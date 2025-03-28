@@ -22,6 +22,13 @@ public class Material3LibraryManager {
         this.configData = loadOrCreateConfigData();
     }
 
+    public Material3LibraryManager(String sc_id, boolean isAppCompatEnabled) {
+        this.sc_id = sc_id;
+        this.isAppCompatEnabled = isAppCompatEnabled;
+        this.configFile = getConfigPath();
+        this.configData = loadOrCreateConfigData();
+    }
+
     private File getConfigPath() {
         return new File(Environment.getExternalStorageDirectory(),
                 ".sketchware" + File.separator + "data" + File.separator + sc_id + File.separator + "material_3.json");

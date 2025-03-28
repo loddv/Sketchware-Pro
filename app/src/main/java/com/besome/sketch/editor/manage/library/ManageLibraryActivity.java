@@ -92,7 +92,7 @@ public class ManageLibraryActivity extends BaseAppCompatActivity implements View
         if (type == PROJECT_LIB_TYPE_EXCLUDE_BUILTIN_LIBRARIES) {
             libraryItemView = new ExcludeBuiltInLibrariesLibraryItemView(this, sc_id);
         } else {
-            libraryItemView = new Material3LibraryItemView(this, sc_id);
+            libraryItemView = new Material3LibraryItemView(this, sc_id, compatLibraryBean.useYn.equals("Y"));
         }
         libraryItemView.setTag(type);
         //noinspection ConstantConditions since the variant if it's nullable handles nulls correctly
@@ -132,6 +132,7 @@ public class ManageLibraryActivity extends BaseAppCompatActivity implements View
             if (child instanceof ExcludeBuiltInLibrariesLibraryItemView libraryItemView) {
                 libraryItemView.setData(null);
             } if (child instanceof Material3LibraryItemView libraryItemView) {
+                libraryItemView.setAppCombatEnabled(compatLibraryBean.useYn.equals("Y"));
                 libraryItemView.setData(null);
             } else if (child instanceof LibraryItemView libraryItemView) {
                 if (libraryBean != null && libraryBean.libType == (Integer) libraryItemView.getTag()) {

@@ -20,7 +20,6 @@ public class ManageCompatActivity extends BaseAppCompatActivity implements View.
     private ProjectLibraryBean compatLibraryBean;
     private ProjectLibraryBean firebaseLibraryBean;
     private ManageLibraryManageCompatBinding binding;
-    private Material3LibraryManager material3LibraryManager;
 
     private void showWarningDialog(String value) {
         new MaterialAlertDialogBuilder(this)
@@ -71,7 +70,7 @@ public class ManageCompatActivity extends BaseAppCompatActivity implements View.
                 return;
             }
 
-            if (!binding.libSwitch.isChecked() && material3LibraryManager.isMaterial3Enabled()) {
+            if (!binding.libSwitch.isChecked() && new Material3LibraryManager(getIntent().getStringExtra("sc_id"), !binding.libSwitch.isChecked()).isMaterial3Enabled()) {
                 showWarningDialog(Helper.getResString(R.string.design_library_appcompat_need_m3_disable));
                 binding.libSwitch.setChecked(true);
                 return;
@@ -93,8 +92,6 @@ public class ManageCompatActivity extends BaseAppCompatActivity implements View.
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(true);
         binding.toolbar.setNavigationOnClickListener(v -> onBackPressed());
-
-        material3LibraryManager = new Material3LibraryManager(getIntent().getStringExtra("sc_id"));
 
         compatLibraryBean = getIntent().getParcelableExtra("compat");
         firebaseLibraryBean = getIntent().getParcelableExtra("firebase");

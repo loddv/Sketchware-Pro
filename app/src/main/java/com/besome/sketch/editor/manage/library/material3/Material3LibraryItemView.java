@@ -13,11 +13,18 @@ import pro.sketchware.R;
 
 @SuppressLint("ViewConstructor")
 public class Material3LibraryItemView extends LibraryItemView {
-    private final String sc_id;
 
-    public Material3LibraryItemView(Context context, String sc_id) {
+    private final String sc_id;
+    private boolean isAppCombatEnabled;
+
+    public Material3LibraryItemView(Context context, String sc_id, boolean isAppCombatEnabled) {
         super(context);
         this.sc_id = sc_id;
+        this.isAppCombatEnabled = isAppCombatEnabled;
+    }
+
+    public void setAppCombatEnabled(boolean state) {
+        isAppCombatEnabled = state;
     }
 
     @Override
@@ -25,7 +32,7 @@ public class Material3LibraryItemView extends LibraryItemView {
         icon.setImageResource(R.drawable.ic_mtrl_material3);
         title.setText(Helper.getResString(R.string.design_library_title_material3));
         description.setText("Modern Material design with adaptive dynamic theming");
-        boolean isEnabled = new Material3LibraryManager(sc_id).isMaterial3Enabled();
+        boolean isEnabled = new Material3LibraryManager(sc_id, isAppCombatEnabled).isMaterial3Enabled();
         enabled.setText(isEnabled ? "ON" : "OFF");
         enabled.setSelected(isEnabled);
     }

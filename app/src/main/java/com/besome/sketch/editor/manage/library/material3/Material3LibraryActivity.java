@@ -30,8 +30,9 @@ public class Material3LibraryActivity extends AppCompatActivity {
         binding.toolbar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
 
         String sc_id = getIntent().getStringExtra("sc_id");
-        material3LibraryManager = new Material3LibraryManager(sc_id);
-        if (!getIntent().getBooleanExtra("is_app_compat_enabled", false)) {
+        boolean isAppCombatEnabled = getIntent().getBooleanExtra("is_app_compat_enabled", false);
+        material3LibraryManager = new Material3LibraryManager(sc_id, isAppCombatEnabled);
+        if (!isAppCombatEnabled) {
             new MaterialAlertDialogBuilder(this)
                     .setIcon(R.drawable.ic_mtrl_warning)
                     .setTitle("AppCompat is disabled!")

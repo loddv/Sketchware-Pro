@@ -45,7 +45,6 @@ public class ColorsAdapter extends RecyclerView.Adapter<ColorsAdapter.ViewHolder
         ColorModel colorModel = filteredData.get(position);
         String colorName = colorModel.getColorName();
         String colorValue = colorModel.getColorValue();
-        String valueHex = colorsEditorManager.getColorValue(activity.getApplicationContext(), colorValue, 4);
         if (notesMap.containsKey(position)) {
             holder.itemBinding.tvTitle.setHint(notesMap.get(position));
             holder.itemBinding.tvTitle.setVisibility(View.VISIBLE);
@@ -56,9 +55,7 @@ public class ColorsAdapter extends RecyclerView.Adapter<ColorsAdapter.ViewHolder
         holder.itemBinding.title.setHint(colorName);
         holder.itemBinding.sub.setText(colorValue);
 
-        if (PropertiesUtil.isHexColor(valueHex)) {
-            holder.itemBinding.color.setBackgroundColor(PropertiesUtil.parseColor(valueHex));
-        }
+        holder.itemBinding.color.setBackgroundColor(PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), colorValue, 4, activity.variant.contains("night"))));
 
         holder.itemBinding.backgroundCard.setOnClickListener(v -> activity.colorsEditor.showColorEditDialog(colorModel, position));
     }

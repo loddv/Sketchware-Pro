@@ -46,6 +46,7 @@ public class ColorsEditor extends Fragment {
 
     public boolean hasUnsavedChanges;
     public static String contentPath;
+    private boolean isNightVariant;
     public final ArrayList<ColorModel> colorList = new ArrayList<>();
     public final HashMap <String, String> defaultColors = new HashMap<>();
     private HashMap<Integer, String> notesMap = new HashMap<>();
@@ -72,7 +73,7 @@ public class ColorsEditor extends Fragment {
         boolean isSkippingMode = updateMode == 1;
         boolean isMergeAndReplace = updateMode == 2;
         colorsEditorManager.isDefaultVariant = activity.variant.isEmpty();
-        colorsEditorManager.isNightVariant = activity.variant.contains("night");
+        isNightVariant = activity.variant.contains("night");
 
         ArrayList<ColorModel> defaultColors = new ArrayList<>();
 
@@ -153,7 +154,7 @@ public class ColorsEditor extends Fragment {
                 dialogBinding.colorKeyInput.setEnabled(false);
             }
             dialogBinding.stringHeaderInput.setText(notesMap.getOrDefault(position, ""));
-            dialogBinding.colorPreview.setBackgroundColor(PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), colorModel.getColorValue(), 3)));
+            dialogBinding.colorPreview.setBackgroundColor(PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), colorModel.getColorValue(), 3, isNightVariant)));
             dialogBinding.importantNote.setVisibility(defaultColors.containsKey(colorModel.getColorName()) ? View.VISIBLE : View.GONE);
 
             dialog.b("Edit color");
@@ -185,7 +186,7 @@ public class ColorsEditor extends Fragment {
                     return;
                 }
                 dialogBinding.colorValueInput.setError(null);
-                dialogBinding.colorPreview.setBackgroundColor(PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), s.toString(), 3)));
+                dialogBinding.colorPreview.setBackgroundColor(PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), s.toString(), 3, isNightVariant)));
             }
         });
 

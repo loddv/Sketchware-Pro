@@ -44,7 +44,6 @@ public class ColorsEditorManager {
     public String contentPath;
     public boolean isDataLoadingFailed;
     public boolean isDefaultVariant = true;
-    public boolean isNightVariant;
     public final String defaultHexColor = "#00000000";
 
     public HashMap<String, String> defaultColors;
@@ -57,6 +56,10 @@ public class ColorsEditorManager {
     }
 
     public String getColorValue(Context context, String colorValue, int referencingLimit) {
+        return getColorValue(context, colorValue, referencingLimit, false);
+    }
+
+    public String getColorValue(Context context, String colorValue, int referencingLimit, boolean isNightVariant) {
         if (colorValue == null || referencingLimit <= 0) {
             return defaultHexColor;
         }
@@ -66,7 +69,7 @@ public class ColorsEditorManager {
         }
         if (colorValue.startsWith("?attr/") || colorValue.startsWith("?")) {
             String attrName = colorValue.startsWith("?attr/") ? colorValue.substring(6) : colorValue.substring(1);
-            return getColorValueFromAttrs(context, attrName, referencingLimit - 1);
+            return getColorValueFromAttrs(context, attrName, referencingLimit - 1, isNightVariant);
         }
         if (colorValue.startsWith("@color/")) {
             return getColorValueFromXml(context, colorValue.substring(7), referencingLimit - 1);
@@ -76,7 +79,7 @@ public class ColorsEditorManager {
         return defaultHexColor;
     }
 
-    public String getColorValueFromAttrs(Context context, String attrName, int referencingLimit) {
+    public String getColorValueFromAttrs(Context context, String attrName, int referencingLimit, boolean isNightVariant) {
         try {
             int attrId = context.getResources().getIdentifier(attrName, "attr", context.getPackageName());
 

@@ -535,7 +535,7 @@ public class Zx extends PopupWindow {
             int color = PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), colorModel.getColorValue(), 3));
             int colorNight;
             if (nightColorsMap.containsKey(colorModel.getColorName())) {
-                colorNight = PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), nightColorsMap.get(colorModel.getColorName()), 3));
+                colorNight = PropertiesUtil.parseColor(colorsEditorManager.getColorValue(activity.getApplicationContext(), nightColorsMap.get(colorModel.getColorName()), 3, true));
             } else {
                 colorNight = -1;
             }

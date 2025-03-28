@@ -30,7 +30,6 @@ import mod.hey.studios.project.ProjectSettings;
 import mod.hey.studios.util.ProjectFile;
 import mod.hilal.saif.blocks.CommandBlock;
 import mod.pranav.viewbinding.ViewBindingBuilder;
-
 import pro.sketchware.SketchApplication;
 import pro.sketchware.utility.FileUtil;
 import pro.sketchware.xml.XmlBuilder;
@@ -216,7 +215,7 @@ public class yq {
      * Example content: /storage/emulated/0/.sketchware/mysc/605/app/src/main/res/raw
      */
     public final String importedSoundsPath;
-    
+
     private final Context context;
 
     public final HashMap<String, Object> metadata;
@@ -357,13 +356,14 @@ public class yq {
             e2.printStackTrace();
         }
     }
+
     /**
      * Copies a mipMaps folder to the project's app icon path, {@link yq#resDirectoryPath}/mipmap
      */
 
     public void aa(String iconPath) {
         try {
-            FileUtil.copyDirectory(new File(iconPath),new File(resDirectoryPath + File.separator));
+            FileUtil.copyDirectory(new File(iconPath), new File(resDirectoryPath + File.separator));
         } catch (Exception e2) {
             e2.printStackTrace();
         }
@@ -787,7 +787,7 @@ public class yq {
         if (newXMLCommand && FileUtil.isExistFile(path)) {
             FileUtil.copyFile(path, FileUtil.getExternalStorageDir().concat("/.sketchware/temp/commands"));
         }
-        
+
         var viewBindingBuilder = new ViewBindingBuilder(List.of(), new File("."), packageName);
 
         // Generate layouts unless a custom version of it exists already
@@ -800,19 +800,19 @@ public class yq {
             var ogFile = new File(layoutDir + xmlName);
             if (!layoutFiles.contains(ogFile)) {
                 srcCodeBeans.add(new SrcCodeBean(xmlName, CommandBlock.applyCommands(xmlName, ox.b())));
-                
+
                 if (isViewBindingEnable()) {
                     var privFile = new File(context.getCacheDir(), xmlName);
                     FileUtil.writeFile(privFile.getAbsolutePath(), CommandBlock.applyCommands(xmlName, ox.b()));
                     var code = viewBindingBuilder.generateBindingForLayout(privFile);
                     srcCodeBeans.add(new SrcCodeBean(
-                        ViewBindingBuilder.generateFileNameForLayout(xmlName.replace(".xml", "")) + ".java", 
-                        CommandBlock.applyCommands(xmlName, code)
+                            ViewBindingBuilder.generateFileNameForLayout(xmlName.replace(".xml", "")) + ".java",
+                            CommandBlock.applyCommands(xmlName, code)
                     ));
                 }
             }
         }
-        
+
         ArrayList<ProjectFileBean> customViewFiles = projectFileManager.c();
         for (ProjectFileBean customViewFile : customViewFiles) {
             String xmlName = customViewFile.getXmlName();
@@ -821,14 +821,14 @@ public class yq {
             var ogFile = new File(layoutDir + xmlName);
             if (!layoutFiles.contains(ogFile)) {
                 srcCodeBeans.add(new SrcCodeBean(xmlName, CommandBlock.applyCommands(xmlName, ox.b())));
-                
+
                 if (isViewBindingEnable()) {
                     var privFile = new File(context.getCacheDir(), xmlName);
                     FileUtil.writeFile(privFile.getAbsolutePath(), CommandBlock.applyCommands(xmlName, ox.b()));
                     var code = viewBindingBuilder.generateBindingForLayout(privFile);
                     srcCodeBeans.add(new SrcCodeBean(
-                        ViewBindingBuilder.generateFileNameForLayout(xmlName.replace(".xml", "")) + ".java", 
-                        CommandBlock.applyCommands(xmlName, code)
+                            ViewBindingBuilder.generateFileNameForLayout(xmlName.replace(".xml", "")) + ".java",
+                            CommandBlock.applyCommands(xmlName, code)
                     ));
                 }
             }
@@ -945,7 +945,7 @@ public class yq {
 
         return "";
     }
-    
+
     public String getXMLString() {
         String filePath = wq.b(sc_id) + "/files/resource/values/strings.xml";
         if (FileUtil.isExistFile(filePath)) {
@@ -955,7 +955,7 @@ public class yq {
         stringsFileBuilder.addNonTranslatableString("app_name", applicationName);
         return CommandBlock.applyCommands("strings.xml", stringsFileBuilder.toCode());
     }
-    
+
     public String getXMLColor() {
         String filePath = wq.b(sc_id) + "/files/resource/values/colors.xml";
         if (FileUtil.isExistFile(filePath)) {
@@ -969,7 +969,7 @@ public class yq {
         colorsFileBuilder.addColor("colorControlNormal", String.format("#%06X", colorControlNormal & 0xffffff));
         return CommandBlock.applyCommands("colors.xml", colorsFileBuilder.toCode());
     }
-    
+
     public String getXMLStyle() {
         String filePath = wq.b(sc_id) + "/files/resource/values/styles.xml";
         if (FileUtil.isExistFile(filePath)) {
@@ -994,7 +994,7 @@ public class yq {
             boolean useNewMaterialComponentsTheme = projectSettings.getValue(ProjectSettings.SETTING_ENABLE_BRIDGELESS_THEMES,
                     BuildSettings.SETTING_GENERIC_VALUE_FALSE).equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE);
             XmlBuilderHelper stylesFileBuilder = new XmlBuilderHelper();
-            stylesFileBuilder.addStyle("AppTheme", "Theme.MaterialComponents.Light.NoActionBar" + (useNewMaterialComponentsTheme ? "" : ".Bridge"));
+            stylesFileBuilder.addStyle("AppTheme", "Theme.MaterialComponents.Light.NoActionBar" + (useNewMaterialComponentsTheme ? ".Bridge" : ""));
             // todo: add `colorOnPrimary` to custom theme colors.
             stylesFileBuilder.addItemToStyle("AppTheme", "colorOnPrimary", "@android:color/white");
             stylesFileBuilder.addItemToStyle("AppTheme", "colorPrimary", "@color/colorPrimary");
@@ -1002,11 +1002,14 @@ public class yq {
             stylesFileBuilder.addItemToStyle("AppTheme", "colorAccent", "@color/colorAccent");
             stylesFileBuilder.addItemToStyle("AppTheme", "colorControlHighlight", "@color/colorControlHighlight");
             stylesFileBuilder.addItemToStyle("AppTheme", "colorControlNormal", "@color/colorControlNormal");
+
             stylesFileBuilder.addStyle("AppTheme.FullScreen", "AppTheme");
             stylesFileBuilder.addItemToStyle("AppTheme.FullScreen", "android:windowFullscreen", "true");
             stylesFileBuilder.addItemToStyle("AppTheme.FullScreen", "android:windowContentOverlay", "@null");
+
             stylesFileBuilder.addStyle("AppTheme.AppBarOverlay", "ThemeOverlay.MaterialComponents.Dark.ActionBar");
             stylesFileBuilder.addStyle("AppTheme.PopupOverlay", "ThemeOverlay.MaterialComponents.Light");
+
             stylesFileBuilder.addStyle("AppTheme.DebugActivity", "AppTheme");
             stylesFileBuilder.addItemToStyle("AppTheme.DebugActivity", "actionBarStyle", "@style/ThemeOverlay.MaterialComponents.ActionBar.Primary");
             stylesFileBuilder.addItemToStyle("AppTheme.DebugActivity", "actionBarTheme", "@style/Widget.MaterialComponents.ActionBar.Primary");

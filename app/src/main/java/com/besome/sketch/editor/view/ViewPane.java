@@ -88,6 +88,7 @@ import dev.aldi.sayuti.editor.view.item.ItemPatternLockView;
 import dev.aldi.sayuti.editor.view.item.ItemViewPager;
 import dev.aldi.sayuti.editor.view.item.ItemWaveSideBar;
 import dev.aldi.sayuti.editor.view.item.ItemYoutubePlayer;
+
 import mod.agus.jcoderz.beans.ViewBeans;
 import mod.agus.jcoderz.editor.view.item.ItemAnalogClock;
 import mod.agus.jcoderz.editor.view.item.ItemAutoCompleteTextView;
@@ -117,7 +118,6 @@ import pro.sketchware.utility.SvgUtils;
 public class ViewPane extends RelativeLayout {
     private Context context;
     private ViewGroup rootLayout;
-    private ViewBean rootBean;
     private int b = 99;
     private ArrayList<ViewInfo> viewInfos = new ArrayList<>();
     private ViewInfo viewInfo;
@@ -327,8 +327,8 @@ public class ViewPane extends RelativeLayout {
         updateItemView(item, viewBean);
         return item;
     }
-
-    private View getUnknownItemView(final ViewBean bean) {
+    
+    private final View getUnknownItemView(final ViewBean bean) {
         bean.type = ViewBean.VIEW_TYPE_LAYOUT_LINEAR;
         return new ItemLinearLayout(context);
     }
@@ -336,9 +336,6 @@ public class ViewPane extends RelativeLayout {
     public void updateRootLayout(String sc_id, String fileName) {
         InjectRootLayoutManager manager = new InjectRootLayoutManager(sc_id);
         var currentBean = manager.toBean(fileName);
-        if (rootBean == null) {
-            rootBean = currentBean.clone();
-        }
         View rootView = createItemView(currentBean);
         if (rootView instanceof sy sy) {
             sy.setFixed(true);
@@ -348,11 +345,11 @@ public class ViewPane extends RelativeLayout {
         } else {
             rootLayout = (ViewGroup) rootView;
         }
-        if (!currentBean.isEqual(rootBean)) {
-            rootBean = currentBean;
-            rootLayout = (ViewGroup) rootView;
+        if (rootLayout instanceof sy sy) {
+            if (!currentBean.isEqual(sy.getBean())) {
+                rootLayout = (ViewGroup) rootView;
+            }
         }
-        rootLayout.setBackgroundColor(0xffeeeeee);
         addView(rootLayout);
     }
 
@@ -415,6 +412,7 @@ public class ViewPane extends RelativeLayout {
         view.setTranslationY(wB.a(getContext(), viewBean.translationY));
         view.setScaleX(viewBean.scaleX);
         view.setScaleY(viewBean.scaleY);
+        view.setEnabled(viewBean.enabled != 0);
         String backgroundResource = viewBean.layout.backgroundResource;
         if (backgroundResource != null) {
             try {
@@ -661,7 +659,11 @@ public class ViewPane extends RelativeLayout {
             viewBean.preParent = viewBean.parent;
             viewBean.parent = "root";
             viewBean.preParentType = viewBean.parentType;
-            viewBean.parentType = rootBean.type;
+            if (rootLayout instanceof sy sy) {
+                viewBean.parentType = sy.getBean().type;
+            } else {
+                viewBean.parentType = ViewBean.VIEW_TYPE_LAYOUT_LINEAR;
+            }
             viewBean.index = -1;
         }
     }

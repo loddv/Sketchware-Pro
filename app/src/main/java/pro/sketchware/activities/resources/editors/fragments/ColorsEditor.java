@@ -76,7 +76,7 @@ public class ColorsEditor extends Fragment {
 
         ArrayList<ColorModel> defaultColors = new ArrayList<>();
 
-        if (activity.variant.isEmpty() && !FileUtil.isExistFile(contentPath)) {
+        if ((activity.variant.isEmpty() || hasUnsavedChanges) && !FileUtil.isExistFile(contentPath)) {
             String generatedContent = activity.yq.getXMLColor();
             colorsEditorManager.parseColorsXML(defaultColors, generatedContent);
         } else {
@@ -114,6 +114,9 @@ public class ColorsEditor extends Fragment {
             binding.recyclerView.setAdapter(adapter);
             activity.checkForInvalidResources();
             updateNoContentLayout();
+            if (hasUnsavedChanges) {
+                contentPath = activity.colorsFilePath;
+            }
         });
     }
 
@@ -290,8 +293,8 @@ public class ColorsEditor extends Fragment {
 
     public void saveColorsFile() {
         if (hasUnsavedChanges) {
-            XmlUtil.saveXml(contentPath, colorsEditorManager.convertListToXml(colorList, notesMap));
-            hasUnsavedChanges = false;
+        XmlUtil.saveXml(contentPath, colorsEditorManager.convertListToXml(colorList, notesMap));
+        hasUnsavedChanges = false;
         }
     }
 }

@@ -67,7 +67,7 @@ public class StringsEditor extends Fragment {
         stringsEditorManager.isDefaultVariant = activity.variant.isEmpty();
 
         ArrayList<HashMap<String, Object>> defaultStrings = new ArrayList<>();
-        if (activity.variant.isEmpty() && !FileUtil.isExistFile(filePath)) {
+        if ((activity.variant.isEmpty() || hasUnsavedChanges) && !FileUtil.isExistFile(filePath)) {
             String generatedContent = activity.yq.getXMLString();
             stringsEditorManager.convertXmlStringsToListMap(generatedContent, defaultStrings);
         } else {
@@ -106,6 +106,9 @@ public class StringsEditor extends Fragment {
             binding.recyclerView.setAdapter(adapter);
             activity.checkForInvalidResources();
             updateNoContentLayout();
+            if (hasUnsavedChanges) {
+                this.filePath = activity.stringsFilePath;
+            }
         });
     }
 
@@ -182,8 +185,8 @@ public class StringsEditor extends Fragment {
 
     public void saveStringsFile() {
         if (hasUnsavedChanges) {
-            XmlUtil.saveXml(filePath, stringsEditorManager.convertListMapToXmlStrings(listmap, notesMap));
-            hasUnsavedChanges = false;
+        XmlUtil.saveXml(filePath, stringsEditorManager.convertListMapToXmlStrings(listmap, notesMap));
+        hasUnsavedChanges = false;
         }
     }
 }

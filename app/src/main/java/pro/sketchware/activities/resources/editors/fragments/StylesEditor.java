@@ -77,7 +77,7 @@ public class StylesEditor extends Fragment {
 
         ArrayList<StyleModel> defaultStyles;
 
-        if (activity.variant.isEmpty() && !FileUtil.isExistFile(filePath)) {
+        if ((activity.variant.isEmpty() || hasUnsavedChanges) && !FileUtil.isExistFile(filePath)) {
             String generatedContent = activity.yq.getXMLStyle();
             defaultStyles = stylesEditorManager.parseStylesFile(generatedContent);
         } else {
@@ -115,6 +115,9 @@ public class StylesEditor extends Fragment {
             binding.recyclerView.setAdapter(adapter);
             activity.checkForInvalidResources();
             updateNoContentLayout();
+            if (hasUnsavedChanges) {
+                this.filePath = activity.stylesFilePath;
+            }
         });
     }
 
@@ -299,8 +302,8 @@ public class StylesEditor extends Fragment {
 
     public void saveStylesFile() {
         if (hasUnsavedChanges) {
-            FileUtil.writeFile(filePath, stylesEditorManager.convertStylesToXML(stylesList, notesMap));
-            hasUnsavedChanges = false;
+        FileUtil.writeFile(filePath, stylesEditorManager.convertStylesToXML(stylesList, notesMap));
+        hasUnsavedChanges = false;
         }
     }
 

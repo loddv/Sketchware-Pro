@@ -108,6 +108,9 @@ public class ThemesEditor extends Fragment {
             binding.recyclerView.setAdapter(adapter);
             activity.checkForInvalidResources();
             updateNoContentLayout();
+            if (hasUnsavedChanges) {
+                this.filePath = activity.themesFilePath;
+            }
         });
     }
 
@@ -288,8 +291,8 @@ public class ThemesEditor extends Fragment {
 
     public void saveThemesFile() {
         if (hasUnsavedChanges) {
-            FileUtil.writeFile(filePath, themesEditorManager.convertStylesToXML(themesList, notesMap));
-            hasUnsavedChanges = false;
+        FileUtil.writeFile(filePath, themesEditorManager.convertStylesToXML(themesList, notesMap));
+        hasUnsavedChanges = false;
         }
     }
 

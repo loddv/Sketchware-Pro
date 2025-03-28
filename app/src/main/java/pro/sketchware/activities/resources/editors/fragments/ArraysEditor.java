@@ -109,6 +109,9 @@ public class ArraysEditor extends Fragment {
             binding.recyclerView.setAdapter(adapter);
             activity.checkForInvalidResources();
             updateNoContentLayout();
+            if (hasUnsavedChangesStatus) {
+                this.filePath = activity.arrayFilePath;
+            }
         });
     }
 
@@ -324,8 +327,8 @@ public class ArraysEditor extends Fragment {
     }
     public void saveArraysFile() {
         if (hasUnsavedChanges) {
-            FileUtil.writeFile(filePath, arraysEditorManager.convertArraysToXML(arraysList, notesMap));
-            hasUnsavedChanges = false;
+        FileUtil.writeFile(filePath, arraysEditorManager.convertArraysToXML(arraysList, notesMap));
+        hasUnsavedChanges = false;
         }
     }
 

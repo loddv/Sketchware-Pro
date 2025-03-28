@@ -204,6 +204,10 @@ public class Ox {
                         } else if (!toNotAdd.contains("app:cardBackgroundColor") && !injectHandler.contains("cardBackgroundColor")) {
                             nx.addAttribute("app", "cardBackgroundColor", formatColor(color));
                         }
+                    } else if (nx.c().equals("MaterialButton")) {
+                        if (!toNotAdd.contains("app:backgroundTint") && !injectHandler.contains("backgroundTint")) {
+                            nx.addAttribute("app", "backgroundTint", backgroundResColor == null ? formatColor(color) : backgroundResColor);
+                        }
                     } else if (nx.c().equals("CollapsingToolbarLayout")) {
                         if (!toNotAdd.contains("app:contentScrim") && !injectHandler.contains("contentScrim") && backgroundResColor != null) {
                             nx.addAttribute("app", "contentScrim", backgroundResColor);
@@ -409,7 +413,7 @@ public class Ox {
         if (!viewBean.inject.isEmpty()) {
             widgetTag.addAttributeValue(viewBean.inject.replaceAll(" ", ""));
         }
-        
+
         if (!viewBean.parentAttributes.isEmpty()) {
             viewBean.parentAttributes.forEach((key, value) -> {
                 String[] parts = key.split(":");

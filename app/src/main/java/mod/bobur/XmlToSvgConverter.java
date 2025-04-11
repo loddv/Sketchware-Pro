@@ -222,29 +222,6 @@ public class XmlToSvgConverter {
         return value.replaceAll("[^\\d.]", "");
     }
 
-    private static String convertHexColor(String argb, Element vectorElement) {
-        if (argb.startsWith("@") || argb.startsWith("?")) {
-            return getVectorColor(vectorElement);
-        }
-
-        String digits = argb.replaceAll("^#", "");
-        if (digits.length() != 4 && digits.length() != 8) return argb;
-
-        String red, green, blue, alpha;
-        if (digits.length() == 4) {
-            alpha = String.valueOf(digits.charAt(0));
-            red = String.valueOf(digits.charAt(1));
-            green = String.valueOf(digits.charAt(2));
-            blue = String.valueOf(digits.charAt(3));
-        } else {
-            alpha = digits.substring(0, 2);
-            red = digits.substring(2, 4);
-            green = digits.substring(4, 6);
-            blue = digits.substring(6, 8);
-        }
-        return "#" + red + green + blue + alpha;
-    }
-
     public String getVectorColor(Element vectorElement) {
         ColorsEditorManager colorsEditorManager = new ColorsEditorManager();
         Element root = vectorElement.getOwnerDocument().getDocumentElement();

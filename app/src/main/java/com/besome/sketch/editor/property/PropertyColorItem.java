@@ -13,14 +13,14 @@ import androidx.annotation.NonNull;
 
 import java.util.Objects;
 
-import pro.sketchware.R;
+import com.besome.sketch.lib.ui.ColorPickerDialog;
 
 import a.a.a.Kw;
-import a.a.a.Zx;
 import a.a.a.mB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
 import pro.sketchware.utility.ThemeUtils;
+import pro.sketchware.R;
 
 @SuppressLint("ViewConstructor")
 public class PropertyColorItem extends RelativeLayout implements View.OnClickListener {
@@ -71,10 +71,6 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         return value;
     }
 
-    public String getResValue() {
-        return resValue;
-    }
-
     public void setValue(int value) {
         this.value = value;
         resValue = null;
@@ -88,6 +84,10 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
             tvValue.setText(String.format("#%08X", value));
             viewColor.setBackgroundColor(value);
         }
+    }
+
+    public String getResValue() {
+        return resValue;
     }
 
     public void setValue(int value, String resValue) {
@@ -157,13 +157,9 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
             color = tvValueStr;
         } else
             color = Objects.requireNonNullElseGet(resValue, () -> String.format("#%06X", value));
-        Zx colorPicker = getZx(color, colorTransparentAvailable, colorNoneAvailable);
-        colorPicker.showAtLocation(anchorView, Gravity.CENTER, 0, 0);
-    }
 
-    private @NonNull Zx getZx(String color, boolean colorTransparentAvailable, boolean colorNoneAvailable) {
-        Zx colorPicker = new Zx((Activity) context, color, colorTransparentAvailable, colorNoneAvailable, sc_id);
-        colorPicker.a(new Zx.b() {
+        ColorPickerDialog colorPicker = new ColorPickerDialog((Activity) context, color, colorTransparentAvailable, colorNoneAvailable, sc_id);
+        colorPicker.a(new ColorPickerDialog.b() {
             @Override
             public void a(int var1) {
                 setValue(var1);
@@ -186,6 +182,6 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
                 valueChangeListener.a(key, value);
             }
         });
-        return colorPicker;
+        colorPicker.showAtLocation(anchorView, Gravity.CENTER, 0, 0);
     }
 }

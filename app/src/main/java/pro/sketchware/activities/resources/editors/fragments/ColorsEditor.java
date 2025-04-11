@@ -15,12 +15,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.besome.sketch.lib.ui.ColorPickerDialog;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
 
-import a.a.a.Zx;
 import a.a.a.aB;
 import mod.hey.studios.util.Helper;
 import mod.hey.studios.util.ProjectFile;
@@ -242,8 +243,8 @@ public class ColorsEditor extends Fragment {
         });
 
         dialogBinding.colorPreviewCard.setOnClickListener(v -> {
-            Zx colorPicker = new Zx(activity, Objects.requireNonNull(dialogBinding.colorValueInput.getText()).toString(), false, false, activity.sc_id);
-            colorPicker.a(new Zx.b() {
+            ColorPickerDialog colorPicker = new ColorPickerDialog(activity, Objects.requireNonNull(dialogBinding.colorValueInput.getText()).toString(), false, false, activity.sc_id);
+            colorPicker.a(new ColorPickerDialog.b() {
                 @Override
                 public void a(int colorInt) {
                     String selectedColorHex = String.format("#%06X", colorInt & 0x00FFFFFF);

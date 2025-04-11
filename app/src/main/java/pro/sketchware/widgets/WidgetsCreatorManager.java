@@ -50,7 +50,6 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class WidgetsCreatorManager {
 
-    private ArrayList<HashMap<String, Object>> widgetConfigurationsList = new ArrayList<>();
     private final String widgetResourcesDirectoryPath = "/storage/emulated/0/.sketchware/resources/widgets/";
     private final String widgetsJsonFilePath = widgetResourcesDirectoryPath + "widgets.json";
     private final String widgetExportDirectoryPath = widgetResourcesDirectoryPath + "export/";
@@ -68,12 +67,32 @@ public class WidgetsCreatorManager {
     private final ViewEditor viewEditor;
     private final ViewEditorFragment viewEditorFragment;
     private final Context context;
+    private ArrayList<HashMap<String, Object>> widgetConfigurationsList = new ArrayList<>();
 
     public WidgetsCreatorManager(ViewEditorFragment viewEditorFragment) {
         this.viewEditorFragment = viewEditorFragment;
         viewEditor = viewEditorFragment.viewEditor;
         context = viewEditorFragment.requireContext();
         initialize();
+    }
+
+    public static void clearErrorOnTextChanged(EditText editText, TextInputLayout textInputLayout) {
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (textInputLayout.getError() != null) {
+                    textInputLayout.setError(null);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
     }
 
     public void initialize() {
@@ -121,7 +140,6 @@ public class WidgetsCreatorManager {
         return false;
     }
 
-
     private void initializeAvailableWidgetTypesList() {
         for (String widgetName : availableWidgetsNames) {
             availableWidgetsTypes.add(String.valueOf(ViewBean.getViewTypeByTypeName(widgetName)));
@@ -146,8 +164,8 @@ public class WidgetsCreatorManager {
 
     public void showWidgetsCreatorDialog(int position) {
         boolean isEditing = position != -1;
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(context);
-        dialog.setTitle(isEditing ? Helper.getResString(R.string.widget_editor) : Helper.getResString(R.string.create_new_widget));
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context);
+        builder.setTitle(isEditing ? Helper.getResString(R.string.widget_editor) : Helper.getResString(R.string.create_new_widget));
         WidgetsCreatorDialogBinding binding = WidgetsCreatorDialogBinding.inflate(LayoutInflater.from(context));
         View inflate = binding.getRoot();
 
@@ -166,9 +184,7 @@ public class WidgetsCreatorManager {
             binding.addWidgetTo.setText(map.get("Class").toString());
             binding.injectCode.setText(map.get("inject").toString());
         } else {
-            dialog.setNeutralButton(R.string.common_word_see_more, (dialog1, which) -> {
-                showMorePopUp(dialog1, dialog.create().getButton(which));
-            });
+            builder.setNeutralButton(Helper.getResString(R.string.common_word_see_more), null);
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -188,13 +204,13 @@ public class WidgetsCreatorManager {
             showCategorySelectorDialog(types, binding.addWidgetTo);
         });
 
-        dialog.setPositiveButton(R.string.common_word_save, (v, which) -> {
+        builder.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
             try {
-                String widgetTitle = Helper.getText(binding.widgetTitle).trim();
-                String widgetName = Helper.getText(binding.widgetName).trim();
-                String widgetType = Helper.getText(binding.widgetType).trim();
-                String widgetInject = Helper.getText(binding.injectCode).trim();
-                String widgetClass = Helper.getText(binding.addWidgetTo).trim();
+                String widgetTitle = Objects.requireNonNull(binding.widgetTitle.getText()).toString().trim();
+                String widgetName = Objects.requireNonNull(binding.widgetName.getText()).toString().trim();
+                String widgetType = Objects.requireNonNull(binding.widgetType.getText()).toString().trim();
+                String widgetInject = Objects.requireNonNull(binding.injectCode.getText()).toString().trim();
+                String widgetClass = Objects.requireNonNull(binding.addWidgetTo.getText()).toString().trim();
 
                 if (widgetTitle.isEmpty()) {
                     binding.inputTitle.setError(String.format(Helper.getResString(R.string.var_is_required, "Widget title")));
@@ -237,9 +253,17 @@ public class WidgetsCreatorManager {
             }
         });
 
-        dialog.setNegativeButton(R.string.common_word_cancel, null);
+        builder.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
 
-        dialog.setView(inflate);
+        builder.setView(inflate);
+
+        AlertDialog dialog = builder.create();
+        dialog.setOnShowListener(dialog1 -> {
+            if (!isEditing) {
+                dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> showMorePopUp(dialog, v));
+            }
+        });
+
         dialog.show();
     }
 
@@ -312,25 +336,6 @@ public class WidgetsCreatorManager {
             viewEditorFragment.e();
             SketchwareUtil.toast("Imported!");
         }
-    }
-
-    public static void clearErrorOnTextChanged(EditText editText, TextInputLayout textInputLayout) {
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (textInputLayout.getError() != null) {
-                    textInputLayout.setError(null);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
     }
 
     private void showTypeViewSelectorDialog(List<String> choices, List<String> types, TextInputEditText type) {

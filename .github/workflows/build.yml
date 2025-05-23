@@ -46,9 +46,9 @@ jobs:
     - name: Build with Gradle
       run: |
         if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
-          ./gradlew minApi${{ github.event.inputs.min_api_level }}
+          ./gradlew assembleMinApi${{ github.event.inputs.min_api_level }}Debug
         else
-          ./gradlew minApi${{ github.event.inputs.min_api_level }}
+          ./gradlew assembleMinApi${{ github.event.inputs.min_api_level }}Release
         fi
 
     - name: Upload APK artifacts

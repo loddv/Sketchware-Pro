@@ -1,0 +1,60 @@
+name: Build Sketchware Pro
+
+on:
+  workflow_dispatch:
+    inputs:
+      min_api_level:
+        type: choice
+        description: 'Minimum API Level for the build:'
+        options:
+          - '21'
+          - '26'
+        default: '21'
+      build_type:
+        type: choice
+        description: 'Build Type:'
+        options:
+          - 'release'
+          - 'debug'
+        default: 'release'
+      branch:
+        type: string
+        description: 'Branch to build from (e.g., main, develop):'
+        required: true
+        default: 'main' # Ou a branch padrão do seu projeto, como 'master' ou 'develop'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch }} # Usa a branch selecionada pelo usuário
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'gradle'
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build with Gradle
+      run: |
+        if [ "${{ github.event.inputs.build_type }}" == "release" ]; then
+          ./gradlew assemble${{ github.event.inputs.min_api_level }}Release
+        else
+          ./gradlew assemble${{ github.event.inputs.min_api_level }}Debug
+        fi
+
+    - name: Upload APK artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: SketchwarePro-minApi${{ github.event.inputs.min_api_level }}-${{ github.event.inputs.build_type }}-${{ github.event.inputs.branch }}
+        path: app/build/outputs/apk/*/
+        retention-days: 7
+

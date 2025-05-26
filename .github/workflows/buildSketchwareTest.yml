@@ -75,18 +75,33 @@ jobs:
     name: Remover execuções falhas do workflow
     runs-on: ${{ github.event.inputs.runner_os || 'ubuntu-latest' }} # Fallback para push/pull_request
     if: github.event_name == 'workflow_dispatch' # Opcional: rodar apenas em dispatch manual
+    permissions:
+      actions: write # Necessário para deletar execuções de workflow
     steps:
-      - uses: actions/checkout@v4.1.3 # Necessário para obter GITHUB_TOKEN com permissões certas se o job não tiver outra utilidade
-        with:
-          fetch-depth: 0 # Não estritamente necessário para este job, mas inofensivo
+      - name: Instalar jq (para parsing de JSON)
+        run: sudo apt-get update && sudo apt-get install -y jq
+        if: runner.os == 'Linux' # Instalar apenas em runners Linux, onde apt-get está disponível
 
       - name: Deletar execuções falhas do workflow
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
-          WORKFLOW_ID=$(basename "${{ github.workflow_ref }}") # Obtém o nome do arquivo do workflow
-          echo "Procurando execuções falhas para o workflow ID: $WORKFLOW_ID no repositório $REPO"
+          # Use github.workflow para o nome do arquivo do workflow
+          WORKFLOW_NAME="${{ github.workflow }}"
+          echo "Procurando execuções falhas para o workflow: $WORKFLOW_NAME no repositório $REPO"
+
+          # Obter o ID do workflow pelo nome
+          WORKFLOW_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                       -H "Accept: application/vnd.github.v3+json" \
+                       "https://api.github.com/repos/$REPO/actions/workflows" | \
+                       jq -r ".workflows[] | select(.name == \"$WORKFLOW_NAME\") | .id")
+
+          if [ -z "$WORKFLOW_ID" ]; then
+            echo "Erro: Não foi possível encontrar o ID do workflow '$WORKFLOW_NAME'."
+            exit 1
+          fi
+          echo "Workflow ID encontrado: $WORKFLOW_ID"
 
           FAILED_RUNS=$(curl -s -H "Authorization: token $GH_TOKEN" \
                -H "Accept: application/vnd.github.v3+json" \
@@ -145,7 +160,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: |
-          if: "assembleMinApi26${{ github.event_name }} == 'workflow_dispatch' && ${{github.event.inputs.build_type }} || 'Debug'"
+            assembleMinApi26${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
         env:
           CRASH_REPORT_WEBHOOK_URL: ${{ secrets.CRASH_REPORT_WEBHOOK_URL }}
 
@@ -191,7 +206,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           arguments: |
-          if: "assembleMinApi21${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}"
+            assembleMinApi21${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
         env:
           CRASH_REPORT_WEBHOOK_URL: ${{ secrets.CRASH_REPORT_WEBHOOK_URL }}
 

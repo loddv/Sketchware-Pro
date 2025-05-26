@@ -22,8 +22,8 @@ on:
         description: 'Choice a os build version machine:'
         options:
           - 'ubuntu-latest'
+          - 'ubuntu-24.04'
           - 'ubuntu-22.04'
-          - 'ubuntu-20.04'
         default: 'ubuntu-latest'
       branch:
         type: string

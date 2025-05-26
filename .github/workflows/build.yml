@@ -9,14 +9,22 @@ on:
         options:
           - '21'
           - '26'
-        default: '21'
+        default: '26'
       build_type:
         type: choice
         description: 'Build Type:'
         options:
           - 'release'
           - 'debug'
-        default: 'release'
+        default: 'debug'
+      build_os_version:
+        type: choice
+        description: 'Choice a os build version machine:'
+        options:
+          - 'ubuntu-latest'
+          - 'ubuntu-22.04'
+          - 'ubuntu-20.04'
+        default: 'ubuntu-latest'
       branch:
         type: string
         description: 'Branch to build from (e.g., main, develop):'
@@ -25,7 +33,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event.inputs.build_os_version }}
 
     steps:
     - name: Checkout repository

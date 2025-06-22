@@ -144,7 +144,7 @@ jobs:
       - name: Build APK
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: assembleMinApi21${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
+          arguments: assemble${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
         env:
           CRASH_REPORT_WEBHOOK_URL: ${{ secrets.CRASH_REPORT_WEBHOOK_URL }}
 
@@ -189,7 +189,7 @@ jobs:
       - name: Build APK
         uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: assembleMinApi21${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
+          arguments: assemble${{ github.event_name == 'workflow_dispatch' && github.event.inputs.build_type || 'Debug' }}
         env:
           CRASH_REPORT_WEBHOOK_URL: ${{ secrets.CRASH_REPORT_WEBHOOK_URL }}
 

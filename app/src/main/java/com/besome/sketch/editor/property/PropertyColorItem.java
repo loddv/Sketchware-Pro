@@ -9,16 +9,16 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import java.util.Objects;
-
 import com.besome.sketch.lib.ui.ColorPickerDialog;
+
+import java.util.Objects;
 
 import a.a.a.Kw;
 import a.a.a.mB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
-import pro.sketchware.utility.ThemeUtils;
 import pro.sketchware.R;
+import pro.sketchware.utility.ThemeUtils;
 
 @SuppressLint("ViewConstructor")
 public class PropertyColorItem extends RelativeLayout implements View.OnClickListener {
@@ -93,14 +93,12 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         this.resValue = resValue;
         if (value == 0) {
             tvValue.setText("TRANSPARENT");
-            viewColor.setBackgroundColor(value);
         } else if (value == 0xffffff) {
             tvValue.setText("NONE");
-            viewColor.setBackgroundColor(value);
         } else {
             tvValue.setText(resValue);
-            viewColor.setBackgroundColor(value);
         }
+        viewColor.setBackgroundColor(value);
     }
 
     @Override
@@ -118,9 +116,13 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         if (orientationItem == 0) {
             propertyItem.setVisibility(GONE);
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyItem.setOnClickListener(null);
+            propertyMenuItem.setOnClickListener(this);
         } else {
             propertyItem.setVisibility(VISIBLE);
             propertyMenuItem.setVisibility(GONE);
+            propertyItem.setOnClickListener(this);
+            propertyMenuItem.setOnClickListener(null);
         }
     }
 
@@ -133,30 +135,21 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         imgLeftIcon = findViewById(R.id.img_left_icon);
         propertyItem = findViewById(R.id.property_item);
         propertyMenuItem = findViewById(R.id.property_menu_item);
-        if (z) {
-            setOnClickListener(this);
-            setSoundEffectsEnabled(true);
-        }
+//        if (z) {
+//            propertyMenuItem.setOnClickListener(this);
+//            propertyMenuItem.setSoundEffectsEnabled(true);
+//        }
     }
 
     private void showColorPicker(View anchorView) {
-        boolean colorNoneAvailable;
-        boolean colorTransparentAvailable;
-        if (key.equals("property_background_color")) {
-            colorTransparentAvailable = true;
-            colorNoneAvailable = true;
-        } else {
-            colorTransparentAvailable = false;
-            colorNoneAvailable = false;
-        }
-        String color;
         String tvValueStr = tvValue.getText().toString();
+        String color;
         if (tvValueStr.equals("NONE") || tvValueStr.equals("TRANSPARENT")) {
             color = tvValueStr;
         } else
             color = Objects.requireNonNullElseGet(resValue, () -> String.format("#%06X", value));
 
-        ColorPickerDialog colorPicker = new ColorPickerDialog((Activity) context, color, colorTransparentAvailable, colorNoneAvailable, sc_id);
+        ColorPickerDialog colorPicker = new ColorPickerDialog((Activity) context, color, key.equals("property_background_color"), true, sc_id);
         colorPicker.a(new ColorPickerDialog.b() {
             @Override
             public void a(int var1) {
@@ -168,14 +161,14 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
 
             @Override
             public void a(String var1, int var2) {
-                setValue(var2, "@color/" +  var1);
+                setValue(var2, "@color/" + var1);
                 if (valueChangeListener != null) {
                     valueChangeListener.a(key, value);
                 }
             }
         });
-        colorPicker.materialColorAttr((attr, attrId) -> {
-            setValue(ThemeUtils.getColor(viewColor, attrId), "?" + attr);
+        colorPicker.materialColorAttr((attr, attrColor) -> {
+            setValue(attrColor, "?" + attr);
             if (valueChangeListener != null) {
                 valueChangeListener.a(key, value);
             }

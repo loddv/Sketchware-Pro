@@ -30,6 +30,7 @@ import mod.hey.studios.util.ProjectFile;
 import mod.hilal.saif.blocks.CommandBlock;
 import mod.pranav.viewbinding.ViewBindingBuilder;
 import pro.sketchware.SketchApplication;
+import pro.sketchware.util.library.BuiltInLibraryManager;
 import pro.sketchware.utility.FileUtil;
 import pro.sketchware.xml.XmlBuilder;
 import pro.sketchware.xml.XmlBuilderHelper;
@@ -181,14 +182,27 @@ public class yq {
      * Example content: /storage/emulated/0/.sketchware/mysc/605/app/src/main/res/raw
      */
     public final String importedSoundsPath;
+
+    private final Material3LibraryManager material3LibraryManager;
+
     private final oB fileUtil;
     private final Context context;
+
+    private ExportType exportingType;
 
     public final HashMap<String, Object> metadata;
 
     public jq N;
     public boolean generateDataBindingClasses;
-    public boolean exportingProject;
+    public boolean isAndroidStudioExport;
+
+    public enum ExportType {
+        AAB,
+        SIGN_APP,
+        DEBUG_APP,
+        ANDROID_STUDIO,
+        SOURCE_CODE_VIEWING
+    }
 
     public yq(Context context, String sc_id) {
         this(context, wq.d(sc_id), lC.b(sc_id));
@@ -199,6 +213,7 @@ public class yq {
         this.metadata = metadata;
         N = new jq();
         sc_id = yB.c(metadata, "sc_id");
+        material3LibraryManager = new Material3LibraryManager(sc_id);
         N.sc_id = sc_id;
         projectMyscPath = myscFolderPath.endsWith(File.separator) ? myscFolderPath : myscFolderPath + File.separator;
         packageName = yB.c(metadata, "my_sc_pkg_name");
@@ -294,7 +309,7 @@ public class yq {
         fileUtil.b(projectMyscPath + File.separator + "app" + File.separator + "build.gradle",
                 Lx.getBuildGradleString(VAR_DEFAULT_TARGET_SDK_VERSION, VAR_DEFAULT_MIN_SDK_VERSION, projectSettings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION, String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)), N, projectSettings.getValue(ProjectSettings.SETTING_ENABLE_VIEWBINDING, ProjectSettings.SETTING_GENERIC_VALUE_FALSE).equals(ProjectSettings.SETTING_GENERIC_VALUE_TRUE)));
         fileUtil.b(projectMyscPath + File.separator + "settings.gradle", Lx.a());
-        fileUtil.b(projectMyscPath + File.separator + "build.gradle", Lx.c("8.7.0", "4.4.2"));
+        fileUtil.b(projectMyscPath + File.separator + "build.gradle", Lx.c("8.12.0", "4.4.3"));
 
         fileUtil.b(projectMyscPath + File.separator + "gradle.properties", """
                 android.enableR8.fullMode=false
@@ -354,72 +369,100 @@ public class yq {
      */
     public void a(Context context) {
         boolean logcatEnabled = N.isDebugBuild && new BuildSettings(sc_id).getValue(
-                BuildSettings.SETTING_ENABLE_LOGCAT, BuildSettings.SETTING_GENERIC_VALUE_TRUE).equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE);
+                        BuildSettings.SETTING_ENABLE_LOGCAT, BuildSettings.SETTING_GENERIC_VALUE_TRUE)
+                .equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE);
 
         String javaDir = FileUtil.getExternalStorageDir() + "/.sketchware/data/" + sc_id + "/files/java/";
-        if (!new File(javaDir, "DebugActivity.java").exists()) {
-            fileUtil.b(javaFilesPath + File.separator
-                            + packageNameAsFolders + File.separator
-                            + "DebugActivity.java",
-                    PACKAGE_PLACEHOLDER_PATTERN.matcher(fileUtil.b(
-                            context,
-                            "debug" + File.separator
-                                    + "DebugActivity.java"
-                    )).replaceAll(packageName));
+
+        File debugActivityFile = new File(javaDir, "DebugActivity.java");
+        if (!debugActivityFile.exists()) {
+            String debugActivityContent = fileUtil.b(
+                    context,
+                    "debug" + File.separator + "DebugActivity.java"
+            );
+            debugActivityContent = PACKAGE_PLACEHOLDER_PATTERN.matcher(debugActivityContent).replaceAll(packageName);
+            fileUtil.b(javaFilesPath + File.separator + packageNameAsFolders + File.separator + "DebugActivity.java", debugActivityContent);
         }
 
-        String customApplicationClassName = new ProjectSettings(sc_id).getValue(ProjectSettings.SETTING_APPLICATION_CLASS,
-                ".SketchApplication");
+        String customApplicationClassName = new ProjectSettings(sc_id).getValue(
+                ProjectSettings.SETTING_APPLICATION_CLASS, ".SketchApplication");
         boolean notUsingCustomApplicationClass = customApplicationClassName.equals(".SketchApplication");
-        if (!new File(javaDir, "SketchApplication.java").exists() && notUsingCustomApplicationClass) {
-            boolean applyMultiDex = projectSettings.getMinSdkVersion() < 21;
 
-            String sketchApplicationFileContent = PACKAGE_PLACEHOLDER_PATTERN.matcher(fileUtil.b(
+        if (!customApplicationClassName.startsWith(".")) {
+            customApplicationClassName = "." + customApplicationClassName; // since sketchware don't allow creating any java file outside the package name
+        }
+
+        String fullCustomClassName = packageName + customApplicationClassName;
+
+        int lastDot = fullCustomClassName.lastIndexOf('.');
+        String customClassSimpleName = fullCustomClassName.substring(lastDot + 1);
+        String customClassPackage = fullCustomClassName.substring(0, lastDot);
+        String customClassPackageAsFolders = customClassPackage.replace('.', File.separatorChar);
+
+        File targetApplicationFile = new File(javaDir + File.separator +
+                customApplicationClassName.substring(1).replace('.', '/') + ".java");
+
+        if (!targetApplicationFile.exists()) {
+            boolean applyMultiDex = projectSettings.getMinSdkVersion() < 21;
+            String sketchApplicationFileContent = fileUtil.b(
                     context,
                     "debug" + File.separator + "SketchApplication.java"
-            )).replaceAll(packageName);
+            );
+            sketchApplicationFileContent = PACKAGE_PLACEHOLDER_PATTERN.matcher(sketchApplicationFileContent).replaceAll(packageName);
+
             if (applyMultiDex) {
                 sketchApplicationFileContent = sketchApplicationFileContent.replaceAll(
                         "Application \\{", "androidx.multidex.MultiDexApplication {");
             }
             if (logcatEnabled) {
                 sketchApplicationFileContent = sketchApplicationFileContent.replace(
-                        "super.onCreate();", "SketchLogger.startLogging();\n" +
-                                "        super.onCreate();").replace(
-                        "Process.killProcess(Process.myPid());",
-                        "SketchLogger.broadcastLog(Log.getStackTraceString(throwable));\n" +
-                                "                    Process.killProcess(Process.myPid());"
-                );
+                                "super.onCreate();", "SketchLogger.startLogging();\n        super.onCreate();")
+                        .replace("Process.killProcess(Process.myPid());",
+                                "SketchLogger.broadcastLog(Log.getStackTraceString(throwable));\n" +
+                                        "                    Process.killProcess(Process.myPid());"
+                        );
             }
             if (new Material3LibraryManager(sc_id).isDynamicColorsEnabled()) {
                 sketchApplicationFileContent = sketchApplicationFileContent.replace(
-                        "mApplicationContext = getApplicationContext();", "mApplicationContext = getApplicationContext();\n" +
-                                        "        DynamicColors.applyToActivitiesIfAvailable(this);")
+                                "mApplicationContext = getApplicationContext();",
+                                "mApplicationContext = getApplicationContext();\n        DynamicColors.applyToActivitiesIfAvailable(this);")
                         .replace("import android.util.Log;", "import android.util.Log;\nimport com.google.android.material.color.DynamicColors;");
+            }
+            if (!notUsingCustomApplicationClass) {
+                sketchApplicationFileContent = sketchApplicationFileContent.replaceAll(
+                        "public class SketchApplication", "public class " + customClassSimpleName);
+                sketchApplicationFileContent = sketchApplicationFileContent.replaceAll(
+                        "package " + packageName + ";", "package " + customClassPackage + ";");
+
+                String imports = "import android.util.Log;\nimport " + packageName + ".DebugActivity;";
+                if (logcatEnabled) {
+                    imports += "\nimport " + packageName + ".SketchLogger;";
+                }
+                sketchApplicationFileContent = sketchApplicationFileContent.replace(
+                        "import android.util.Log;", imports);
             }
 
             fileUtil.b(javaFilesPath + File.separator
-                            + packageNameAsFolders + File.separator
-                            + "SketchApplication.java",
-                    sketchApplicationFileContent);
+                    + customClassPackageAsFolders + File.separator
+                    + customClassSimpleName + ".java", sketchApplicationFileContent);
         }
 
         if (logcatEnabled) {
-            if (!new File(javaDir, "SketchLogger.java").exists()) {
-                String sketchLoggerFileContent = PACKAGE_PLACEHOLDER_PATTERN.matcher(fileUtil.b(
+            File sketchLoggerFile = new File(javaDir, "SketchLogger.java");
+            if (!sketchLoggerFile.exists()) {
+                String sketchLoggerFileContent = fileUtil.b(
                         context,
-                        "debug" + File.separator
-                                + "SketchLogger.java"
-                )).replaceAll(packageName);
+                        "debug" + File.separator + "SketchLogger.java"
+                );
 
-                if (!notUsingCustomApplicationClass && customApplicationClassName.charAt(0) == '.') {
-                    sketchLoggerFileContent = sketchLoggerFileContent.replaceAll("SketchApplication\\.getContext\\(\\)",
-                            customApplicationClassName.substring(1) + ".getContext()");
-                }
+                sketchLoggerFileContent = PACKAGE_PLACEHOLDER_PATTERN.matcher(sketchLoggerFileContent).replaceAll(packageName);
 
-                fileUtil.b(javaFilesPath + File.separator
-                        + packageNameAsFolders + File.separator
-                        + "SketchLogger.java", sketchLoggerFileContent);
+                sketchLoggerFileContent = sketchLoggerFileContent.replace("<?class_name_package?>", customClassPackage);
+
+                sketchLoggerFileContent = sketchLoggerFileContent.replace("<?class_name?>", customClassSimpleName);
+
+                fileUtil.b(javaFilesPath + File.separator + packageNameAsFolders + File.separator + "SketchLogger.java",
+                        sketchLoggerFileContent);
             }
         }
     }
@@ -447,19 +490,25 @@ public class yq {
     /**
      * Initialize project metadata
      */
-    public void a(iC projectLibraryManager, hC projectFileManager, eC projectDataManager, boolean exportingProject) {
+    public void a(iC projectLibraryManager, hC projectFileManager, eC projectDataManager) {
+        a(projectLibraryManager, projectFileManager, projectDataManager, ExportType.DEBUG_APP);
+    }
+
+    public void a(iC projectLibraryManager, hC projectFileManager, eC projectDataManager, ExportType exportingType) {
         ProjectLibraryBean adMob = projectLibraryManager.b();
         ProjectLibraryBean appCompat = projectLibraryManager.c();
         ProjectLibraryBean firebase = projectLibraryManager.d();
         ProjectLibraryBean googleMaps = projectLibraryManager.e();
+        this.exportingType = exportingType;
         N = new jq();
         N.packageName = packageName;
         N.projectName = applicationName;
         N.versionCode = versionCode;
         N.versionName = versionName;
         N.sc_id = sc_id;
-        N.isDebugBuild = !exportingProject;
-        this.exportingProject = exportingProject;
+        N.isDebugBuild = exportingType == ExportType.DEBUG_APP;
+        isAndroidStudioExport = exportingType == ExportType.ANDROID_STUDIO;
+        generateDataBindingClasses = !(exportingType == ExportType.DEBUG_APP || exportingType == ExportType.ANDROID_STUDIO);
         if (firebase.useYn.equals(ProjectLibraryBean.LIB_USE_Y)) {
             N.isFirebaseEnabled = true;
             N.addPermission(jq.PERMISSION_INTERNET);
@@ -747,7 +796,7 @@ public class yq {
         for (ProjectFileBean activity : projectFileManager.b()) {
             if (!javaFiles.contains(new File(javaDir + activity.getJavaName()))) {
                 srcCodeBeans.add(new SrcCodeBean(activity.getJavaName(),
-                        new Jx(N, activity, projectDataManager).generateCode(exportingProject)));
+                        new Jx(N, activity, projectDataManager).generateCode(isAndroidStudioExport, sc_id)));
             }
         }
 
@@ -809,7 +858,7 @@ public class yq {
         // Make generated classes viewable
         if (!javaFiles.contains(new File(javaDir + "SketchwareUtil.java"))) {
             srcCodeBeans.add(new SrcCodeBean("SketchwareUtil.java",
-                    Lx.i(packageName)));
+                    Lx.i(packageName, material3LibraryManager.isMaterial3Enabled())));
         }
 
         if (!javaFiles.contains(new File(javaDir + "FileUtil.java"))) {
@@ -862,7 +911,7 @@ public class yq {
      * @return The file's code or an empty String if not found
      */
     public String getFileSrc(String filename, hC projectFileManager, eC projectDataManager, iC projectLibraryManager) {
-        a(projectLibraryManager, projectFileManager, projectDataManager, false);
+        a(projectLibraryManager, projectFileManager, projectDataManager);
         CommandBlock.x();
         boolean isJavaFile = filename.endsWith(".java");
         boolean isXmlFile = filename.endsWith(".xml");
@@ -879,7 +928,7 @@ public class yq {
                  Generating every java file is necessary to make command blocks for xml work
                  */
                 for (ProjectFileBean file : files) {
-                    CommandBlock.CBForXml(new Jx(N, file, projectDataManager).generateCode(exportingProject));
+                    CommandBlock.CBForXml(new Jx(N, file, projectDataManager).generateCode(isAndroidStudioExport, sc_id));
                 }
             }
         }
@@ -907,7 +956,7 @@ public class yq {
         for (ProjectFileBean file : files) {
             if (filename.equals(isJavaFile ? file.getJavaName() : file.getXmlName())) {
                 if (isJavaFile) {
-                    return new Jx(N, file, projectDataManager).generateCode(exportingProject);
+                    return new Jx(N, file, projectDataManager).generateCode(isAndroidStudioExport, sc_id);
                 } else if (isXmlFile) {
                     Ox xmlGenerator = new Ox(N, file);
                     xmlGenerator.a(eC.a(projectDataManager.d(filename)), projectDataManager.h(filename));
@@ -921,7 +970,7 @@ public class yq {
 
     public String getXMLString() {
         String filePath = wq.b(sc_id) + "/files/resource/values/strings.xml";
-        if (FileUtil.isExistFile(filePath)) {
+        if (FileUtil.isExistFile(filePath) && exportingType == ExportType.SOURCE_CODE_VIEWING) {
             return FileUtil.readFile(filePath);
         }
         XmlBuilderHelper stringsFileBuilder = new XmlBuilderHelper();
@@ -931,7 +980,7 @@ public class yq {
 
     public String getXMLColor() {
         String filePath = wq.b(sc_id) + "/files/resource/values/colors.xml";
-        if (FileUtil.isExistFile(filePath)) {
+        if (FileUtil.isExistFile(filePath) && exportingType == ExportType.SOURCE_CODE_VIEWING) {
             return FileUtil.readFile(filePath);
         }
         XmlBuilderHelper colorsFileBuilder = new XmlBuilderHelper();
@@ -945,10 +994,9 @@ public class yq {
 
     public String getXMLStyle() {
         String filePath = wq.b(sc_id) + "/files/resource/values/styles.xml";
-        if (FileUtil.isExistFile(filePath)) {
+        if (FileUtil.isExistFile(filePath) && exportingType == ExportType.SOURCE_CODE_VIEWING) {
             return FileUtil.readFile(filePath);
         }
-        Material3LibraryManager material3LibraryManager = new Material3LibraryManager(sc_id);
         if (material3LibraryManager.isMaterial3Enabled()) {
             XmlBuilderHelper stylesFileBuilder = new XmlBuilderHelper();
             stylesFileBuilder.addStyle("AppTheme", String.format("Theme.Material3.%s.NoActionBar", material3LibraryManager.getTheme()));
@@ -969,7 +1017,7 @@ public class yq {
                     BuildSettings.SETTING_GENERIC_VALUE_FALSE).equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE);
             XmlBuilderHelper stylesFileBuilder = new XmlBuilderHelper();
             stylesFileBuilder.addStyle("AppTheme", "Theme.MaterialComponents.Light.NoActionBar" + (useNewMaterialComponentsTheme ? "" : ".Bridge"));
-            // todo: add `colorOnPrimary` to custom theme colors.
+            // todo: add 'colorOnPrimary' to custom theme colors.
             stylesFileBuilder.addItemToStyle("AppTheme", "colorOnPrimary", "@android:color/white");
             stylesFileBuilder.addItemToStyle("AppTheme", "colorPrimary", "@color/colorPrimary");
             stylesFileBuilder.addItemToStyle("AppTheme", "colorPrimaryDark", "@color/colorPrimaryDark");

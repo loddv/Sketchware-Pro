@@ -27,10 +27,9 @@ import com.besome.sketch.adapters.ProjectsAdapter;
 import com.besome.sketch.design.DesignActivity;
 import com.besome.sketch.editor.manage.library.ProjectComparator;
 import com.besome.sketch.projects.MyProjectSettingActivity;
-import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.divider.MaterialDividerItemDecoration;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.transition.MaterialFadeThrough;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,6 +72,15 @@ public class ProjectsFragment extends DA {
     private DB preference;
     private SearchView projectsSearchView;
     private MenuProvider menuProvider;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setEnterTransition(new MaterialFadeThrough());
+        setReturnTransition(new MaterialFadeThrough());
+        setExitTransition(new MaterialFadeThrough());
+        setReenterTransition(new MaterialFadeThrough());
+    }
 
     @Override
     public void b(int requestCode) {
@@ -149,18 +157,11 @@ public class ProjectsFragment extends DA {
         UI.addSystemWindowInsetToPadding(binding.titleContainer, true, false, true, false);
         UI.addSystemWindowInsetToPadding(binding.myprojects, true, false, true, true);
 
-        MaterialDividerItemDecoration dividerItemDecoration = new MaterialDividerItemDecoration(requireContext(), MaterialDividerItemDecoration.VERTICAL);
-        dividerItemDecoration.setDividerColor(MaterialColors.getColor(binding.myprojects, com.google.android.material.R.attr.colorSurfaceContainerLowest));
-        binding.myprojects.addItemDecoration(dividerItemDecoration);
-
-        binding.nestedScroll.setOnScrollChangeListener(new NestedScrollView.OnScrollChangeListener() {
-            @Override
-            public void onScrollChange(NestedScrollView v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                if (scrollY > oldScrollY) {
-                    fab.shrink();
-                } else if (scrollY < oldScrollY) {
-                    fab.extend();
-                }
+        binding.nestedScroll.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if (scrollY > oldScrollY) {
+                fab.shrink();
+            } else if (scrollY < oldScrollY) {
+                fab.extend();
             }
         });
 
@@ -200,6 +201,7 @@ public class ProjectsFragment extends DA {
     @Override
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
+        if (getActivity() == null) return;
         if (hidden) {
             requireActivity().removeMenuProvider(menuProvider);
         } else {

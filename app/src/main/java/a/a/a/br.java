@@ -1,6 +1,5 @@
 package a.a.a;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -10,8 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.ConcatAdapter;
@@ -24,7 +21,7 @@ import com.besome.sketch.beans.ComponentBean;
 import com.besome.sketch.beans.EventBean;
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.editor.LogicEditorActivity;
-import com.besome.sketch.editor.component.ComponentAddActivity;
+import com.besome.sketch.editor.component.AddComponentBottomSheet;
 import com.besome.sketch.editor.component.ComponentEventButton;
 import com.besome.sketch.lib.base.CollapsibleViewHolder;
 import com.besome.sketch.lib.ui.CollapsibleButton;
@@ -44,11 +41,6 @@ public class br extends qA implements View.OnClickListener {
     private Adapter adapter;
     private String sc_id;
     private ArrayList<ComponentBean> components = new ArrayList<>();
-    private final ActivityResultLauncher<Intent> addComponent = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-        if (result.getResultCode() == Activity.RESULT_OK) {
-            refreshData();
-        }
-    });
 
     private FrComponentListBinding binding;
 
@@ -62,10 +54,8 @@ public class br extends qA implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if (!mB.a() && v.getId() == binding.fab.getId()) {
-            Intent intent = new Intent(requireContext(), ComponentAddActivity.class);
-            intent.putExtra("sc_id", sc_id);
-            intent.putExtra("project_file", projectFile);
-            addComponent.launch(intent);
+            AddComponentBottomSheet addComponentBottomSheet = AddComponentBottomSheet.newInstance(sc_id, projectFile, () -> refreshData());
+            addComponentBottomSheet.show(getParentFragmentManager(), null);
         }
     }
 
@@ -73,7 +63,6 @@ public class br extends qA implements View.OnClickListener {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FrComponentListBinding.inflate(inflater, container, false);
         initialize();
-        setHasOptionsMenu(true);
         if (savedInstanceState != null) {
             sc_id = savedInstanceState.getString("sc_id");
         } else {
@@ -232,7 +221,7 @@ public class br extends qA implements View.OnClickListener {
                 ArrayList<EventBean> addedEvents =
                         jC.a(sc_id).a(projectFile.getJavaName(), componentBean);
                 ArrayList<String> availableEvents =
-                        new ArrayList<>(Arrays.asList(oq.a(componentBean.getClassInfo())));
+                        new ArrayList<>(Arrays.asList(oq.getComponentEventsForClass(componentBean.getClassInfo())));
 
                 binding.eventsPreview.removeAllViews();
                 binding.eventsPreview.setAlpha(1.0f);
@@ -274,7 +263,7 @@ public class br extends qA implements View.OnClickListener {
                                             ViewGroup.LayoutParams.WRAP_CONTENT);
                             layoutParams.setMargins(0, 0, (int) wB.a(requireContext(), 4.0f), 0);
                             previewBinding.getRoot().setLayoutParams(layoutParams);
-                            previewBinding.icon.setImageResource(oq.a(event.eventName));
+                            previewBinding.icon.setImageResource(oq.getEventIconResource(event.eventName));
                             previewBinding.iconBg.setBackgroundResource(
                                     R.drawable.circle_bg_surface);
                             binding.eventsPreview.addView(previewBinding.getRoot());
@@ -291,7 +280,7 @@ public class br extends qA implements View.OnClickListener {
                                         ViewGroup.LayoutParams.WRAP_CONTENT);
                         layoutParams2.setMargins(0, 0, (int) wB.a(requireContext(), 4.0f), 0);
                         previewBinding.getRoot().setLayoutParams(layoutParams2);
-                        previewBinding.icon.setImageResource(oq.a(eventName));
+                        previewBinding.icon.setImageResource(oq.getEventIconResource(eventName));
                         ColorMatrix colorMatrix = new ColorMatrix();
                         colorMatrix.setSaturation(0.0f);
                         previewBinding.icon.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
@@ -391,7 +380,7 @@ public class br extends qA implements View.OnClickListener {
                     var event = getItem(position);
                     holder.button.onEventAdded();
                     holder.button.getName().setText(event.eventName);
-                    holder.button.getIcon().setImageResource(oq.a(event.eventName));
+                    holder.button.getIcon().setImageResource(oq.getEventIconResource(event.eventName));
                     holder.button.setClickListener(v -> {
                         if (!mB.a()) {
                             openEvent(event.targetId, event.eventName, event.eventName);
@@ -434,7 +423,7 @@ public class br extends qA implements View.OnClickListener {
                     var eventName = getItem(position);
                     holder.button.onEventAvailableToAdd();
                     holder.button.getName().setText(eventName);
-                    holder.button.getIcon().setImageResource(oq.a(eventName));
+                    holder.button.getIcon().setImageResource(oq.getEventIconResource(eventName));
                     holder.button.setClickListener(v -> {
                         if (!mB.a()) {
                             var component = components.get(getLayoutPosition());

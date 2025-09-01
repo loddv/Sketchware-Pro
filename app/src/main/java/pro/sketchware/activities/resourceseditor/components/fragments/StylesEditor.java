@@ -1,12 +1,9 @@
 package pro.sketchware.activities.resourceseditor.components.fragments;
 
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,23 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.besome.sketch.editor.property.PropertyInputItem;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.MaterialAutoCompleteTextView;
-
-import a.a.a.aB;
-import mod.hey.studios.util.Helper;
-
-import pro.sketchware.R;
-import pro.sketchware.activities.resourceseditor.ResourcesEditorActivity;
-import pro.sketchware.activities.resourceseditor.components.utils.AttributeSuggestions;
-import pro.sketchware.databinding.PropertyPopupParentAttrBinding;
-import pro.sketchware.databinding.ResourcesEditorFragmentBinding;
-import pro.sketchware.databinding.StyleEditorAddAttrBinding;
-import pro.sketchware.databinding.StyleEditorAddBinding;
-import pro.sketchware.activities.resourceseditor.components.models.StyleModel;
-import pro.sketchware.activities.resourceseditor.components.adapters.StylesAdapter;
-import pro.sketchware.activities.resourceseditor.components.utils.StylesEditorManager;
-import pro.sketchware.utility.FileUtil;
-import pro.sketchware.utility.SketchwareUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +21,19 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+
+import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.activities.resourceseditor.ResourcesEditorActivity;
+import pro.sketchware.activities.resourceseditor.components.adapters.StylesAdapter;
+import pro.sketchware.activities.resourceseditor.components.models.StyleModel;
+import pro.sketchware.activities.resourceseditor.components.utils.StylesEditorManager;
+import pro.sketchware.databinding.PropertyPopupParentAttrBinding;
+import pro.sketchware.databinding.ResourcesEditorFragmentBinding;
+import pro.sketchware.databinding.StyleEditorAddAttrBinding;
+import pro.sketchware.databinding.StyleEditorAddBinding;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 public class StylesEditor extends Fragment {
 
@@ -56,10 +49,12 @@ public class StylesEditor extends Fragment {
 
     public boolean hasUnsavedChanges;
     private String filePath;
-    private final ResourcesEditorActivity activity;
+    private ResourcesEditorActivity activity;
 
-    public StylesEditor(ResourcesEditorActivity activity) {
-        this.activity = activity;
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        activity = (ResourcesEditorActivity) getActivity();
     }
 
     @Nullable
@@ -132,10 +127,10 @@ public class StylesEditor extends Fragment {
     }
 
     public void showAddStyleDialog() {
-        aB dialog = new aB(requireActivity());
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
-        dialog.b("Create new style");
-        dialog.b("Create", v1 -> {
+        dialog.setTitle("Create new style");
+        dialog.setPositiveButton("Create", (d, which) -> {
             String styleName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
@@ -160,14 +155,14 @@ public class StylesEditor extends Fragment {
             adapter.notifyItemInserted(notifyPosition);
             updateNoContentLayout();
         });
-        dialog.a(getString(R.string.cancel), Helper.getDialogDismissListener(dialog));
-        dialog.a(binding.getRoot());
+        dialog.setNegativeButton(getString(R.string.cancel), null);
+        dialog.setView(binding.getRoot());
         dialog.show();
     }
 
     public void showEditStyleDialog(int position) {
         StyleModel style = stylesList.get(position);
-        aB dialog = new aB(requireActivity());
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
 
         binding.styleName.setText(style.getStyleName());
@@ -176,8 +171,8 @@ public class StylesEditor extends Fragment {
             binding.styleHeaderInput.setText(notesMap.get(position));
         }
 
-        dialog.b("Edit style");
-        dialog.b("Edit", v1 -> {
+        dialog.setTitle("Edit style");
+        dialog.setPositiveButton("Edit", (d, which) -> {
             String styleName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
@@ -197,23 +192,22 @@ public class StylesEditor extends Fragment {
             hasUnsavedChanges = true;
             adapter.notifyItemChanged(position);
         });
-        dialog.setDismissOnDefaultButtonClick(false);
-        dialog.configureDefaultButton(Helper.getResString(R.string.common_word_delete), view -> new MaterialAlertDialogBuilder(requireContext())
+        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete), (d, which) -> new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Warning")
                 .setMessage("Are you sure you want to delete " + style.getStyleName() + "?")
-                .setPositiveButton(R.string.common_word_yes, (d, w) -> {
+                .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
                     stylesList.remove(position);
                     notesMap.remove(position);
                     adapter.notifyItemRemoved(position);
-                    dialog.dismiss();
+                    d.dismiss();
                     updateNoContentLayout();
                     hasUnsavedChanges = true;
                 })
                 .setNegativeButton("Cancel", null)
                 .create()
                 .show());
-        dialog.a(getString(R.string.cancel), Helper.getDialogDismissListener(dialog));
-        dialog.a(binding.getRoot());
+        dialog.setNegativeButton(getString(R.string.cancel), null);
+        dialog.setView(binding.getRoot());
         dialog.show();
     }
 
@@ -267,18 +261,17 @@ public class StylesEditor extends Fragment {
     private void showAttributeDialog(StyleModel style, String attr) {
         boolean isEditing = !attr.isEmpty();
 
-        aB dialog = new aB(requireActivity());
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddAttrBinding binding = StyleEditorAddAttrBinding.inflate(getLayoutInflater());
-        setupAutoComplete(binding.attrName, binding.attrValue);
 
         if (isEditing) {
             binding.attrName.setText(attr);
             binding.attrValue.setText(style.getAttribute(attr));
         }
 
-        dialog.b(isEditing ? "Edit attribute" : "Create new attribute");
+        dialog.setTitle(isEditing ? "Edit attribute" : "Create new attribute");
 
-        dialog.b(Helper.getResString(R.string.common_word_save), v1 -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (d, which) -> {
             String attribute = Objects.requireNonNull(binding.attrName.getText()).toString();
             String value = Objects.requireNonNull(binding.attrValue.getText()).toString();
 
@@ -295,47 +288,16 @@ public class StylesEditor extends Fragment {
             hasUnsavedChanges = true;
         });
 
-        dialog.a(getString(R.string.cancel), Helper.getDialogDismissListener(dialog));
-        dialog.a(binding.getRoot());
+        dialog.setNegativeButton(getString(R.string.cancel), null);
+        dialog.setView(binding.getRoot());
         dialog.show();
     }
 
     public void saveStylesFile() {
         if (hasUnsavedChanges) {
-        FileUtil.writeFile(filePath, stylesEditorManager.convertStylesToXML(stylesList, notesMap));
-        hasUnsavedChanges = false;
+            FileUtil.writeFile(filePath, stylesEditorManager.convertStylesToXML(stylesList, notesMap));
+            hasUnsavedChanges = false;
         }
-    }
-
-    private void setupAutoComplete(MaterialAutoCompleteTextView attrView, MaterialAutoCompleteTextView valueView) {
-       AttributeSuggestions attributeSuggestions = new AttributeSuggestions(binding.getRoot());
-        String[] attributes = attributeSuggestions.ATTRIBUTE_SUGGESTIONS.toArray(new String[0]);
-
-        ArrayAdapter<String> attrAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_dropdown_item_1line, attributes);
-        attrView.setAdapter(attrAdapter);
-
-        ArrayAdapter<String> valueAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_dropdown_item_1line, new ArrayList<>());
-        valueView.setAdapter(valueAdapter);
-
-        attrView.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String attribute = s.toString().trim().toLowerCase();
-
-                List<String> suggestions = attributeSuggestions.getSuggestions(attribute);
-
-                if (suggestions != null && !suggestions.isEmpty()) {
-                    ArrayAdapter<String> newValueAdapter = new ArrayAdapter<>(requireActivity(), android.R.layout.simple_dropdown_item_1line, suggestions);
-                    valueView.setAdapter(newValueAdapter);
-                }
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
     }
 
 }

@@ -3,17 +3,18 @@ package pro.sketchware.activities.resourceseditor.components.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
-import pro.sketchware.activities.resourceseditor.components.fragments.ArraysEditor;
-import pro.sketchware.databinding.PalletCustomviewBinding;
-import pro.sketchware.activities.resourceseditor.components.models.ArrayModel;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import pro.sketchware.activities.resourceseditor.components.fragments.ArraysEditor;
+import pro.sketchware.activities.resourceseditor.components.models.ArrayModel;
+import pro.sketchware.databinding.PalletCustomviewBinding;
 
 public class ArraysAdapter extends RecyclerView.Adapter<ArraysAdapter.ArrayViewHolder> {
 
@@ -70,7 +71,7 @@ public class ArraysAdapter extends RecyclerView.Adapter<ArraysAdapter.ArrayViewH
         }
 
         public void bind(ArrayModel array) {
-            binding.title.setHint(array.getArrayName());
+            binding.title.setText(array.getArrayName());
             binding.sub.setText(array.getArrayType().name());
             if (notesMap.containsKey(getAbsoluteAdapterPosition())) {
                 binding.tvTitle.setText(notesMap.get(getAbsoluteAdapterPosition()));

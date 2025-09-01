@@ -146,11 +146,9 @@ public class ViewProperty extends LinearLayout implements Kw {
 
             if (selectedGroupId == (Integer) item.getTag()) {
                 item.setSelected(true);
-                item.title.setTextColor(getResources().getColor(R.color.view_property_tab_active_text));
                 item.animate().scaleX(0.9f).scaleY(0.9f).start();
             } else {
                 item.setSelected(false);
-                item.title.setTextColor(getResources().getColor(R.color.view_property_tab_deactive_text));
                 item.animate().scaleX(0.8f).scaleY(0.8f).start();
             }
         }
@@ -490,11 +488,11 @@ public class ViewProperty extends LinearLayout implements Kw {
         private void configure(int imageResId, int propertyNameResId) {
             propertyMenuItem.setVisibility(VISIBLE);
             propertyMenuItem.setCardBackgroundColor(MaterialColors.getColor(this, R.attr.colorPrimaryContainer));
+            propertyMenuItem.setOnClickListener(this);
             icon.setImageResource(imageResId);
             icon.setColorFilter(MaterialColors.getColor(this, R.attr.colorOnPrimaryContainer), PorterDuff.Mode.SRC_ATOP);
             title.setText(Helper.getResString(propertyNameResId));
             title.setTextColor(MaterialColors.getColor(this, R.attr.colorOnPrimaryContainer));
-            setOnClickListener(this);
         }
 
         private void setView(ViewBean viewBean) {

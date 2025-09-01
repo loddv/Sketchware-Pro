@@ -80,11 +80,11 @@ public class ExtraMenuBean {
 
     public ExtraMenuBean(LogicEditorActivity logicA) {
         logicEditor = logicA;
-        sc_id = logicA.B;
+        sc_id = logicA.scId;
         fpu = new FilePathUtil();
-        frc = new FileResConfig(logicA.B);
+        frc = new FileResConfig(logicA.scId);
         defaultExtraMenu = new DefaultExtraMenuBean(logicA);
-        projectDataManager = jC.a(logicA.B);
+        projectDataManager = jC.a(logicA.scId);
         javaName = logicA.M.getJavaName();
     }
 
@@ -116,11 +116,10 @@ public class ExtraMenuBean {
 
     private void codeMenu(Ss menu) {
         AsdDialog asdDialog = new AsdDialog(logicEditor);
-        asdDialog.setCon(menu.getArgValue().toString());
+        asdDialog.setContent(menu.getArgValue().toString());
         asdDialog.show();
-        /* p2 as true is for number */
-        asdDialog.saveLis(logicEditor, false, menu, asdDialog);
-        asdDialog.cancelLis(asdDialog);
+        asdDialog.setOnSaveClickListener(logicEditor, false, menu, asdDialog);
+        asdDialog.setOnCancelClickListener(asdDialog);
     }
 
     public void defineMenuSelector(Ss ss) {
@@ -734,10 +733,10 @@ public class ExtraMenuBean {
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.setNeutralButton("Code Editor", (v, which) -> {
             AsdDialog editor = new AsdDialog(logicEditor);
-            editor.setCon(menu.getArgValue().toString());
+            editor.setContent(menu.getArgValue().toString());
             editor.show();
-            editor.saveLis(logicEditor, false, menu, editor);
-            editor.cancelLis(editor);
+            editor.setOnSaveClickListener(logicEditor, false, menu, editor);
+            editor.setOnCancelClickListener(editor);
             v.dismiss();
         });
         dialog.show();
@@ -758,7 +757,6 @@ public class ExtraMenuBean {
     private void asdDialog(Ss ss, String message) {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(logicEditor);
         dialog.setTitle(Helper.getResString(R.string.logic_editor_title_enter_string_value));
-        dialog.setIcon(R.drawable.rename_96_blue);
 
         if (!isEmpty(message)) dialog.setMessage(message);
 
@@ -783,10 +781,10 @@ public class ExtraMenuBean {
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.setNeutralButton("Code Editor", (v, which) -> {
             AsdDialog asdDialog = new AsdDialog(logicEditor);
-            asdDialog.setCon(Helper.getText(edittext));
+            asdDialog.setContent(Helper.getText(edittext));
             asdDialog.show();
-            asdDialog.saveLis(logicEditor, false, ss, asdDialog);
-            asdDialog.cancelLis(asdDialog);
+            asdDialog.setOnSaveClickListener(logicEditor, false, ss, asdDialog);
+            asdDialog.setOnCancelClickListener(asdDialog);
             v.dismiss();
         });
         dialog.show();
@@ -797,7 +795,7 @@ public class ExtraMenuBean {
         ArrayList<String> markedPath = new ArrayList<>();
 
         mOptions.setSelectionMode(SelectionMode.BOTH);
-        String path;
+        String path = null;
         if (menuName.equals("Assets")) {
             mOptions.setTitle("Select an Asset");
             path = String.format(ASSETS_PATH, sc_id);
@@ -807,10 +805,13 @@ public class ExtraMenuBean {
             path = String.format(NATIVE_PATH, sc_id);
             markedPath.add(0, path + ss.getArgValue().toString());
         }
+        String[] strArr = path.split("/");
+        String splitter = strArr[strArr.length - 1];
+        mOptions.setInitialDirectory(path);
         FilePickerCallback callback = new FilePickerCallback() {
             @Override
             public void onFileSelected(File file) {
-                logicEditor.a(ss, file.getAbsolutePath());
+                logicEditor.a(ss, file.getAbsolutePath().split(splitter)[1]);
             }
         };
         fpd = new FilePickerDialogFragment(mOptions, callback);

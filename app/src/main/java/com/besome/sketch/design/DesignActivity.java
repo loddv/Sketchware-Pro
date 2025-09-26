@@ -63,6 +63,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 import com.topjohnwu.superuser.Shell;
 
 import java.io.File;
@@ -128,6 +129,7 @@ import pro.sketchware.utility.apk.ApkSignatures;
 public class DesignActivity extends BaseAppCompatActivity implements View.OnClickListener {
     public static String sc_id;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private final FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
     private ImageView xmlLayoutOrientation;
     private boolean B;
     private int currentTabNumber;
@@ -273,7 +275,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             } else {
                 xmlLayoutOrientation.setImageResource(R.drawable.ic_screen_rotation_grey600_24dp);
             }
-            viewTabAdapter.a(projectFile);
+            viewTabAdapter.initialize(projectFile);
         }
     }
 
@@ -399,7 +401,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     public void onBackPressed() {
         if (drawer.isDrawerOpen(GravityCompat.END)) {
             drawer.closeDrawer(GravityCompat.END);
-        } else if (viewTabAdapter.g()) {
+        } else if (viewTabAdapter.isPropertyViewVisible()) {
             hideViewPropertyView();
         } else {
             if (currentTabNumber > 0) {
@@ -544,14 +546,14 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 if (position == 0) {
                     bottomMenu.findItem(7).setVisible(true);
                     if (viewTabAdapter != null) {
-                        viewTabAdapter.c(true);
+                        viewTabAdapter.showHidePropertyView(true);
                         xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_screen);
                     }
                 } else if (position == 1) {
                     bottomMenu.findItem(7).setVisible(false);
                     if (viewTabAdapter != null) {
                         xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_code);
-                        viewTabAdapter.c(false);
+                        viewTabAdapter.showHidePropertyView(false);
                         if (eventTabAdapter != null) {
                             eventTabAdapter.refreshEvents();
                         }
@@ -560,7 +562,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     bottomMenu.findItem(7).setVisible(false);
                     if (viewTabAdapter != null) {
                         xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_code);
-                        viewTabAdapter.c(false);
+                        viewTabAdapter.showHidePropertyView(false);
                         if (componentTabAdapter != null) {
                             componentTabAdapter.refreshData();
                         }
@@ -639,7 +641,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             ProjectLoader projectLoader = new ProjectLoader(this, savedInstanceState);
             projectLoader.execute();
         } catch (Exception e) {
-            e.printStackTrace();
+            crashlytics.log("ProjectLoader failed");
+            crashlytics.recordException(e);
         } finally {
             SystemLogPrinter.stop();
         }
@@ -697,7 +700,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 try {
                     saveChangesAndCloseProject();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    crashlytics.recordException(e);
                     h();
                 }
             }
@@ -710,7 +713,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     DiscardChangesProjectCloser discardChangesProjectCloser = new DiscardChangesProjectCloser(this);
                     discardChangesProjectCloser.execute();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    crashlytics.recordException(e);
                     h();
                 }
             }
@@ -1083,7 +1086,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 if (yB.a(lC.b(sc_id), "custom_icon")) {
                     q.aa(wq.e() + File.separator + sc_id + File.separator + "mipmaps");
                     if (yB.a(lC.b(sc_id), "isIconAdaptive", false)) {
-                        q.cf("""
+                        q.createLauncherIconXml("""
                                 <?xml version="1.0" encoding="utf-8"?>
                                 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android" >
                                 <background android:drawable="@mipmap/ic_launcher_background"/>
@@ -1216,6 +1219,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 isBuildFinished = true;
                 activity.indicateCompileErrorOccurred(zy.getMessage());
             } catch (Throwable tr) {
+                FirebaseCrashlytics.getInstance().log("Project build error");
+                FirebaseCrashlytics.getInstance().recordException(tr);
                 isBuildFinished = true;
                 LogUtil.e("DesignActivity$BuildTask", "Failed to build project", tr);
                 activity.indicateCompileErrorOccurred(Log.getStackTraceString(tr));
@@ -1478,7 +1483,10 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         private void doInBackground() {
             DesignActivity activity = getActivity();
             if (activity != null) {
-                jC.a(sc_id).k();
+                eC ecInstance = jC.a(sc_id);
+                synchronized (ecInstance) {
+                    ecInstance.k();
+                }
             }
         }
     }

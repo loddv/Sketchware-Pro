@@ -31,6 +31,8 @@ on:
           - 'ubuntu-24.04'
           - 'ubuntu-22.04'
         default: 'ubuntu-latest'
+
+        
 jobs:
   build:
     name: Build APKs

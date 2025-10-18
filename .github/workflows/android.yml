@@ -15,11 +15,26 @@ on:
     branches-ignore:
       - 'wip/**'
   workflow_dispatch:
-
+    inputs:
+      build_type:
+        type: choice
+        description: 'Build Type:'
+        options:
+          - 'release'
+          - 'debug'
+        default: 'debug'
+      build_os_version:
+        type: choice
+        description: 'Choice a os build version machine:'
+        options:
+          - 'ubuntu-latest'
+          - 'ubuntu-24.04'
+          - 'ubuntu-22.04'
+        default: 'ubuntu-latest'
 jobs:
   build:
     name: Build APKs
-    runs-on: ${{ vars.IS_USING_HOSTED_RUNNERS == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.IS_USING_HOSTED_RUNNERS == 'false' && 'self-hosted' || ${{ github.event.inputs.build_os_version }} }}
     outputs:
       short_sha: ${{ steps.set_sha.outputs.short_sha }}
     steps:

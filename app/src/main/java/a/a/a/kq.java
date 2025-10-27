@@ -140,8 +140,8 @@ public class kq {
             case "soundpool", "requestnetwork", "objectanimator", "dialog", "texttospeech",
                  "intent", "locationmanager", "firebase", "speechtotext", "calendar", "file",
                  "firebaseauth", "timer", "gyroscope", "mediaplayer", "bluetoothconnect",
-                 "vibrator", "firebasestorage", "onesignal", "phoneauth", "fbadbanner",
-                 "googlelogin", "dynamiclink", "fbadinterstitial", "cloudmessage" -> "p";
+                 "vibrator", "firebasestorage", "phoneauth",
+                 "googlelogin", "cloudmessage" -> "p";
             case "varMap" -> "a";
             case "listInt", "listMap", "listStr" -> "l";
             default -> "v";
@@ -220,24 +220,20 @@ public class kq {
             case "sidebar" -> "WaveSideBar";
             case "badgeview" -> "BadgeView";
             case "circleimageview" -> "CircleImageView";
-            case "onesignal" -> "OneSignal";
             case "customViews" -> "CustomView";
             case "asynctask" -> "AsyncTask";
             case "activity" -> "Context";
             case "otpview" -> "OTPView";
             case "lottie" -> "LottieAnimation";
             case "phoneauth" -> "FirebasePhoneAuth";
-            case "fbadbanner" -> "FBAdsBanner";
             case "codeview" -> "CodeView";
             case "recyclerview" -> "RecyclerView";
             case "resource" -> "Image";
             case "googlelogin" -> "FirebaseGoogleSignIn";
-            case "dynamiclink" -> "FirebaseDynamicLink";
             case "youtubeview" -> "YoutubePlayer";
             case "cardview" -> "CardView";
             case "radiogroup" -> "RadioGroup";
             case "color" -> "Color";
-            case "fbadinterstitial" -> "FBAdsInterstitial";
             case "textinputlayout" -> "TextInputLayout";
             case "collapsingtoolbar" -> "CollapsingToolbarLayout";
             case "cloudmessage" -> "FirebaseCloudMessage";

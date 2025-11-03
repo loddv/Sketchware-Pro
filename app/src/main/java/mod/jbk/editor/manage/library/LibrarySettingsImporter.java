@@ -2,7 +2,6 @@ package mod.jbk.editor.manage.library;
 
 import android.app.Activity;
 import android.net.Uri;
-import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +19,7 @@ import com.airbnb.lottie.LottieAnimationView;
 import com.besome.sketch.beans.ProjectLibraryBean;
 import com.besome.sketch.editor.manage.library.ProjectComparator;
 import com.besome.sketch.lib.ui.CircleImageView;
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
 import java.util.HashSet;
@@ -31,15 +30,13 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import a.a.a.aB;
 import a.a.a.iC;
 import a.a.a.lC;
 import a.a.a.mB;
 import a.a.a.wB;
 import a.a.a.wq;
-import a.a.a.xB;
 import a.a.a.yB;
-import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class LibrarySettingsImporter {
     private static final ProjectComparator PROJECT_COMPARATOR = new ProjectComparator();
@@ -62,13 +59,12 @@ public class LibrarySettingsImporter {
 
     public void showDialog(Activity activity) {
         this.activity = activity;
-        aB dialog = new aB(activity);
-        dialog.b(xB.b().a(activity, R.string.design_library_title_select_project));
-        dialog.a(R.drawable.widget_firebase);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
+        dialog.setTitle(R.string.design_library_title_select_project);
+        dialog.setIcon(R.drawable.widget_firebase);
         LinearLayout root = (LinearLayout) wB.a(activity, R.layout.manage_library_popup_project_selector);
         LottieAnimationView animationView = root.findViewById(R.id.animation_view);
         RecyclerView recyclerView = root.findViewById(R.id.list);
-        recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(null));
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         new Thread(() -> {
@@ -82,19 +78,19 @@ public class LibrarySettingsImporter {
                 recyclerView.setAdapter(adapter);
             });
         }).start();
-        dialog.a(root);
-        dialog.b(xB.b().a(activity, R.string.common_word_select), v -> {
+        dialog.setView(root);
+        dialog.setPositiveButton(R.string.common_word_select, (v, which) -> {
             if (!mB.a()) {
                 if (adapter.selectedProjectIndex >= 0) {
                     var settings = (ProjectLibraryBean) projects.get(adapter.selectedProjectIndex).get("settings");
                     for (var listener : onProjectSelectedListeners) {
                         listener.accept(settings);
                     }
-                    dialog.dismiss();
+                    v.dismiss();
                 }
             }
         });
-        dialog.a(xB.b().a(activity, R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(R.string.common_word_cancel, null);
         dialog.show();
     }
 
@@ -132,11 +128,7 @@ public class LibrarySettingsImporter {
             if (yB.a(projectMap, "custom_icon")) {
                 String iconPath = wq.e() + File.separator + sc_id;
                 Uri iconUri;
-                if (Build.VERSION.SDK_INT >= 24) {
-                    iconUri = FileProvider.getUriForFile(activity.getApplicationContext(), activity.getPackageName() + ".provider", new File(iconPath, "icon.png"));
-                } else {
-                    iconUri = Uri.fromFile(new File(iconPath, "icon.png"));
-                }
+                iconUri = FileProvider.getUriForFile(activity.getApplicationContext(), activity.getPackageName() + ".provider", new File(iconPath, "icon.png"));
                 viewHolder.imgIcon.setImageURI(iconUri);
             } else {
                 viewHolder.imgIcon.setImageResource(R.drawable.default_icon);
@@ -185,7 +177,7 @@ public class LibrarySettingsImporter {
             }
 
             private void selectProject(int index) {
-                if (projects.size() > 0) {
+                if (!projects.isEmpty()) {
                     for (Map<String, Object> projectMap : projects) {
                         projectMap.put("selected", false);
                     }

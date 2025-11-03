@@ -6,15 +6,15 @@ import android.widget.LinearLayout;
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconGridView extends IconBase {
 
     public IconGridView(Context context) {
         super(context);
-        setWidgetImage(R.drawable.grid_3_48);
+        setWidgetImage(R.drawable.ic_mtrl_grid);
         setWidgetName("GridView");
     }
 

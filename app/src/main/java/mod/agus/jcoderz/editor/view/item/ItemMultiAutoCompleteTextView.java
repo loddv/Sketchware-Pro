@@ -5,14 +5,15 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.widget.MultiAutoCompleteTextView;
+
+import androidx.appcompat.widget.AppCompatMultiAutoCompleteTextView;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
 
-import a.a.a.sy;
 import a.a.a.wB;
 
-public class ItemMultiAutoCompleteTextView extends MultiAutoCompleteTextView implements sy {
+public class ItemMultiAutoCompleteTextView extends AppCompatMultiAutoCompleteTextView implements ItemView {
 
     private final Paint paint;
     private final int paddingFactor;
@@ -48,6 +49,7 @@ public class ItemMultiAutoCompleteTextView extends MultiAutoCompleteTextView imp
         return isFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         isFixed = z;
     }

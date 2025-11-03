@@ -1,40 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="?attr/colorSurfaceContainer"
     android:orientation="vertical">
+
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:dividerColor="?attr/colorSurfaceContainerHighest" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:background="@drawable/layout_rounded_border_lightblue"
         android:gravity="center_vertical"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp">
+        android:paddingHorizontal="8dp">
 
         <Spinner
             android:id="@+id/spn_widget"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:backgroundTint="#ffffffff"
+            android:backgroundTint="?attr/colorOnSurface"
             android:spinnerMode="dropdown" />
 
-        <ImageView
+        <ImageButton
+            android:id="@+id/img_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_mtrl_delete" />
+
+        <ImageButton
             android:id="@+id/img_save"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@null"
-            android:src="@drawable/save_white_48" />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_mtrl_save" />
+
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_property_group"
         android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:background="#fff6f6f6"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="4dp"
@@ -44,14 +55,16 @@
         android:id="@+id/property_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ffeeeeee"
+        android:paddingTop="6dp"
         android:orientation="horizontal">
 
         <com.besome.sketch.lib.ui.CustomHorizontalScrollView
             android:id="@+id/hcv_property"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true">
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingHorizontal="5dp">
 
             <LinearLayout
                 android:id="@+id/property_contents"
@@ -72,5 +85,7 @@
     <com.besome.sketch.editor.view.ViewEvents
         android:id="@+id/view_event"
         android:layout_width="match_parent"
-        android:layout_height="82dp" />
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingHorizontal="5dp" />
 </LinearLayout>

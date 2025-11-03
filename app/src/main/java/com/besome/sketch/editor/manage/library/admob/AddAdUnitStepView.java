@@ -1,6 +1,5 @@
 package com.besome.sketch.editor.manage.library.admob;
 
-import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -18,18 +17,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.besome.sketch.beans.AdUnitBean;
 import com.besome.sketch.beans.ProjectLibraryBean;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
-import com.sketchware.remod.R;
 
 import java.util.ArrayList;
 
 import a.a.a.SB;
 import a.a.a.Uu;
-import a.a.a.aB;
 import a.a.a.bB;
 import a.a.a.gB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class AddAdUnitStepView extends LinearLayout implements Uu, OnClickListener {
     private AdUnitsAdapter adUnitsAdapter;
@@ -46,9 +45,9 @@ public class AddAdUnitStepView extends LinearLayout implements Uu, OnClickListen
     }
 
     private void createAdUnit() {
-        aB dialog = new aB((Activity) getContext());
-        dialog.b(Helper.getResString(R.string.design_library_admob_dialog_add_adunit_title));
-        dialog.a(R.drawable.add_96_blue);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(getContext());
+        dialog.setTitle(Helper.getResString(R.string.design_library_admob_dialog_add_adunit_title));
+        dialog.setIcon(R.drawable.ic_mtrl_add);
         View rootView = wB.a(getContext(), R.layout.manage_library_setting_admob_adunit_add);
 
         TextInputLayout tiName = rootView.findViewById(R.id.ti_name);
@@ -62,36 +61,36 @@ public class AddAdUnitStepView extends LinearLayout implements Uu, OnClickListen
         SB adUnitValidator = new SB(getContext(), tiAdUnitId, 1, 100);
 
         edName.setPrivateImeOptions("defaultInputmode=english;");
-        dialog.a(rootView);
-        dialog.b(Helper.getResString(R.string.common_word_add), view -> {
+        dialog.setView(rootView);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_add), (v, which) -> {
             if (!nameValidator.b()) {
                 edName.requestFocus();
             } else if (!adUnitValidator.b()) {
                 edAdUnitId.requestFocus();
             } else {
-                String name = edName.getText().toString();
-                String id = edAdUnitId.getText().toString();
+                String name = Helper.getText(edName);
+                String id = Helper.getText(edAdUnitId);
                 adUnitBeanArrayList.add(new AdUnitBean(id, name));
                 adUnitsAdapter.notifyItemInserted(adUnitBeanArrayList.size() - 1);
-                dialog.dismiss();
+                v.dismiss();
             }
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
     private void deleteAdUnit(int position) {
-        aB dialog = new aB((Activity) getContext());
-        dialog.b(Helper.getResString(R.string.design_library_admob_dialog_delete_adunit_title));
-        dialog.a(R.drawable.delete_96);
-        dialog.a(Helper.getResString(R.string.design_library_admob_dialog_confirm_delete_adunit));
-        dialog.b(Helper.getResString(R.string.common_word_delete), view -> {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(getContext());
+        dialog.setTitle(Helper.getResString(R.string.design_library_admob_dialog_delete_adunit_title));
+        dialog.setIcon(R.drawable.delete_96);
+        dialog.setMessage(Helper.getResString(R.string.design_library_admob_dialog_confirm_delete_adunit));
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (v, which) -> {
             adUnitBeanArrayList.remove(position);
             adUnitsAdapter.notifyItemRemoved(position);
             bB.a(getContext(), Helper.getResString(R.string.common_message_complete_delete), 0).show();
-            dialog.dismiss();
+            v.dismiss();
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
@@ -122,7 +121,7 @@ public class AddAdUnitStepView extends LinearLayout implements Uu, OnClickListen
 
     @Override
     public boolean isValid() {
-        if (adUnitBeanArrayList.size() > 0) {
+        if (!adUnitBeanArrayList.isEmpty()) {
             return true;
         } else {
             bB.a(getContext(), Helper.getResString(R.string.design_library_admob_setting_message_add_ad_unit), 1).show();
@@ -146,7 +145,7 @@ public class AddAdUnitStepView extends LinearLayout implements Uu, OnClickListen
     private class AdUnitsAdapter extends RecyclerView.Adapter<AdUnitsAdapter.ViewHolder> {
         @Override
         public int getItemCount() {
-            if (adUnitBeanArrayList.size() == 0) {
+            if (adUnitBeanArrayList.isEmpty()) {
                 tvWarning.setVisibility(View.VISIBLE);
             } else {
                 tvWarning.setVisibility(View.GONE);

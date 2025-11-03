@@ -5,15 +5,15 @@ import android.view.ViewGroup;
 
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconPatternLockView extends IconBase {
 
     public IconPatternLockView(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_pattern_lock_view);
+        setWidgetImage(R.drawable.ic_mtrl_pattern);
         setWidgetName("PatternLockView");
     }
 

@@ -1,17 +1,20 @@
 package com.besome.sketch.editor.event;
 
 import android.content.Context;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.util.AttributeSet;
 
 import androidx.annotation.NonNull;
 
 import com.besome.sketch.lib.base.CollapsibleLayout;
 import com.besome.sketch.lib.ui.CollapsibleButton;
-import com.sketchware.remod.R;
+import com.google.android.material.color.MaterialColors;
 
 import java.util.List;
 
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class CollapsibleEventLayout extends CollapsibleLayout<CollapsibleButton> {
     private CollapsibleButton delete;
@@ -27,9 +30,15 @@ public class CollapsibleEventLayout extends CollapsibleLayout<CollapsibleButton>
 
     @Override
     protected List<CollapsibleButton> initializeButtons(@NonNull Context context) {
-        CollapsibleButton reset = CollapsibleButton.create(context, 0, R.drawable.ic_reset_color_32dp, R.string.common_word_reset);
-        delete = CollapsibleButton.create(context, 1, R.drawable.delete_96, R.string.common_word_delete);
-        addToCollection = CollapsibleButton.create(context, 2, R.drawable.ic_bookmark_red_48dp, R.string.logic_list_menu_add_to_collection);
+        CollapsibleButton reset = CollapsibleButton.create(context, 0, R.drawable.ic_mtrl_reset, R.string.common_word_reset);
+
+        delete = CollapsibleButton.create(context, 1, R.drawable.ic_mtrl_delete, R.string.common_word_delete);
+        var colorError = MaterialColors.getColor(delete, R.attr.colorError);
+        var iconFilter = new PorterDuffColorFilter(colorError, PorterDuff.Mode.SRC_ATOP);
+        delete.getLabel().setTextColor(colorError);
+        delete.getIcon().setColorFilter(iconFilter);
+
+        addToCollection = CollapsibleButton.create(context, 2, R.drawable.ic_mtrl_bookmark, R.string.logic_list_menu_add_to_collection);
         addToCollection.setVisibility(GONE);
         return List.of(reset, delete, addToCollection);
     }

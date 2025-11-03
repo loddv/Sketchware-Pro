@@ -1,14 +1,56 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ScrollView android:layout_width="fill_parent" android:layout_height="wrap_content"
-  xmlns:android="http://schemas.android.com/apk/res/android">
-    <LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="wrap_content">
-        <RadioGroup android:orientation="vertical" android:id="@id/rg_type" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="8.0dip" android:layout_marginRight="8.0dip">
-            <RadioButton android:id="@id/rb_int" android:layout_width="fill_parent" android:layout_height="40.0dip" android:checked="true" />
-            <RadioButton android:id="@id/rb_string" android:layout_width="fill_parent" android:layout_height="40.0dip" />
-            <RadioButton android:id="@id/rb_map" android:layout_width="fill_parent" android:layout_height="40.0dip" />
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="10dp">
+
+        <RadioGroup
+            android:id="@+id/rg_type"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rb_int"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:checked="true"
+                android:text="@string/logic_variable_type_number" />
+
+            <RadioButton
+                android:id="@+id/rb_string"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="@string/logic_variable_type_string" />
+
+            <RadioButton
+                android:id="@+id/rb_map"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:text="@string/logic_variable_type_map" />
         </RadioGroup>
-        <com.google.android.material.textfield.TextInputLayout android:id="@id/ti_input" android:layout_width="fill_parent" android:layout_height="wrap_content" android:layout_marginLeft="8.0dip" android:layout_marginRight="8.0dip">
-            <EditText android:textSize="16.0sp" android:id="@id/ed_input" android:layout_width="fill_parent" android:layout_height="40.0dip" android:lines="1" android:inputType="text" android:imeOptions="actionDone" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/ti_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/logic_editor_hint_enter_variable_name"
+            android:importantForAutofill="noExcludeDescendants">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ed_input"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:lines="1"
+                android:textSize="16sp" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 </ScrollView>

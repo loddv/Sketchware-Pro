@@ -1,12 +1,13 @@
 package a.a.a;
 
 import com.besome.sketch.beans.ComponentBean;
+import com.besome.sketch.editor.manage.library.material3.Material3LibraryManager;
 
 import java.util.ArrayList;
 
-import dev.aldi.sayuti.block.ExtraBlockClassInfo;
 import mod.hilal.saif.components.ComponentsHandler;
 import mod.hilal.saif.events.EventsHandler;
+import pro.sketchware.menu.DefaultExtraMenuBean;
 
 public class mq {
     /**
@@ -48,7 +49,7 @@ public class mq {
                 return new Gx(b(typeName));
 
             default:
-                return ExtraBlockClassInfo.getTypeVar(type, typeName);
+                return null;
         }
     }
 
@@ -86,13 +87,8 @@ public class mq {
             case ComponentBean.COMPONENT_TYPE_FRAGMENT_ADAPTER -> "FragmentStatePagerAdapter";
             case ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_PHONE ->
                     "PhoneAuthProvider.OnVerificationStateChangedCallbacks";
-            case ComponentBean.COMPONENT_TYPE_FIREBASE_DYNAMIC_LINKS -> "DynamicLink";
             case ComponentBean.COMPONENT_TYPE_FIREBASE_CLOUD_MESSAGE -> "FirebaseCloudMessage";
             case ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_GOOGLE_LOGIN -> "GoogleSignInClient";
-            case ComponentBean.COMPONENT_TYPE_ONESIGNAL -> "OSSubscriptionObserver";
-            case ComponentBean.COMPONENT_TYPE_FACEBOOK_ADS_BANNER -> "com.facebook.ads.AdView";
-            case ComponentBean.COMPONENT_TYPE_FACEBOOK_ADS_INTERSTITIAL ->
-                    "com.facebook.ads.InterstitialAd";
             default -> ComponentsHandler.var(componentId);
         };
     }
@@ -130,10 +126,13 @@ public class mq {
         };
     }
 
+    /**
+     * @return The internal type name of a variable(e.g. View, Component), from its type name(%m.typename), as displayed in the moreblock code.
+     */
     public static String b(String name) {
         return switch (name) {
             case "intent", "Intent" -> "Intent";
-            case "file", "File", "File (Shared Preferences)" -> "SharedPreferences";
+            case "file", "File (Shared Preferences)" -> "SharedPreferences";
             case "calendar", "Calendar" -> "Calendar";
             case "vibrator", "Vibrator" -> "Vibrator";
             case "Timer" -> "Timer";
@@ -195,7 +194,32 @@ public class mq {
             case "bottomnavigation" -> "BottomNavigationView";
             case "patternview" -> "PatternLockView";
             case "sidebar" -> "WaveSideBar";
-            default -> ExtraBlockClassInfo.getName(name);
+            case "circleimageview" -> "CircleImageView";
+            case "customViews" -> "CustomView";
+            case "asynctask" -> "AsyncTask";
+            case "activity" -> "Context";
+            case "otpview" -> "OTPView";
+            case "lottie" -> "LottieAnimation";
+            case "phoneauth" -> "FirebasePhoneAuth";
+            case "codeview" -> "CodeView";
+            case "recyclerview" -> "RecyclerView";
+            case "resource" -> "Image";
+            case "googlelogin" -> "FirebaseGoogleSignIn";
+            case "youtubeview" -> "YoutubePlayer";
+            case "cardview" -> "CardView";
+            case "radiogroup" -> "RadioGroup";
+            case "color" -> "Color";
+            case "textinputlayout" -> "TextInputLayout";
+            case "collapsingtoolbar" -> "CollapsingToolbarLayout";
+            case "cloudmessage" -> "FirebaseCloudMessage";
+            case "resource_bg" -> "BackgroundImage";
+            case "datepicker" -> "DatePicker";
+            case "timepicker" -> "TimePicker";
+            case "swiperefreshlayout" -> "SwipeRefreshLayout";
+            case "signinbutton" -> "SignInButton";
+            case "materialButton" -> "MaterialButton";
+            case "fragmentAdapter" -> "FragmentAdapter";
+            default -> DefaultExtraMenuBean.getName(name);
         };
     }
 
@@ -215,9 +239,10 @@ public class mq {
     /**
      * @return Imports needed for a type
      */
-    public static ArrayList<String> getImportsByTypeName(String name) {
+    public static ArrayList<String> getImportsByTypeName(String scId, String name, String convert) {
         ArrayList<String> importList = new ArrayList<>();
         ComponentsHandler.getImports(name, importList);
+        Material3LibraryManager materialLibraryManager = new Material3LibraryManager(scId);
 
         switch (name) {
             case "Map":
@@ -394,7 +419,9 @@ public class mq {
                 return importList;
 
             case "Toolbar":
-                importList.add("androidx.appcompat.widget.Toolbar");
+                importList.add(
+                        materialLibraryManager.isMaterial3Enabled() ? "com.google.android.material.appbar.MaterialToolbar" : "androidx.appcompat.widget.Toolbar"
+                );
                 importList.add("androidx.annotation.NonNull");
                 return importList;
 
@@ -573,12 +600,6 @@ public class mq {
                 importList.add("com.google.firebase.messaging.FirebaseMessaging");
                 return importList;
 
-            case "OSSubscriptionObserver":
-                importList.add("com.onesignal.OSSubscriptionObserver");
-                importList.add("com.onesignal.OneSignal");
-                importList.add("org.json.JSONObject");
-                return importList;
-
             case "PhoneAuthProvider.OnVerificationStateChangedCallbacks":
                 importList.add("com.google.android.gms.tasks.OnCompleteListener");
                 importList.add("com.google.android.gms.tasks.Task");
@@ -607,15 +628,6 @@ public class mq {
                 importList.add("com.google.firebase.auth.GoogleAuthProvider");
                 return importList;
 
-            case "DynamicLink":
-                importList.add("com.google.android.gms.tasks.OnSuccessListener");
-                importList.add("com.google.android.gms.tasks.OnFailureListener");
-                importList.add("com.google.firebase.dynamiclinks.DynamicLink");
-                importList.add("com.google.firebase.dynamiclinks.FirebaseDynamicLinks");
-                importList.add("com.google.firebase.dynamiclinks.PendingDynamicLinkData");
-                importList.add("com.google.firebase.dynamiclinks.ShortDynamicLink");
-                return importList;
-
             case "RewardedVideoAd":
                 importList.add("com.google.android.gms.ads.AdError");
                 importList.add("com.google.android.gms.ads.MobileAds");
@@ -625,12 +637,10 @@ public class mq {
                 importList.add("com.google.android.gms.ads.rewarded.RewardedAdLoadCallback");
                 return importList;
 
-            case "com.facebook.ads.AdView":
-            case "com.facebook.ads.InterstitialAd":
-                importList.add("com.facebook.ads.*");
-                return importList;
-
             default:
+                if (convert != null && convert.contains(".")) {
+                    importList.add(convert);
+                }
                 return importList;
         }
     }
@@ -742,6 +752,9 @@ public class mq {
         }
     }
 
+    /**
+     * @return The actual class info from its internal type name, as displayed in the generated code.
+     */
     public static String e(String typeName) {
         return switch (typeName) {
             case "double", "double.SelectDouble" -> "double";
@@ -758,8 +771,8 @@ public class mq {
             case "SpeechToText" -> "SpeechRecognizer";
             case "FragmentAdapter" -> "FragmentStatePagerAdapter";
             case "Context" -> "Activity";
-            case "ResString", "ResStyle", "ResColor", "ResArray", "ResDimen", "ResBool", "ResInteger", "ResAttr", "ResXml", "Color" ->
-                    "int";
+            case "ResString", "ResStyle", "ResColor", "ResArray", "ResDimen", "ResBool",
+                 "ResInteger", "ResAttr", "ResXml", "Color" -> "int";
             default -> typeName;
         };
     }

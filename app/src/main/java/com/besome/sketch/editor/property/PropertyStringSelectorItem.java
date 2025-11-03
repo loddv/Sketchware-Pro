@@ -1,7 +1,6 @@
 package com.besome.sketch.editor.property;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -13,14 +12,14 @@ import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import a.a.a.Kw;
-import a.a.a.aB;
 import a.a.a.mB;
 import a.a.a.sq;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 @SuppressLint("ViewConstructor")
 public class PropertyStringSelectorItem extends RelativeLayout implements View.OnClickListener {
@@ -52,15 +51,15 @@ public class PropertyStringSelectorItem extends RelativeLayout implements View.O
             tvName.setText(Helper.getResString(identifier));
             switch (key) {
                 case "property_ad_size":
-                    icon = R.drawable.widget_admob;
+                    icon = R.drawable.ic_mtrl_admob;
                     break;
 
                 case "property_indeterminate":
-                    icon = R.drawable.event_on_accuracy_changed_48dp;
+                    icon = R.drawable.ic_mtrl_indeterminate;
                     break;
 
                 case "property_scale_type":
-                    icon = R.drawable.enlarge_48;
+                    icon = R.drawable.ic_mtrl_enlarge;
                     break;
             }
             if (propertyMenuItem.getVisibility() == VISIBLE) {
@@ -96,9 +95,13 @@ public class PropertyStringSelectorItem extends RelativeLayout implements View.O
         if (orientationItem == 0) {
             propertyItem.setVisibility(GONE);
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyItem.setOnClickListener(null);
+            propertyMenuItem.setOnClickListener(this);
         } else {
             propertyItem.setVisibility(VISIBLE);
             propertyMenuItem.setVisibility(GONE);
+            propertyItem.setOnClickListener(this);
+            propertyMenuItem.setOnClickListener(null);
         }
     }
 
@@ -109,36 +112,25 @@ public class PropertyStringSelectorItem extends RelativeLayout implements View.O
         imgLeftIcon = findViewById(R.id.img_left_icon);
         propertyItem = findViewById(R.id.property_item);
         propertyMenuItem = findViewById(R.id.property_menu_item);
-        if (z) {
-            setOnClickListener(this);
-            setSoundEffectsEnabled(true);
-        }
+//        if (z) {
+//            propertyMenuItem.setOnClickListener(this);
+//            propertyMenuItem.setSoundEffectsEnabled(true);
+//        }
     }
 
     private void showDialog() {
-        aB dialog = new aB((Activity) getContext());
-        dialog.b(tvName.getText().toString());
-        dialog.a(icon);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(getContext());
+        dialog.setTitle(Helper.getText(tvName));
+        dialog.setIcon(icon);
         View view = wB.a(getContext(), R.layout.property_popup_selector_single);
         radioGroupContent = view.findViewById(R.id.rg_content);
 
-        String[] items;
-        switch (key) {
-            case "property_ad_size":
-                items = sq.k;
-                break;
-
-            case "property_indeterminate":
-                items = sq.l;
-                break;
-
-            case "property_scale_type":
-                items = sq.j;
-                break;
-
-            default:
-                items = null;
-        }
+        String[] items = switch (key) {
+            case "property_ad_size" -> sq.k;
+            case "property_indeterminate" -> sq.l;
+            case "property_scale_type" -> sq.j;
+            default -> null;
+        };
 
         for (String item : items) {
             radioGroupContent.addView(getOption(item));
@@ -152,8 +144,8 @@ public class PropertyStringSelectorItem extends RelativeLayout implements View.O
             }
         }
 
-        dialog.a(view);
-        dialog.b(Helper.getResString(R.string.common_word_select), v -> {
+        dialog.setView(view);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_select), (v, which) -> {
             int childCount = radioGroupContent.getChildCount();
             int counter = 0;
             while (true) {
@@ -170,9 +162,9 @@ public class PropertyStringSelectorItem extends RelativeLayout implements View.O
             if (valueChangeListener != null) {
                 valueChangeListener.a(key, value);
             }
-            dialog.dismiss();
+            v.dismiss();
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 

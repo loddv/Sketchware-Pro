@@ -4,16 +4,18 @@ import a.a.a.nA;
 
 public class QuizBean extends nA {
     public static final int QUIZ_TYPE_ANSWER = 2;
-    public static final int QUIZ_TYPE_INFO = 0;
     public static final int QUIZ_TYPE_OX = 1;
+
+    public static final int QUIZ_TRUE = 1;
+    public static final int QUIZ_FALSE = 0;
+    public static final int QUIZ_ANSWER_A = 0;
+    public static final int QUIZ_ANSWER_B = 1;
+
     public int answer;
     public String answerA;
     public String answerB;
     public String question;
     public int type;
-
-    public QuizBean() {
-    }
 
     public QuizBean(String question, int answer) {
         type = QUIZ_TYPE_OX;

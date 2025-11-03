@@ -1,26 +1,27 @@
 package mod.jbk.build.compiler.resource;
 
+import static com.besome.sketch.Config.VAR_DEFAULT_TARGET_SDK_VERSION;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
-
-import com.besome.sketch.SketchApplication;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import a.a.a.ProjectBuilder;
 import a.a.a.Jp;
+import a.a.a.ProjectBuilder;
 import a.a.a.zy;
 import mod.agus.jcoderz.editor.manage.library.locallibrary.ManageLocalLibrary;
-import mod.agus.jcoderz.lib.BinaryExecutor;
-import mod.agus.jcoderz.lib.FileUtil;
 import mod.hey.studios.build.BuildSettings;
 import mod.hey.studios.project.ProjectSettings;
 import mod.jbk.build.BuildProgressReceiver;
 import mod.jbk.build.BuiltInLibraries;
 import mod.jbk.diagnostic.MissingFileException;
 import mod.jbk.util.LogUtil;
+import pro.sketchware.SketchApplication;
+import pro.sketchware.utility.BinaryExecutor;
+import pro.sketchware.utility.FileUtil;
 
 /**
  * A class responsible for compiling a Project's resources.
@@ -54,8 +55,8 @@ public class ResourceCompiler {
 
         resourceCompiler.setProgressListener(new Compiler.ProgressListener() {
             @Override
-            void onProgressUpdate(String newProgress) {
-                if (progressReceiver != null) progressReceiver.onProgress(newProgress);
+            void onProgressUpdate(String newProgress, int step) {
+                if (progressReceiver != null) progressReceiver.onProgress(newProgress, step);
             }
         });
         resourceCompiler.compile();
@@ -87,7 +88,7 @@ public class ResourceCompiler {
              *
              * @param newProgress A String provided by the resource compiler the user should see.
              */
-            abstract void onProgressUpdate(String newProgress);
+            abstract void onProgressUpdate(String newProgress, int step);
         }
     }
 
@@ -117,7 +118,7 @@ public class ResourceCompiler {
 
             long savedTimeMillis = System.currentTimeMillis();
             if (progressListener != null) {
-                progressListener.onProgressUpdate("Compiling resources with AAPT2...");
+                progressListener.onProgressUpdate("Compiling resources with AAPT2...", 9);
             }
             compileBuiltInLibraryResources();
             LogUtil.d(TAG + ":c", "Compiling built-in library resources took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
@@ -144,7 +145,7 @@ public class ResourceCompiler {
         public void link() throws zy, MissingFileException {
             String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
             if (progressListener != null)
-                progressListener.onProgressUpdate("Linking resources with AAPT2...");
+                progressListener.onProgressUpdate("Linking resources with AAPT2...", 10);
 
             ArrayList<String> args = new ArrayList<>();
             args.add(aapt2.getAbsolutePath());
@@ -160,8 +161,7 @@ public class ResourceCompiler {
             args.add("--min-sdk-version");
             args.add(String.valueOf(buildHelper.settings.getMinSdkVersion()));
             args.add("--target-sdk-version");
-            args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
-                    "28"));
+            args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION, String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
 
             args.add("--version-code");
             String versionCode = buildHelper.yq.versionCode;

@@ -1,8 +1,9 @@
 package mod.hilal.saif.android_manifest;
 
+import static pro.sketchware.utility.GsonUtils.getGson;
+
 import android.os.Environment;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 
 import java.io.File;
@@ -10,10 +11,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import com.sketchware.remod.xml.XmlBuilder;
-import mod.SketchwareUtil;
-import mod.agus.jcoderz.lib.FileUtil;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
+import pro.sketchware.xml.XmlBuilder;
 
 public class AndroidManifestInjector {
 
@@ -52,7 +53,7 @@ public class AndroidManifestInjector {
                 File injections = getPathAndroidManifestAttributeInjection(sc_id);
 
                 if (injections.exists()) {
-                    attributes = new Gson().fromJson(FileUtil.readFile(injections.getAbsolutePath()), Helper.TYPE_MAP_LIST);
+                    attributes = getGson().fromJson(FileUtil.readFile(injections.getAbsolutePath()), Helper.TYPE_MAP_LIST);
 
                     if (attributes == null) {
                         errorMessage = "result == null";
@@ -89,7 +90,7 @@ public class AndroidManifestInjector {
                     if ("_application_permissions".equals(name)) {
                         XmlBuilder usesPermissionTag = new XmlBuilder("uses-permission");
                         usesPermissionTag.addAttributeValue((String) value);
-                        nx.a(usesPermissionTag);
+                        nx.addChildNode(usesPermissionTag);
                     }
                 } else {
                     SketchwareUtil.toastError("Invalid AndroidManifest attribute injection value in attribute #" + (i + 1));
@@ -193,7 +194,7 @@ public class AndroidManifestInjector {
 
         String path = getPathAndroidManifestActivitiesComponents(projectId).getAbsolutePath();
         if (FileUtil.isExistFile(path)) {
-            ArrayList<HashMap<String, Object>> data = new Gson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+            ArrayList<HashMap<String, Object>> data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
             for (int i = 0; i < data.size(); i++) {
                 HashMap<String, Object> activityComponents = data.get(i);
 
@@ -203,7 +204,7 @@ public class AndroidManifestInjector {
                     Object value = activityComponents.get("value");
 
                     if (value instanceof String) {
-                        if (!((String) value).trim().equals("")) {
+                        if (!((String) value).trim().isEmpty()) {
                             for (int k = 3; k < manifestLines.size(); k++) {
                                 String line = manifestLines.get(k);
                                 String _line = manifestLines.get(k - 1);
@@ -241,7 +242,7 @@ public class AndroidManifestInjector {
         File appComponents = getPathAndroidManifestAppComponents(projectId);
         if (appComponents.exists()) {
             String appComponentsContent;
-            if (!(appComponentsContent = FileUtil.readFile(appComponents.getAbsolutePath())).trim().equals("")) {
+            if (!(appComponentsContent = FileUtil.readFile(appComponents.getAbsolutePath())).trim().isEmpty()) {
                 String str2 = manifestLines.get(manifestLines.size() - 3);
                 String str3 = str2 + "\r\n" + appComponentsContent;
                 manifestLines.set(manifestLines.size() - 3, str3);

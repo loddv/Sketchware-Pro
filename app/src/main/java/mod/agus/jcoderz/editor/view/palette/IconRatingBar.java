@@ -5,15 +5,15 @@ import android.content.Context;
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconRatingBar extends IconBase {
 
     public IconRatingBar(Context context) {
         super(context);
-        setWidgetImage(R.drawable.color_star_24);
+        setWidgetImage(R.drawable.ic_mtrl_star);
         setWidgetName("RatingBar");
     }
 

@@ -1,88 +1,89 @@
 package a.a.a;
 
-import android.content.Context;
-
-import com.sketchware.remod.R;
+import androidx.annotation.DrawableRes;
 
 import java.util.ArrayList;
 
 import mod.agus.jcoderz.editor.event.ManageEvent;
 import mod.hey.studios.util.Helper;
 import mod.hilal.saif.events.EventsHandler;
+import pro.sketchware.R;
 
 public class oq {
 
     /**
      * The known Event names that can be added to all Activities.
      */
-    public static final String[] a = EventsHandler.getActivityEvents();
+    public static final String[] ACTIVITY_EVENTS = EventsHandler.getActivityEvents();
 
     /**
      * @return The resource ID for an Event's icon
      */
-    public static int a(String eventName) {
+    @DrawableRes
+    public static int getEventIconResource(String eventName) {
         return switch (eventName) {
-            case "initializeLogic", "onBackPressed", "onPostCreate", "onStart", "onStop", "onDestroy", "onResume", "onPause", "moreBlock" ->
+            case "initializeLogic", "onBackPressed", "onPostCreate", "onStart", "onStop",
+                 "onDestroy", "onResume", "onPause", "moreBlock" ->
                     R.drawable.bg_event_type_activity;
-            case "onBannerAdClicked", "onClick" -> R.drawable.event_on_click_48dp;
-            case "onCheckedChange" -> R.drawable.event_on_check_changed_48dp;
-            case "onItemSelected" -> R.drawable.event_on_item_selected_48dp;
-            case "onItemClicked" -> R.drawable.event_on_item_clicked_48dp;
-            case "onItemLongClicked" -> R.drawable.event_on_item_long_clicked_48dp;
-            case "onTextChanged" -> R.drawable.event_on_text_changed_48dp;
-            case "onPageStarted" -> R.drawable.event_on_page_started_48dp;
-            case "onPageFinished" -> R.drawable.event_on_page_finished_48dp;
-            case "onProgressChanged" -> R.drawable.event_on_progress_changed_48dp;
-            case "onStartTrackingTouch" -> R.drawable.event_on_start_tracking_touch_48dp;
-            case "onStopTrackingTouch" -> R.drawable.event_on_stop_tracking_touch_48dp;
-            case "onAnimationStart" -> R.drawable.event_on_animation_start_48dp;
-            case "onAnimationEnd" -> R.drawable.event_on_animation_end_48dp;
-            case "onAnimationCancel" -> R.drawable.event_on_animation_cancel_48dp;
-            case "onAnimationRepeat" -> R.drawable.event_animation_repeat_48dp;
-            case "onBindCustomView" -> R.drawable.event_on_bind_custom_view_48dp;
-            case "onDateChange" -> R.drawable.event_on_date_changed_48dp;
-            case "onChildAdded" -> R.drawable.event_on_child_added_48dp;
-            case "onChildChanged" -> R.drawable.event_on_child_changed_48dp;
-            case "onChildMoved" -> R.drawable.event_on_child_moved_48dp;
-            case "onChildRemoved", "onDeleteSuccess" -> R.drawable.event_on_child_removed_48dp;
-            case "onCancelled" -> R.drawable.event_on_cancelled_48dp;
-            case "onCreateUserComplete" -> R.drawable.event_on_create_user_complete_48dp;
-            case "onSignInUserComplete" -> R.drawable.event_on_signin_complete_48dp;
-            case "onResetPasswordEmailSent" -> R.drawable.event_on_reset_password_email_sent_48dp;
-            case "onSensorChanged" -> R.drawable.event_on_sensor_changed_48dp;
-            case "onAccuracyChanged" -> R.drawable.event_on_accuracy_changed_48dp;
+            case "onBannerAdClicked", "onClick" -> R.drawable.ic_mtrl_touch;
+            case "onCheckedChange" -> R.drawable.ic_mtrl_checkbox;
+            case "onItemSelected" -> R.drawable.ic_mtrl_pull_down;
+            case "onItemClicked" -> R.drawable.ic_mtrl_list;
+            case "onItemLongClicked" -> R.drawable.ic_mtrl_touch_long;
+            case "onTextChanged" -> R.drawable.ic_mtrl_text_change;
+            case "onPageStarted" -> R.drawable.ic_mtrl_progress;
+            case "onPageFinished", "onAdShowedFullScreenContent", "onBannerAdOpened" ->
+                    R.drawable.ic_mtrl_preview;
+            case "onProgressChanged" -> R.drawable.ic_mtrl_progress_check;
+            case "onStartTrackingTouch" -> R.drawable.ic_mtrl_track_started;
+            case "onStopTrackingTouch" -> R.drawable.ic_mtrl_target;
+            case "onAnimationStart" -> R.drawable.ic_mtrl_sprint;
+            case "onAnimationEnd" -> R.drawable.ic_mtrl_anim_end;
+            case "onAnimationCancel" -> R.drawable.ic_mtrl_anim_cancel;
+            case "onAnimationRepeat" -> R.drawable.ic_mtrl_refresh;
+            case "onBindCustomView" -> R.drawable.ic_mtrl_bind;
+            case "onDateChange" -> R.drawable.ic_mtrl_date_changed;
+            case "onChildAdded" -> R.drawable.ic_mtrl_database_added;
+            case "onChildChanged" -> R.drawable.ic_mtrl_database_edit;
+            case "onChildMoved" -> R.drawable.ic_mtrl_database_moved;
+            case "onChildRemoved", "onDeleteSuccess" -> R.drawable.ic_mtrl_database_off;
+            case "onCancelled" -> R.drawable.ic_mtrl_cancel;
+            case "onCreateUserComplete" -> R.drawable.ic_mtrl_user_create;
+            case "onSignInUserComplete" -> R.drawable.ic_mtrl_signin;
+            case "onResetPasswordEmailSent" -> R.drawable.ic_mtrl_reset;
+            case "onSensorChanged", "onResponse" -> R.drawable.ic_mtrl_sensor;
+            case "onAccuracyChanged" -> R.drawable.ic_mtrl_center;
             case "onInterstitialAdLoaded", "onBannerAdLoaded", "onRewardAdLoaded" ->
-                    R.drawable.event_on_ad_loaded;
-            case "onBannerAdFailedToLoad", "onInterstitialAdFailedToLoad", "onAdFailedToShowFullScreenContent", "onRewardAdFailedToLoad", "onFailure" ->
-                    R.drawable.event_on_ad_failed_to_load;
-            case "onAdShowedFullScreenContent", "onBannerAdOpened" -> R.drawable.event_on_ad_opened;
+                    R.drawable.ic_mtrl_loaded;
+            case "onBannerAdFailedToLoad", "onInterstitialAdFailedToLoad",
+                 "onAdFailedToShowFullScreenContent", "onRewardAdFailedToLoad", "onFailure" ->
+                    R.drawable.ic_mtrl_load_failed;
             case "onAdDismissedFullScreenContent", "onBannerAdClosed" ->
-                    R.drawable.event_on_ad_closed;
-            case "onUploadProgress" -> R.drawable.event_on_upload_progress_48dp;
-            case "onDownloadProgress" -> R.drawable.event_on_download_progress_48dp;
-            case "onUploadSuccess" -> R.drawable.event_on_upload_success_48dp;
-            case "onDownloadSuccess" -> R.drawable.event_on_download_success_48dp;
-            case "onPictureTaken" -> R.drawable.event_on_picture_taken_48dp;
-            case "onPictureTakenCancel" -> R.drawable.event_on_picture_taken_cancel_48dp;
-            case "onFilesPicked" -> R.drawable.event_on_file_picked_48dp;
-            case "onFilesPickedCancel" -> R.drawable.event_on_file_picked_cancel_48dp;
-            case "onResponse" -> R.drawable.event_on_response_48dp;
-            case "onErrorResponse" -> R.drawable.event_on_error_response_48dp;
-            case "onSpeechResult" -> R.drawable.event_on_speech_result;
-            case "onSpeechError" -> R.drawable.event_on_speech_error;
-            case "onConnected" -> R.drawable.event_on_connected_96;
-            case "onDataReceived" -> R.drawable.event_on_data_received_96;
-            case "onDataSent" -> R.drawable.event_on_data_sent_96;
-            case "onConnectionError" -> R.drawable.event_on_connection_error_96;
-            case "onConnectionStopped" -> R.drawable.event_on_connection_stopped_96;
-            case "onLocationChanged" -> R.drawable.event_on_location_changed_96;
-            case "onMapReady" -> R.drawable.event_on_map_ready_96;
-            case "onMarkerClicked" -> R.drawable.event_on_marker_clicked_96;
-            default -> ManageEvent.d(eventName);
+                    R.drawable.ic_mtrl_preview_off;
+            case "onUploadProgress" -> R.drawable.ic_mtrl_uploading;
+            case "onDownloadProgress" -> R.drawable.ic_mtrl_downloading;
+            case "onUploadSuccess" -> R.drawable.ic_mtrl_uploaded;
+            case "onDownloadSuccess" -> R.drawable.ic_mtrl_download;
+            case "onPictureTaken" -> R.drawable.ic_mtrl_pic_taken;
+            case "onPictureTakenCancel" -> R.drawable.ic_mtrl_pic_cancel;
+            case "onFilesPicked" -> R.drawable.ic_mtrl_file_picked;
+            case "onFilesPickedCancel" -> R.drawable.ic_mtrl_pick_cancel;
+            case "onErrorResponse" -> R.drawable.ic_mtrl_sensor_cancel;
+            case "onSpeechResult" -> R.drawable.ic_mtrl_speech;
+            case "onSpeechError" -> R.drawable.ic_mtrl_speech_cancel;
+            case "onConnected" -> R.drawable.ic_mtrl_bluetooth_connected;
+            case "onDataReceived" -> R.drawable.ic_mtrl_bt_received;
+            case "onDataSent" -> R.drawable.ic_mtrl_bt_sent;
+            case "onConnectionError" -> R.drawable.ic_mtrl_bt_error;
+            case "onConnectionStopped" -> R.drawable.ic_mtrl_bt_cancel;
+            case "onLocationChanged" -> R.drawable.ic_mtrl_location_changed;
+            case "onMapReady" -> R.drawable.ic_mtrl_map_ready;
+            case "onMarkerClicked" -> R.drawable.ic_mtrl_loc_click;
+            default -> ManageEvent.getDrawableForEvent(eventName);
         };
     }
 
-    public static String a(String eventName, Context context) {
+    public static String getEventName(String eventName) {
         return switch (eventName) {
             case "initializeLogic" -> Helper.getResString(R.string.event_initialize);
             case "onBackPressed" -> Helper.getResString(R.string.event_onbackpressed);
@@ -145,17 +146,17 @@ public class oq {
             case "onMapReady" -> Helper.getResString(R.string.event_on_map_ready);
             case "onMarkerClicked" -> Helper.getResString(R.string.event_on_marker_clicked);
             case "onLocationChanged" -> Helper.getResString(R.string.event_on_location_changed);
-            default -> ManageEvent.e(eventName);
+            default -> ManageEvent.getEventDescription(eventName);
         };
     }
 
-    public static String[] a() {
-        return a;
+    public static String[] getAllActivityEvents() {
+        return ACTIVITY_EVENTS;
     }
 
-    public static String[] a(Gx classInfo) {
+    public static String[] getComponentEventsForClass(Gx classInfo) {
         ArrayList<String> eventList = new ArrayList<>();
-        ManageEvent.h(classInfo, eventList);
+        ManageEvent.addExtraComponentEvents(classInfo, eventList);
         if (classInfo.a("ObjectAnimator")) {
             eventList.add("onAnimationStart");
             eventList.add("onAnimationEnd");
@@ -231,9 +232,9 @@ public class oq {
         return eventList.toArray(new String[0]);
     }
 
-    public static String[] b(Gx classInfo) {
+    public static String[] getListenersForClass(Gx classInfo) {
         ArrayList<String> eventList = new ArrayList<>();
-        ManageEvent.b(classInfo, eventList);
+        ManageEvent.addExtraListeners(classInfo, eventList);
         if (classInfo.a("Clickable")) {
             eventList.add("onClickListener");
             eventList.add("onLongClickListener");
@@ -328,9 +329,9 @@ public class oq {
         return eventList.toArray(new String[0]);
     }
 
-    public static String[] b(String listenerName) {
+    public static String[] getEventsForListener(String listenerName) {
         ArrayList<String> eventList = new ArrayList<>();
-        ManageEvent.c(listenerName, eventList);
+        ManageEvent.addEventsForListener(listenerName, eventList);
 
         switch (listenerName) {
             case "onClickListener" -> eventList.add("onClick");
@@ -421,9 +422,9 @@ public class oq {
         return eventList.toArray(new String[0]);
     }
 
-    public static String[] c(Gx classInfo) {
+    public static String[] getEventsForClass(Gx classInfo) {
         ArrayList<String> eventList = new ArrayList<>();
-        ManageEvent.a(classInfo, eventList);
+        ManageEvent.addExtraEvents(classInfo, eventList);
         if (classInfo.a("Clickable")) {
             eventList.add("onClick");
         }

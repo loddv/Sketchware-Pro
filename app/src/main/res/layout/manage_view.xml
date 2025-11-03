@@ -1,84 +1,99 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:fitsSystemWindows="true"
+    tools:ignore="ContentDescription">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        android:background="?attr/colorSurface"
+        android:fitsSystemWindows="true"
+        app:liftOnScrollColor="@color/transparent">
 
-        <include layout="@layout/toolbar" />
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topAppBar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:title="@string/design_actionbar_title_manager_view" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tab_layout"
-            style="@style/ManageViewTabLayout"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_gravity="bottom" />
+            android:layout_height="wrap_content" />
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <LinearLayout
+        android:id="@+id/contentLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:animateLayoutChanges="true"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <androidx.coordinatorlayout.widget.CoordinatorLayout
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/view_pager"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="10dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-            <androidx.viewpager.widget.ViewPager
-                android:id="@+id/view_pager"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+    </LinearLayout>
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/fab"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom|center|right"
-                android:layout_margin="16dp"
-                android:backgroundTint="@color/color_btn_ltpink_normal"
-                android:src="@drawable/ic_add_white_36dp"
-                app:borderWidth="0dp" />
-        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_mtrl_add"
+        app:icon="@drawable/ic_mtrl_add"
+        tools:ignore="ContentDescription" />
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/layout_btn_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="14dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="?attr/colorSurfaceContainer"
+        app:cardCornerRadius="18dp"
+        app:cardElevation="5dp"
+        app:strokeWidth="0.5dp"
+        tools:visibility="visible">
 
         <LinearLayout
-            android:id="@+id/layout_btn_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:background="#ffffffff"
-            android:orientation="horizontal"
-            android:padding="4dp"
-            android:visibility="gone">
+            android:layout_margin="4dp"
+            android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_cancel"
+                style="?attr/materialIconButtonFilledTonalStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
+                android:layout_marginHorizontal="4dp"
                 android:layout_weight="1"
-                android:textColor="#ffffffff"
+                android:text="@string/cancel"
                 android:textSize="@dimen/text_size_button_material"
-                android:theme="@style/AppTheme.Button.Blue" />
+                app:cornerRadius="15dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_delete"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginHorizontal="4dp"
                 android:layout_weight="1"
-                android:textColor="#ffffffff"
+                android:text="@string/common_word_delete"
                 android:textSize="@dimen/text_size_button_material"
-                android:textStyle="bold"
-                android:theme="@style/AppTheme.Button.LightBlue" />
+                app:cornerRadius="15dp" />
         </LinearLayout>
-    </LinearLayout>
-</LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

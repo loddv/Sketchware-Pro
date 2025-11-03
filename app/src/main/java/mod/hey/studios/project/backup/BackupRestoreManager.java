@@ -1,30 +1,34 @@
 package mod.hey.studios.project.backup;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.os.AsyncTask;
-import android.os.Environment;
+import android.view.LayoutInflater;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.besome.sketch.ProjectsFragment;
-import com.github.angads25.filepicker.model.DialogConfigs;
-import com.github.angads25.filepicker.model.DialogProperties;
-import com.github.angads25.filepicker.view.FilePickerDialog;
-import com.sketchware.remod.R;
+import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.List;
 
-import a.a.a.aB;
 import a.a.a.lC;
-import mod.SketchwareUtil;
-import mod.agus.jcoderz.lib.FileUtil;
+import dev.pranav.filepicker.FilePickerCallback;
+import dev.pranav.filepicker.FilePickerDialogFragment;
+import dev.pranav.filepicker.FilePickerOptions;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.activities.main.fragments.projects.ProjectsFragment;
+import pro.sketchware.databinding.ProgressMsgBoxBinding;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 public class BackupRestoreManager {
 
@@ -59,9 +63,9 @@ public class BackupRestoreManager {
         backupDialogStates.put(0, false);
         backupDialogStates.put(1, false);
 
-        aB dialog = new aB(act);
-        dialog.a(R.drawable.ic_backup);
-        dialog.b("Backup Options");
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(act);
+        dialog.setIcon(R.drawable.ic_backup);
+        dialog.setTitle("Backup Options");
 
         LinearLayout checkboxContainer = new LinearLayout(act);
         checkboxContainer.setOrientation(LinearLayout.VERTICAL);
@@ -109,12 +113,12 @@ public class BackupRestoreManager {
         includeUsedCustomBlocks.setOnCheckedChangeListener(listener);
         checkboxContainer.addView(includeUsedCustomBlocks);
 
-        dialog.a(checkboxContainer);
-        dialog.b("Back up", v -> {
-            dialog.dismiss();
+        dialog.setView(checkboxContainer);
+        dialog.setPositiveButton("Back up", (v, which) -> {
+            v.dismiss();
             doBackup(sc_id, project_name);
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
@@ -126,40 +130,37 @@ public class BackupRestoreManager {
     /*** Restore ***/
 
     public void restore() {
-        DialogProperties properties = new DialogProperties();
-        properties.selection_mode = DialogConfigs.MULTI_MODE;
-        properties.selection_type = DialogConfigs.FILE_SELECT;
-        properties.root = Environment.getExternalStorageDirectory();
-        properties.error_dir = Environment.getExternalStorageDirectory();
-        properties.offset = new File(BackupFactory.getBackupDir());
-        properties.extensions = new String[]{BackupFactory.EXTENSION};
+        FilePickerOptions options = new FilePickerOptions();
+        options.setMultipleSelection(true);
+        options.setExtensions(new String[]{BackupFactory.EXTENSION});
+        options.setTitle("Select backups to restore (" + BackupFactory.EXTENSION + ")");
 
-        FilePickerDialog fpd = new FilePickerDialog(act, properties);
-        fpd.setTitle("Select backups to restore (" + BackupFactory.EXTENSION + ")");
-        fpd.setDialogSelectionListener(files -> {
-            for (int i = 0; i < files.length; i++) {
-                String backupFilePath = files[i];
+        FilePickerCallback callback = new FilePickerCallback() {
+            @Override
+            public void onFilesSelected(@NotNull List<? extends File> files) {
+                for (int i = 0; i < files.size(); i++) {
+                    String backupFilePath = files.get(i).getAbsolutePath();
 
-                if (BackupFactory.zipContainsFile(backupFilePath, "local_libs")) {
-                    boolean restoringMultipleBackups = files.length > 1;
+                    if (BackupFactory.zipContainsFile(backupFilePath, "local_libs")) {
+                        boolean restoringMultipleBackups = files.size() > 1;
 
-                    new AlertDialog.Builder(act)
-                            .setTitle("Warning")
-                            .setMessage(getRestoreIntegratedLocalLibrariesMessage(restoringMultipleBackups, i, files.length,
-                                    FileUtil.getFileNameNoExtension(backupFilePath)))
-                            .setPositiveButton("Copy", (dialog, which) ->
-                                    doRestore(backupFilePath, true))
-                            .setNegativeButton("Don't copy", (dialog, which) ->
-                                    doRestore(backupFilePath, false))
-                            .setNeutralButton(R.string.common_word_cancel, null)
-                            .show();
-                } else {
-                    doRestore(backupFilePath, false);
+                        new MaterialAlertDialogBuilder(act)
+                                .setTitle("Warning")
+                                .setMessage(getRestoreIntegratedLocalLibrariesMessage(restoringMultipleBackups, i, files.size(),
+                                        FileUtil.getFileNameNoExtension(backupFilePath)))
+                                .setPositiveButton("Copy", (dialog, which) -> doRestore(backupFilePath, true))
+                                .setNegativeButton("Don't copy", (dialog, which) -> doRestore(backupFilePath, false))
+                                .setNeutralButton(R.string.common_word_cancel, null)
+                                .show();
+
+                    } else {
+                        doRestore(backupFilePath, false);
+                    }
                 }
             }
-        });
+        };
 
-        fpd.show();
+        new FilePickerDialogFragment(options, callback).show(projectsFragment.getChildFragmentManager(), "file_picker");
     }
 
     public void doRestore(String file, boolean restoreLocalLibs) {
@@ -173,7 +174,7 @@ public class BackupRestoreManager {
         private final HashMap<Integer, Boolean> options;
         private final WeakReference<Activity> activityWeakReference;
         private BackupFactory bm;
-        private ProgressDialog dlg;
+        private AlertDialog dlg;
 
         BackupAsyncTask(WeakReference<Activity> activityWeakReference, String sc_id, String project_name, HashMap<Integer, Boolean> options) {
             this.activityWeakReference = activityWeakReference;
@@ -184,9 +185,13 @@ public class BackupRestoreManager {
 
         @Override
         protected void onPreExecute() {
-            dlg = new ProgressDialog(activityWeakReference.get());
-            dlg.setMessage("Creating backup...");
-            dlg.setCancelable(false);
+            ProgressMsgBoxBinding loadingDialogBinding = ProgressMsgBoxBinding.inflate(LayoutInflater.from(activityWeakReference.get()));
+            loadingDialogBinding.tvProgress.setText("Creating backup...");
+            dlg = new MaterialAlertDialogBuilder(activityWeakReference.get())
+                    .setTitle("Please wait")
+                    .setCancelable(false)
+                    .setView(loadingDialogBinding.getRoot())
+                    .create();
             dlg.show();
         }
 
@@ -196,7 +201,7 @@ public class BackupRestoreManager {
             bm.setBackupLocalLibs(options.get(0));
             bm.setBackupCustomBlocks(options.get(1));
 
-            bm.backup(project_name);
+            bm.backup(activityWeakReference.get(), project_name);
 
             return "";
         }
@@ -220,7 +225,7 @@ public class BackupRestoreManager {
         private final ProjectsFragment projectsFragment;
         private final boolean restoreLocalLibs;
         private BackupFactory bm;
-        private ProgressDialog dlg;
+        private AlertDialog dlg;
         private boolean error = false;
 
         RestoreAsyncTask(WeakReference<Activity> activityWeakReference, String file, boolean restoreLocalLibraries, ProjectsFragment projectsFragment) {
@@ -232,9 +237,13 @@ public class BackupRestoreManager {
 
         @Override
         protected void onPreExecute() {
-            dlg = new ProgressDialog(activityWeakReference.get());
-            dlg.setMessage("Restoring...");
-            dlg.setCancelable(false);
+            ProgressMsgBoxBinding loadingDialogBinding = ProgressMsgBoxBinding.inflate(LayoutInflater.from(activityWeakReference.get()));
+            loadingDialogBinding.tvProgress.setText("Restoring...");
+            dlg = new MaterialAlertDialogBuilder(activityWeakReference.get())
+                    .setTitle("Please wait")
+                    .setCancelable(false)
+                    .setView(loadingDialogBinding.getRoot())
+                    .create();
             dlg.show();
         }
 

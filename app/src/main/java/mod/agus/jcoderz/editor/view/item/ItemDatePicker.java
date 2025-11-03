@@ -7,12 +7,14 @@ import android.graphics.Rect;
 import android.view.MotionEvent;
 import android.widget.DatePicker;
 
-import com.besome.sketch.beans.ViewBean;
+import androidx.annotation.NonNull;
 
-import a.a.a.sy;
+import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
+
 import a.a.a.wB;
 
-public class ItemDatePicker extends DatePicker implements sy {
+public class ItemDatePicker extends DatePicker implements ItemView {
 
     private final Paint paint;
     private final int paddingFactor;
@@ -47,6 +49,7 @@ public class ItemDatePicker extends DatePicker implements sy {
         return isFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         isFixed = z;
     }
@@ -62,7 +65,7 @@ public class ItemDatePicker extends DatePicker implements sy {
     }
 
     @Override
-    public void onDraw(Canvas canvas) {
+    public void onDraw(@NonNull Canvas canvas) {
         if (hasSelection) {
             rect.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
             canvas.drawRect(rect, paint);

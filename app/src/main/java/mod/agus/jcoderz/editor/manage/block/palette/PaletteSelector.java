@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import dev.aldi.sayuti.block.ExtraBlockFile;
-import mod.SketchwareUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 public class PaletteSelector {
 
@@ -19,7 +19,7 @@ public class PaletteSelector {
 
     public ArrayList<HashMap<String, Object>> getPaletteSelector() {
         String paletteBlockFile = ExtraBlockFile.getPaletteBlockFile();
-        if (!paletteBlockFile.equals("")) {
+        if (!paletteBlockFile.isEmpty()) {
             try {
                 JSONArray palettes = new JSONArray(paletteBlockFile);
                 for (int i = 0; i < palettes.length(); i++) {

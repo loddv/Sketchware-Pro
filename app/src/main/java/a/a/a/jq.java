@@ -2,8 +2,6 @@ package a.a.a;
 
 import static android.text.TextUtils.isEmpty;
 
-import android.util.Pair;
-
 import com.besome.sketch.beans.AdTestDeviceBean;
 import com.besome.sketch.beans.ProjectLibraryBean;
 
@@ -172,6 +170,18 @@ public class jq {
     public boolean isHttp3Used = false;
 
     /**
+     * If at least 1 TextToSpeech Component ({@link com.besome.sketch.beans.ComponentBean#COMPONENT_TYPE_TEXT_TO_SPEECH})
+     * is used in the project.
+     */
+    public boolean isTextToSpeechUsed = false;
+
+    /**
+     * If at least 1 SpeechToText Component ({@link com.besome.sketch.beans.ComponentBean#COMPONENT_TYPE_SPEECH_TO_TEXT})
+     * is used in the project.
+     */
+    public boolean isSpeechToTextUsed = false;
+
+    /**
      * Permissions of the whole project, stored as bitfield.
      */
     public int q = 0;
@@ -194,10 +204,6 @@ public class jq {
     public String appId = "";
 
     public String sc_id = "";
-
-    public boolean isDynamicLinkUsed = false;
-
-    public ArrayList<Pair<String, String>> dlDataList = new ArrayList<>();
 
     /**
      * Device IDs registered as Test Devices for the current project.
@@ -298,20 +304,17 @@ public class jq {
         /**
          * True if Activity contains a Drawer.
          */
-        public boolean a = false;
+        public boolean hasDrawer = false;
 
         /**
          * True if Activity uses Firebase Auth.
          */
-        public boolean b = false;
+        public boolean usesFirebaseAuth = false;
 
         /**
          * The permissions bitfield.
          */
         public int c = 0;
-
-        public a() {
-        }
 
         public void a(int i) {
             c = i | c;

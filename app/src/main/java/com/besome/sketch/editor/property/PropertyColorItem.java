@@ -5,24 +5,27 @@ import android.app.Activity;
 import android.content.Context;
 import android.view.Gravity;
 import android.view.View;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import com.besome.sketch.lib.ui.ColorPickerDialog;
+
+import java.util.Objects;
 
 import a.a.a.Kw;
-import a.a.a.Zx;
 import a.a.a.mB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 @SuppressLint("ViewConstructor")
 public class PropertyColorItem extends RelativeLayout implements View.OnClickListener {
 
     private Context context;
     private String key;
+    private String sc_id;
+    private String resValue;
     private int value;
     private TextView tvName;
     private TextView tvValue;
@@ -37,6 +40,12 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         initialize(context, z);
     }
 
+    public PropertyColorItem(Context context, boolean z, String scId) {
+        super(context);
+        sc_id = scId;
+        initialize(context, z);
+    }
+
     public String getKey() {
         return key;
     }
@@ -47,11 +56,11 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         if (identifier > 0) {
             tvName.setText(Helper.getResString(identifier));
             if (propertyMenuItem.getVisibility() == VISIBLE) {
-                ((ImageView) findViewById(R.id.img_icon)).setImageResource(R.drawable.color_palette_48);
+                ((ImageView) findViewById(R.id.img_icon)).setImageResource(R.drawable.ic_mtrl_palette);
                 ((TextView) findViewById(R.id.tv_title)).setText(Helper.getResString(identifier));
                 return;
             }
-            imgLeftIcon.setImageResource(R.drawable.color_palette_48);
+            imgLeftIcon.setImageResource(R.drawable.ic_mtrl_palette);
         }
     }
 
@@ -61,6 +70,7 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
 
     public void setValue(int value) {
         this.value = value;
+        resValue = null;
         if (value == 0) {
             tvValue.setText("TRANSPARENT");
             viewColor.setBackgroundColor(value);
@@ -73,10 +83,27 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         }
     }
 
+    public String getResValue() {
+        return resValue;
+    }
+
+    public void setValue(int value, String resValue) {
+        this.value = value;
+        this.resValue = resValue;
+        if (value == 0) {
+            tvValue.setText("TRANSPARENT");
+        } else if (value == 0xffffff) {
+            tvValue.setText("NONE");
+        } else {
+            tvValue.setText(resValue);
+        }
+        viewColor.setBackgroundColor(value);
+    }
+
     @Override
     public void onClick(View v) {
         if (!mB.a()) {
-            showColorPicker();
+            showColorPicker(v);
         }
     }
 
@@ -88,9 +115,13 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         if (orientationItem == 0) {
             propertyItem.setVisibility(GONE);
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyItem.setOnClickListener(null);
+            propertyMenuItem.setOnClickListener(this);
         } else {
             propertyItem.setVisibility(VISIBLE);
             propertyMenuItem.setVisibility(GONE);
+            propertyItem.setOnClickListener(this);
+            propertyMenuItem.setOnClickListener(null);
         }
     }
 
@@ -103,32 +134,44 @@ public class PropertyColorItem extends RelativeLayout implements View.OnClickLis
         imgLeftIcon = findViewById(R.id.img_left_icon);
         propertyItem = findViewById(R.id.property_item);
         propertyMenuItem = findViewById(R.id.property_menu_item);
-        if (z) {
-            setOnClickListener(this);
-            setSoundEffectsEnabled(true);
-        }
+//        if (z) {
+//            propertyMenuItem.setOnClickListener(this);
+//            propertyMenuItem.setSoundEffectsEnabled(true);
+//        }
     }
 
-    private void showColorPicker() {
-        boolean colorNoneAvailable;
-        boolean colorTransparentAvailable;
-        View view = wB.a(context, R.layout.color_picker);
-        view.setAnimation(AnimationUtils.loadAnimation(context, R.anim.abc_fade_in));
-        if (key.equals("property_background_color")) {
-            colorTransparentAvailable = true;
-            colorNoneAvailable = true;
-        } else {
-            colorTransparentAvailable = false;
-            colorNoneAvailable = false;
-        }
-        Zx colorPicker = new Zx(view, (Activity) context, value, colorTransparentAvailable, colorNoneAvailable);
-        colorPicker.a(i -> {
-            setValue(i);
+    private void showColorPicker(View anchorView) {
+        String tvValueStr = tvValue.getText().toString();
+        String color;
+        if (tvValueStr.equals("NONE") || tvValueStr.equals("TRANSPARENT")) {
+            color = tvValueStr;
+        } else
+            color = Objects.requireNonNullElseGet(resValue, () -> String.format("#%06X", value));
+
+        ColorPickerDialog colorPicker = new ColorPickerDialog((Activity) context, color, key.equals("property_background_color"), true, sc_id);
+        colorPicker.a(new ColorPickerDialog.b() {
+            @Override
+            public void a(int var1) {
+                setValue(var1);
+                if (valueChangeListener != null) {
+                    valueChangeListener.a(key, value);
+                }
+            }
+
+            @Override
+            public void a(String var1, int var2) {
+                setValue(var2, "@color/" + var1);
+                if (valueChangeListener != null) {
+                    valueChangeListener.a(key, value);
+                }
+            }
+        });
+        colorPicker.materialColorAttr((attr, attrColor) -> {
+            setValue(attrColor, "?" + attr);
             if (valueChangeListener != null) {
                 valueChangeListener.a(key, value);
             }
         });
-        colorPicker.setAnimationStyle(R.anim.abc_fade_in);
-        colorPicker.showAtLocation(view, Gravity.CENTER, 0, 0);
+        colorPicker.showAtLocation(anchorView, Gravity.CENTER, 0, 0);
     }
 }

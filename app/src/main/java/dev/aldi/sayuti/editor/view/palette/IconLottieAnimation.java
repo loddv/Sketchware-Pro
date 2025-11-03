@@ -5,15 +5,15 @@ import android.view.ViewGroup;
 
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconLottieAnimation extends IconBase {
 
     public IconLottieAnimation(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_lottie);
+        setWidgetImage(R.drawable.ic_mtrl_animation);
         setWidgetName("Lottie");
     }
 

@@ -5,15 +5,15 @@ import android.view.ViewGroup;
 
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconBadgeView extends IconBase {
 
     public IconBadgeView(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_badge_view);
+        setWidgetImage(R.drawable.ic_mtrl_badge);
         setWidgetName("BadgeView");
     }
 

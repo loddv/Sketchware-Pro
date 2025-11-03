@@ -6,16 +6,17 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.AndroidxOrMaterialView;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
-public class IconMaterialButton extends IconBase {
+public class IconMaterialButton extends IconBase implements AndroidxOrMaterialView {
 
     public IconMaterialButton(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_material_button);
+        setWidgetImage(R.drawable.ic_mtrl_button_click);
         setWidgetName("MaterialButton");
     }
 
@@ -33,7 +34,7 @@ public class IconMaterialButton extends IconBase {
         viewBean.text.textColor = Color.WHITE;
         viewBean.text.text = getName();
         viewBean.convert = "com.google.android.material.button.MaterialButton";
-        viewBean.inject = "android:textAppearance=\"@style/TextAppearance.MaterialComponents.Button\"\napp:backgroundTint=\"@color/colorPrimary\"\napp:cornerRadius=\"8dp\"\nstyle=\"@style/Widget.MaterialComponents.Button\"";
+        viewBean.inject = "app:cornerRadius=\"8dp\"";
         return viewBean;
     }
 }

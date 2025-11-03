@@ -5,7 +5,7 @@ import android.content.pm.ApplicationInfo;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
-import android.widget.CheckBox;
+import android.widget.Checkable;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -15,9 +15,9 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.util.HashMap;
 
-import mod.agus.jcoderz.lib.FileUtil;
 import mod.hey.studios.util.Helper;
 import mod.jbk.util.LogUtil;
+import pro.sketchware.utility.FileUtil;
 
 public class ProjectSettings {
 
@@ -32,6 +32,11 @@ public class ProjectSettings {
      * Setting to make the app's main theme inherit from fully material-styled themes, and not *.Bridge ones
      */
     public static final String SETTING_ENABLE_BRIDGELESS_THEMES = "enable_bridgeless_themes";
+
+    /**
+     * Setting to enable view binding in the project
+     */
+    public static final String SETTING_ENABLE_VIEWBINDING = "enable_viewbinding";
 
     /**
      * Setting for the final app's {@link Application} class
@@ -51,6 +56,10 @@ public class ProjectSettings {
      * Setting to disable showing deprecated methods included in every generated class, e.g. showMessage(String)
      */
     public static final String SETTING_DISABLE_OLD_METHODS = "disable_old_methods";
+    /**
+     * Setting to use new xml command
+     */
+    public static final String SETTING_NEW_XML_COMMAND = "xml_command";
     public static final String SETTING_GENERIC_VALUE_TRUE = "true";
     public static final String SETTING_GENERIC_VALUE_FALSE = "false";
     private static final String TAG = "ProjectSettings";
@@ -58,8 +67,8 @@ public class ProjectSettings {
     public String sc_id;
     private HashMap<String, String> hashmap;
 
-    public ProjectSettings(String s) {
-        sc_id = s;
+    public ProjectSettings(String scId) {
+        sc_id = scId;
 
         path = getPath();
 
@@ -99,7 +108,7 @@ public class ProjectSettings {
     }
 
     public String getValue(String key, String defaultValue) {
-        if (hashmap.containsKey(key)) {
+        if (hashmap != null && hashmap.containsKey(key)) {
             if (!hashmap.get(key).isEmpty()) {
                 return hashmap.get(key);
             } else {
@@ -110,30 +119,34 @@ public class ProjectSettings {
         }
     }
 
+    private void processView(View v) {
+        if (v.getTag() != null) {
+            String key = (String) v.getTag();
+            String value;
+
+            if (v instanceof EditText editText) {
+                value = Helper.getText(editText);
+            } else if (v instanceof Checkable checkable) {
+                value = Boolean.toString(checkable.isChecked());
+            } else if (v instanceof RadioGroup radioGroup) {
+                value = getCheckedRbValue(radioGroup);
+            } else {
+                return;
+            }
+
+            hashmap.put(key, value);
+        }
+    }
+
     public void setValues(View... views) {
         for (View v : views) {
-            if (v.getTag() != null) {
-                String key = (String) v.getTag();  // v.getTag(0);
-                //String value = (String) v.getTag(1);
-                String value;
-
-                if (v instanceof EditText) {
-                    value = ((EditText) v).getText().toString();
-                } else if (v instanceof CheckBox) {
-                    value = ((CheckBox) v).isChecked() ? "true" : "false";
-                } else if (v instanceof RadioGroup) {
-
-                    value = getCheckedRbValue((RadioGroup) v);
-
-
-                    //value = ((RadioGroup)v).getCheckedRadioButtonId()
-                } else {
-                    continue;
-                }
-
-                hashmap.put(key, value);
-            }
+            processView(v);
         }
+        save();
+    }
+
+    public void setValue(String key, String value) {
+        hashmap.put(key, value);
         save();
     }
 
@@ -142,7 +155,7 @@ public class ProjectSettings {
             RadioButton rb = (RadioButton) rg.getChildAt(i);
 
             if (rb.isChecked()) {
-                return rb.getText().toString();
+                return Helper.getText(rb);
             }
         }
 

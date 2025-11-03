@@ -4,20 +4,22 @@ import android.content.Context;
 
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+
+import pro.sketchware.R;
 
 public class IconButton extends IconBase {
 
     public IconButton(Context context) {
         super(context);
+        initialize();
     }
 
-    public void a(Context context) {
-        super.a(context);
-        setWidgetImage(R.drawable.widget_button);
+    private void initialize() {
+        setWidgetImage(R.drawable.ic_mtrl_button_click);
         setWidgetName("Button");
     }
 
+    @Override
     public ViewBean getBean() {
         ViewBean viewBean = new ViewBean();
         viewBean.type = 3;

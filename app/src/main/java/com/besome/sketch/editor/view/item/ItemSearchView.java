@@ -4,20 +4,18 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.view.MotionEvent;
 import android.widget.SearchView;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
 
-import a.a.a.sy;
 import a.a.a.wB;
 
-public class ItemSearchView extends SearchView implements sy {
+public class ItemSearchView extends SearchView implements ItemView {
 
     private final Paint paint;
-    private final int paddingFactor;
-    private final Drawable background;
+    private final int dip;
     private final Rect rect;
     private ViewBean viewBean;
     private boolean hasSelection;
@@ -25,7 +23,7 @@ public class ItemSearchView extends SearchView implements sy {
 
     public ItemSearchView(Context context) {
         super(context);
-        paddingFactor = (int) wB.a(context, 1.0f);
+        dip = (int) wB.a(context, 1.0f);
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setColor(0x9599d5d0);
         rect = new Rect();
@@ -34,7 +32,6 @@ public class ItemSearchView extends SearchView implements sy {
         setFocusableInTouchMode(false);
         setIconifiedByDefault(false);
         setClickable(false);
-        background = getBackground();
     }
 
     @Override
@@ -52,6 +49,7 @@ public class ItemSearchView extends SearchView implements sy {
         return isFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         isFixed = z;
     }
@@ -76,17 +74,8 @@ public class ItemSearchView extends SearchView implements sy {
     }
 
     @Override
-    public void setBackgroundColor(int i) {
-        if (i == 0xffffff) {
-            setBackground(background);
-        } else {
-            super.setBackgroundColor(i);
-        }
-    }
-
-    @Override
     public void setPadding(int left, int top, int right, int bottom) {
-        super.setPadding(left * paddingFactor, top * paddingFactor, right * paddingFactor, paddingFactor * bottom);
+        super.setPadding(left * dip, top * dip, right * dip, dip * bottom);
     }
 
     @Override

@@ -1,6 +1,11 @@
 package dev.aldi.sayuti.block;
 
+import static pro.sketchware.utility.ThemeUtils.getColor;
+import static pro.sketchware.utility.ThemeUtils.isDarkThemeEnabled;
+
 import android.util.Pair;
+
+import androidx.annotation.ColorInt;
 
 import com.besome.sketch.beans.ComponentBean;
 import com.besome.sketch.beans.ProjectFileBean;
@@ -12,20 +17,24 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
+import a.a.a.Ox;
 import a.a.a.jC;
 import a.a.a.jq;
 import a.a.a.kq;
-import a.a.a.Ox;
-import mod.SketchwareUtil;
 import mod.agus.jcoderz.beans.ViewBeans;
-import mod.agus.jcoderz.lib.FileResConfig;
-import mod.elfilibustero.sketch.lib.utils.CustomVariableUtil;
-import mod.hasrat.blocks.ExtraBlocks;
-import mod.hasrat.control.logic.LogicClickListener;
 import mod.hey.studios.editor.view.IdGenerator;
 import mod.hey.studios.moreblock.ReturnMoreblockManager;
 import mod.hilal.saif.activities.tools.ConfigActivity;
 import mod.hilal.saif.blocks.BlocksHandler;
+import mod.pranav.viewbinding.ViewBindingBuilder;
+import pro.sketchware.R;
+import pro.sketchware.activities.resourceseditor.components.utils.StringsEditorManager;
+import pro.sketchware.blocks.ExtraBlocks;
+import pro.sketchware.control.logic.LogicClickListener;
+import pro.sketchware.utility.CustomVariableUtil;
+import pro.sketchware.utility.FileResConfig;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 public class ExtraPaletteBlock {
 
@@ -39,16 +48,18 @@ public class ExtraPaletteBlock {
     private final FileResConfig frc;
     private final HashMap<String, Object> mapSave = new HashMap<>();
     private final ProjectFileBean projectFile;
+    private final Boolean isViewBindingEnabled;
     public LogicEditorActivity logicEditor;
 
-    public ExtraPaletteBlock(LogicEditorActivity logicEditorActivity) {
+    public ExtraPaletteBlock(LogicEditorActivity logicEditorActivity, Boolean isViewBindingEnabled) {
         logicEditor = logicEditorActivity;
-        eventName = logicEditorActivity.D;
+        eventName = logicEditorActivity.eventName;
 
         projectFile = logicEditor.M;
         javaName = projectFile.getJavaName();
         xmlName = projectFile.getXmlName();
-        sc_id = logicEditor.B;
+        sc_id = logicEditor.scId;
+        this.isViewBindingEnabled = isViewBindingEnabled;
 
         frc = new FileResConfig(sc_id);
         extraBlocks = new ExtraBlocks(logicEditor);
@@ -70,13 +81,13 @@ public class ExtraPaletteBlock {
         }
         if (eventName.equals("onBindCustomView")) {
             var eC = jC.a(sc_id);
-            var view = eC.c(xmlName, logicEditor.C);
+            var view = eC.c(xmlName, logicEditor.id);
             if (view == null) {
                 // in case the View's in a Drawer
-                view = eC.c("_drawer_" + xmlName, logicEditor.C);
+                view = eC.c("_drawer_" + xmlName, logicEditor.id);
             }
             String customView = view.customView;
-            if (customView != null && customView.length() > 0) {
+            if (customView != null && !customView.isEmpty()) {
                 for (ViewBean viewBean : jC.a(sc_id).d(ProjectFileBean.getXmlName(customView))) {
                     if (viewBean.getClassInfo().a(str)) {
                         mapSave.put(str, true);
@@ -101,23 +112,17 @@ public class ExtraPaletteBlock {
         return switch (str) {
             case "circleimageview" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_CIRCLEIMAGEVIEW, str2);
-            case "onesignal" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_ONESIGNAL, str2);
             case "asynctask" -> jC.a(sc_id).d(javaName, 36, str2);
             case "otpview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_OTPVIEW, str2);
             case "lottie" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_LOTTIEANIMATIONVIEW, str2);
             case "phoneauth" ->
                     jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_PHONE, str2);
-            case "fbadbanner" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FACEBOOK_ADS_BANNER, str2);
             case "codeview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_CODEVIEW, str2);
             case "recyclerview" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_RECYCLERVIEW, str2);
             case "googlelogin" ->
                     jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_GOOGLE_LOGIN, str2);
-            case "dynamiclink" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_DYNAMIC_LINKS, str2);
             case "youtubeview" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_YOUTUBEPLAYERVIEW, str2);
             case "signinbutton" ->
@@ -125,8 +130,6 @@ public class ExtraPaletteBlock {
             case "cardview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_CARDVIEW, str2);
             case "radiogroup" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_RADIOGROUP, str2);
-            case "fbadinterstitial" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FACEBOOK_ADS_INTERSTITIAL, str2);
             case "textinputlayout" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_TEXTINPUTLAYOUT, str2);
             case "collapsingtoolbar" ->
@@ -154,35 +157,35 @@ public class ExtraPaletteBlock {
     private void variables() {
         ArrayList<String> booleanVariables = jC.a(sc_id).e(javaName, 0);
         for (int i = 0; i < booleanVariables.size(); i++) {
-            if (i == 0) logicEditor.a("Boolean", 0xff555555);
+            if (i == 0) logicEditor.a("Boolean", getTitleBgColor());
 
             logicEditor.a(booleanVariables.get(i), "b", "getVar").setTag(booleanVariables.get(i));
         }
 
         ArrayList<String> numberVariables = jC.a(sc_id).e(javaName, 1);
         for (int i = 0; i < numberVariables.size(); i++) {
-            if (i == 0) logicEditor.a("Number", 0xff555555);
+            if (i == 0) logicEditor.a("Number", getTitleBgColor());
 
             logicEditor.a(numberVariables.get(i), "d", "getVar").setTag(numberVariables.get(i));
         }
 
         ArrayList<String> stringVariables = jC.a(sc_id).e(javaName, 2);
         for (int i = 0; i < stringVariables.size(); i++) {
-            if (i == 0) logicEditor.a("String", 0xff555555);
+            if (i == 0) logicEditor.a("String", getTitleBgColor());
 
             logicEditor.a(stringVariables.get(i), "s", "getVar").setTag(stringVariables.get(i));
         }
 
         ArrayList<String> mapVariables = jC.a(sc_id).e(javaName, 3);
         for (int i = 0; i < mapVariables.size(); i++) {
-            if (i == 0) logicEditor.a("Map", 0xff555555);
+            if (i == 0) logicEditor.a("Map", getTitleBgColor());
 
             logicEditor.a(mapVariables.get(i), "a", "getVar").setTag(mapVariables.get(i));
         }
 
         ArrayList<String> customVariables = jC.a(sc_id).e(javaName, 5);
         for (int i = 0; i < customVariables.size(); i++) {
-            if (i == 0) logicEditor.a("Custom Variable", 0xff555555);
+            if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
 
             String[] split = customVariables.get(i).split(" ");
             if (split.length > 1) {
@@ -194,7 +197,7 @@ public class ExtraPaletteBlock {
 
         ArrayList<String> customVariables2 = jC.a(sc_id).e(javaName, 6);
         for (int i = 0; i < customVariables2.size(); i++) {
-            if (i == 0) logicEditor.a("Custom Variable", 0xff555555);
+            if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
 
             String variable = customVariables2.get(i);
             String variableType = CustomVariableUtil.getVariableType(variable);
@@ -203,12 +206,13 @@ public class ExtraPaletteBlock {
                 String type = switch (variableType) {
                     case "boolean", "Boolean" -> "b";
                     case "String" -> "s";
-                    case "double", "Double", "int", "Integer", "float", "Float", "long", "Long", "short", "Short" -> "d";
+                    case "double", "Double", "int", "Integer", "float", "Float", "long", "Long",
+                         "short", "Short" -> "d";
                     default -> "v";
                 };
                 logicEditor.a(variableName, type, variableType, "getVar").setTag(variable);
             } else {
-                logicEditor.a("Invalid: " + variable, 0xfff44336);
+                logicEditor.a("Invalid: " + variable, getColor(logicEditor, R.attr.colorError));
             }
         }
         BlocksHandler.primaryBlocksA(
@@ -231,7 +235,7 @@ public class ExtraPaletteBlock {
             ComponentBean component = components.get(i);
 
             if (i == 0) {
-                logicEditor.a("Components", 0xff555555);
+                logicEditor.a("Components", getTitleBgColor());
             }
 
             if (component.type != 27) {
@@ -242,7 +246,7 @@ public class ExtraPaletteBlock {
 
     private void blockCustomViews() {
         if (eventName.equals("onBindCustomView")) {
-            String viewId = logicEditor.C;
+            String viewId = logicEditor.id;
             var eC = jC.a(sc_id);
             ViewBean viewBean = eC.c(xmlName, viewId);
             if (viewBean == null) {
@@ -250,18 +254,19 @@ public class ExtraPaletteBlock {
                 viewBean = eC.c("_drawer_" + xmlName, viewId);
             }
             String viewBeanCustomView = viewBean.customView;
-            if (viewBeanCustomView != null && viewBeanCustomView.length() > 0) {
+            if (viewBeanCustomView != null && !viewBeanCustomView.isEmpty()) {
                 ArrayList<ViewBean> customViews = jC.a(sc_id).d(ProjectFileBean.getXmlName(viewBeanCustomView));
                 for (int i = 0, customViewsSize = customViews.size(); i < customViewsSize; i++) {
                     ViewBean customView = customViews.get(i);
 
                     if (i == 0) {
-                        logicEditor.a("Custom Views", 0xff555555);
+                        logicEditor.a("Custom Views", getTitleBgColor());
                     }
 
                     if (!customView.convert.equals("include")) {
                         String typeName = customView.convert.isEmpty() ? ViewBean.getViewTypeName(customView.type) : IdGenerator.getLastPath(customView.convert);
-                        logicEditor.a(customView.id, "v", typeName, "getVar").setTag(customView.id);
+                        String resultId = isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(customView.id) : customView.id;
+                        logicEditor.a(resultId, "v", typeName, "getVar").setTag(resultId);
                     }
                 }
             }
@@ -278,13 +283,13 @@ public class ExtraPaletteBlock {
             Set<String> toNotAdd = new Ox(new jq(), projectFile).readAttributesToReplace(view);
 
             if (i == 0) {
-                logicEditor.a("Views", 0xff555555);
+                logicEditor.a("Views", getTitleBgColor());
             }
 
             if (!view.convert.equals("include")) {
                 if (!toNotAdd.contains("android:id")) {
                     String typeName = view.convert.isEmpty() ? ViewBean.getViewTypeName(view.type) : IdGenerator.getLastPath(view.convert);
-                    logicEditor.a(view.id, "v", typeName, "getVar").setTag(view.id);
+                    logicEditor.a(isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v", typeName, "getVar").setTag(isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id);
                 }
             }
         }
@@ -298,13 +303,13 @@ public class ExtraPaletteBlock {
                     ViewBean drawerView = drawerViews.get(i);
 
                     if (i == 0) {
-                        logicEditor.a("Drawer Views", 0xff555555);
+                        logicEditor.a("Drawer Views", getTitleBgColor());
                     }
 
                     if (!drawerView.convert.equals("include")) {
                         String id = "_drawer_" + drawerView.id;
                         String typeName = drawerView.convert.isEmpty() ? ViewBean.getViewTypeName(drawerView.type) : IdGenerator.getLastPath(drawerView.convert);
-                        logicEditor.a(id, "v", typeName, "getVar").setTag(id);
+                        logicEditor.a(isViewBindingEnabled ? "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id, "v", typeName, "getVar").setTag(id);
                     }
                 }
             }
@@ -314,28 +319,28 @@ public class ExtraPaletteBlock {
     private void blockEvents() {
         switch (eventName) {
             case "onTabAdded", "onTabLayoutNewTabAdded" -> {
-                logicEditor.a("Fragment & TabLayout", 0xff555555);
+                logicEditor.a("Fragment & TabLayout", getTitleBgColor());
                 logicEditor.a("f", "returnTitle");
             }
             case "onFragmentAdded" -> {
-                logicEditor.a("Fragment & TabLayout", 0xff555555);
+                logicEditor.a("Fragment & TabLayout", getTitleBgColor());
                 logicEditor.a("f", "returnFragment");
             }
             case "onScrollChanged" -> {
-                logicEditor.a("ListView", 0xff555555);
+                logicEditor.a("ListView", getTitleBgColor());
                 logicEditor.a("d", "listscrollparam");
                 logicEditor.a("d", "getLastVisiblePosition");
             }
             case "onScrollChanged2" -> {
-                logicEditor.a("RecyclerView", 0xff555555);
+                logicEditor.a("RecyclerView", getTitleBgColor());
                 logicEditor.a("d", "recyclerscrollparam");
             }
             case "onPageChanged" -> {
-                logicEditor.a("ViewPager", 0xff555555);
+                logicEditor.a("ViewPager", getTitleBgColor());
                 logicEditor.a("d", "pagerscrollparam");
             }
             case "onCreateOptionsMenu" -> {
-                logicEditor.a("Menu", 0xff555555);
+                logicEditor.a("Menu", getTitleBgColor());
                 logicEditor.a(" ", "menuInflater");
                 logicEditor.a(" ", "menuAddItem");
                 logicEditor.a(" ", "menuAddMenuItem");
@@ -359,7 +364,7 @@ public class ExtraPaletteBlock {
                     if (variableName != null) {
                         logicEditor.a(variableName, "l", "List", "getVar").setTag(name);
                     } else {
-                        logicEditor.a("Invalid: " + name, 0xfff44336);
+                        logicEditor.a("Invalid: " + name, getColor(logicEditor, R.attr.colorError));
                     }
                 }
             }
@@ -381,7 +386,7 @@ public class ExtraPaletteBlock {
             if (paletteId == 3) {
                 logicEditor.a(" ", "addSourceDirectly");
             } else {
-                logicEditor.a("Enter the path without import & semicolon", 0xff555555);
+                logicEditor.a("Enter the path without import & semicolon", getTitleBgColor());
                 logicEditor.a(" ", "customImport");
                 logicEditor.a(" ", "customImport2");
             }
@@ -389,6 +394,25 @@ public class ExtraPaletteBlock {
         }
 
         switch (paletteId) {
+            case -1:
+                String filePath = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id.concat("/files/resource/values/strings.xml"));
+                ArrayList<HashMap<String, Object>> StringsListMap = new ArrayList<>();
+                StringsEditorManager stringsEditorManager = new StringsEditorManager();
+                stringsEditorManager.convertXmlStringsToListMap(FileUtil.readFileIfExist(filePath), StringsListMap);
+
+                logicEditor.b("Open Resources editor", "openResourcesEditor");
+
+                logicEditor.a("s", "getResString");
+                logicEditor.a("Saved Res Strings :", getTitleBgColor());
+                if (!stringsEditorManager.isXmlStringsExist(StringsListMap, "app_name")) {
+                    logicEditor.a("app_name", "s", "getResStr").setTag("S98ZCSapp_name");
+                }
+
+                for (int i = 0; i < StringsListMap.size(); i++) {
+                    String key = StringsListMap.get(i).get("key").toString();
+                    logicEditor.a(key, "s", "getResStr").setTag("S98ZCS" + key);
+                }
+                return;
             case 0:
                 logicEditor.b("Add variable", "variableAdd");
                 logicEditor.b("Add custom variable", "variableAddNew", clickListener);
@@ -440,8 +464,8 @@ public class ExtraPaletteBlock {
 
             case 5:
                 extraBlocks.fileBlocks();
-                logicEditor.a("FileUtil Blocks", 0xff555555);
-                if (frc.getAssetsFile().size() > 0) {
+                logicEditor.a("FileUtil Blocks", getTitleBgColor());
+                if (!frc.getAssetsFile().isEmpty()) {
                     logicEditor.a(" ", "getAssetFile");
                     logicEditor.a("s", "copyAssetFile");
                 }
@@ -546,7 +570,7 @@ public class ExtraPaletteBlock {
                 if (textViewUsed || compoundButtonUsed || autoCompleteTextViewUsed
                         || multiAutoCompleteTextViewUsed || imageViewUsed || ratingBarUsed
                         || seekBarUsed || progressBarUsed || videoViewUsed || webViewUsed) {
-                    logicEditor.a("Widgets", 0xff555555);
+                    logicEditor.a("Widgets", getTitleBgColor());
 
                     if (textViewUsed) {
                         logicEditor.a(" ", "setText");
@@ -651,7 +675,7 @@ public class ExtraPaletteBlock {
                 boolean viewPagerUsed = isWidgetUsed("ViewPager");
 
                 if (spinnerUsed || listViewUsed || recyclerViewUsed || gridViewUsed || viewPagerUsed) {
-                    logicEditor.a("List", 0xff555555);
+                    logicEditor.a("List", getTitleBgColor());
 
                     if (spinnerUsed) {
                         logicEditor.a(" ", "spnSetData");
@@ -719,7 +743,7 @@ public class ExtraPaletteBlock {
                 boolean textInputLayoutUsed = isWidgetUsed("TextInputLayout") || extraBlocks.isCustomVarUsed("TextInputLayout");
 
                 if (drawerUsed || fabUsed || bottomNavigationViewUsed || swipeRefreshLayoutUsed || cardViewUsed || tabLayoutUsed || textInputLayoutUsed) {
-                    logicEditor.a("AndroidX components", 0xff555555);
+                    logicEditor.a("AndroidX components", getTitleBgColor());
 
                     if (drawerUsed) {
                         logicEditor.a("b", "isDrawerOpen");
@@ -783,7 +807,7 @@ public class ExtraPaletteBlock {
                 boolean otpViewUsed = isWidgetUsed("OTPView");
 
                 if (waveSideBarUsed || badgeViewUsed || bubbleLayoutUsed || patternLockViewUsed || codeViewUsed || lottieAnimationViewUsed) {
-                    logicEditor.a("Library", 0xff555555);
+                    logicEditor.a("Library", getTitleBgColor());
 
                     if (otpViewUsed) {
                         logicEditor.a(" ", "otpViewSetFieldCount");
@@ -850,7 +874,7 @@ public class ExtraPaletteBlock {
                 boolean mapViewUsed = isWidgetUsed("MapView");
 
                 if (signInButtonUsed || youtubePlayerViewUsed || adMobUsed || mapViewUsed) {
-                    logicEditor.a("Google", 0xff555555);
+                    logicEditor.a("Google", getTitleBgColor());
 
                     if (signInButtonUsed) {
                         logicEditor.a(" ", "signInButtonSetColorScheme");
@@ -886,7 +910,7 @@ public class ExtraPaletteBlock {
                 boolean calendarViewUsed = isWidgetUsed("CalendarView");
 
                 if (timePickerUsed || calendarViewUsed) {
-                    logicEditor.a("Date & Time", 0xff555555);
+                    logicEditor.a("Date & Time", getTitleBgColor());
 
                     if (timePickerUsed) {
                         logicEditor.a(" ", "timepickerSetHour");
@@ -903,7 +927,7 @@ public class ExtraPaletteBlock {
                     }
                 }
             }
-            logicEditor.a("Function", 0xff555555);
+            logicEditor.a("Function", getTitleBgColor());
             logicEditor.a(" ", "performClick");
             logicEditor.a("c", "viewOnClick");
             logicEditor.a("c", "viewOnLongClick");
@@ -926,7 +950,7 @@ public class ExtraPaletteBlock {
                 logicEditor.a("f", "finishAffinity");
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_INTENT)
                         || extraBlocks.isCustomVarUsed("Intent")) {
-                    logicEditor.a("Intent", 0xff555555);
+                    logicEditor.a("Intent", getTitleBgColor());
                     logicEditor.a(" ", "intentSetAction");
                     logicEditor.a(" ", "intentSetData");
                     logicEditor.a(" ", "intentSetType");
@@ -938,32 +962,32 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "startActivity");
                     logicEditor.a(" ", "startActivityWithChooser");
                 }
-                if (frc.getBroadcastFile().size() > 0) {
-                    logicEditor.a("Broadcast", 0xff555555);
+                if (!frc.getBroadcastFile().isEmpty()) {
+                    logicEditor.a("Broadcast", getTitleBgColor());
                     logicEditor.a(" ", "sendBroadcast");
                 }
-                if (frc.getServiceFile().size() > 0) {
-                    logicEditor.a("Service", 0xff555555);
+                if (!frc.getServiceFile().isEmpty()) {
+                    logicEditor.a("Service", getTitleBgColor());
                     logicEditor.a(" ", "startService");
                     logicEditor.a(" ", "stopService");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SHAREDPREF)) {
-                    logicEditor.a("SharedPreferences", 0xff555555);
+                    logicEditor.a("SharedPreferences", getTitleBgColor());
                     logicEditor.a("b", "fileContainsData");
                     logicEditor.a("s", "fileGetData");
                     logicEditor.a(" ", "fileSetData");
                     logicEditor.a(" ", "fileRemoveData");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_DATE_PICKER_DIALOG)) {
-                    logicEditor.a("DatePickerDialog", 0xff555555);
+                    logicEditor.a("DatePickerDialog", getTitleBgColor());
                     logicEditor.a(" ", "datePickerDialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TIME_PICKER_DIALOG)) {
-                    logicEditor.a("TimePickerDialog", 0xff555555);
+                    logicEditor.a("TimePickerDialog", getTitleBgColor());
                     logicEditor.a(" ", "timePickerDialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_CALENDAR)) {
-                    logicEditor.a("Calendar", 0xff555555);
+                    logicEditor.a("Calendar", getTitleBgColor());
                     logicEditor.a(" ", "calendarGetNow");
                     logicEditor.a(" ", "calendarAdd");
                     logicEditor.a(" ", "calendarSet");
@@ -973,24 +997,24 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "calendarSetTime");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_VIBRATOR)) {
-                    logicEditor.a("Vibrator", 0xff555555);
+                    logicEditor.a("Vibrator", getTitleBgColor());
                     logicEditor.a(" ", "vibratorAction");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TIMERTASK)
                         || extraBlocks.isCustomVarUsed("Timer")) {
-                    logicEditor.a("Timer", 0xff555555);
+                    logicEditor.a("Timer", getTitleBgColor());
                     logicEditor.a("c", "timerAfter");
                     logicEditor.a("c", "timerEvery");
                     logicEditor.a(" ", "timerCancel");
                 }
                 if (extraBlocks.isComponentUsed(36)) {
-                    logicEditor.a("AsyncTask", 0xff555555);
+                    logicEditor.a("AsyncTask", getTitleBgColor());
                     logicEditor.a(" ", "AsyncTaskExecute");
                     logicEditor.a(" ", "AsyncTaskPublishProgress");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_DIALOG)
                         || extraBlocks.isCustomVarUsed("Dialog")) {
-                    logicEditor.a("Dialog", 0xff555555);
+                    logicEditor.a("Dialog", getTitleBgColor());
                     logicEditor.a(" ", "dialogSetTitle");
                     logicEditor.a(" ", "Dialog SetIcon");
                     logicEditor.a(" ", "dialogSetMessage");
@@ -1000,7 +1024,7 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "dialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_MEDIAPLAYER)) {
-                    logicEditor.a("MediaPlayer", 0xff555555);
+                    logicEditor.a("MediaPlayer", getTitleBgColor());
                     logicEditor.a(" ", "mediaplayerCreate");
                     logicEditor.a(" ", "mediaplayerStart");
                     logicEditor.a(" ", "mediaplayerPause");
@@ -1014,14 +1038,14 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "mediaplayerRelease");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SOUNDPOOL)) {
-                    logicEditor.a("SoundPool", 0xff555555);
+                    logicEditor.a("SoundPool", getTitleBgColor());
                     logicEditor.a(" ", "soundpoolCreate");
                     logicEditor.a("d", "soundpoolLoad");
                     logicEditor.a("d", "soundpoolStreamPlay");
                     logicEditor.a(" ", "soundpoolStreamStop");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_OBJECTANIMATOR)) {
-                    logicEditor.a("ObjectAnimator", 0xff555555);
+                    logicEditor.a("ObjectAnimator", getTitleBgColor());
                     logicEditor.a(" ", "objectanimatorSetTarget");
                     logicEditor.a(" ", "objectanimatorSetProperty");
                     logicEditor.a(" ", "objectanimatorSetValue");
@@ -1035,7 +1059,7 @@ public class ExtraPaletteBlock {
                     logicEditor.a("b", "objectanimatorIsRunning");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE)) {
-                    logicEditor.a("Firebase", 0xff555555);
+                    logicEditor.a("Firebase", getTitleBgColor());
                     logicEditor.a(" ", "firebaseAdd");
                     logicEditor.a(" ", "firebasePush");
                     logicEditor.a("s", "firebaseGetPushKey");
@@ -1045,7 +1069,7 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "firebaseStopListen");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH)) {
-                    logicEditor.a("FirebaseAuth", 0xff555555);
+                    logicEditor.a("FirebaseAuth", getTitleBgColor());
                     logicEditor.a("b", "firebaseauthIsLoggedIn");
                     logicEditor.a("s", "firebaseauthGetCurrentUser");
                     logicEditor.a("s", "firebaseauthGetUid");
@@ -1055,49 +1079,46 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "firebaseauthResetPassword");
                     logicEditor.a(" ", "firebaseauthSignOutUser");
                 }
-                if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE_DYNAMIC_LINKS)) {
-                    logicEditor.a(" ", "setDynamicLinkDataHost");
-                }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_GYROSCOPE)) {
-                    logicEditor.a("Gyroscope", 0xff555555);
+                    logicEditor.a("Gyroscope", getTitleBgColor());
                     logicEditor.a(" ", "gyroscopeStartListen");
                     logicEditor.a(" ", "gyroscopeStopListen");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_INTERSTITIAL_AD)) {
-                    logicEditor.a("AdMob Interstitial", 0xff555555);
+                    logicEditor.a("AdMob Interstitial", getTitleBgColor());
                     logicEditor.a(" ", "interstitialAdLoad");
                     logicEditor.a(" ", "interstitialAdShow");
                     logicEditor.a("b", "interstitialAdIsLoaded");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_REWARDED_VIDEO_AD)) {
-                    logicEditor.a("RewardedVideoAd", 0xff555555);
+                    logicEditor.a("RewardedVideoAd", getTitleBgColor());
                     logicEditor.a(" ", "rewardedVideoAdLoad");
                     logicEditor.a(" ", "rewardedVideoAdShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE_STORAGE)) {
-                    logicEditor.a("Firebase Storage", 0xff555555);
+                    logicEditor.a("Firebase Storage", getTitleBgColor());
                     logicEditor.a(" ", "firebasestorageUploadFile");
                     logicEditor.a(" ", "firebasestorageDownloadFile");
                     logicEditor.a(" ", "firebasestorageDelete");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_CAMERA)) {
-                    logicEditor.a("Camera", 0xff555555);
+                    logicEditor.a("Camera", getTitleBgColor());
                     logicEditor.a(" ", "camerastarttakepicture");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FILE_PICKER)) {
-                    logicEditor.a("FilePicker", 0xff555555);
+                    logicEditor.a("FilePicker", getTitleBgColor());
                     logicEditor.a(" ", "filepickerstartpickfiles");
                     logicEditor.a(" ", "imageCrop");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_REQUEST_NETWORK)) {
-                    logicEditor.a("RequestNetwork", 0xff555555);
+                    logicEditor.a("RequestNetwork", getTitleBgColor());
                     logicEditor.a("b", "isConnected");
                     logicEditor.a(" ", "requestnetworkSetParams");
                     logicEditor.a(" ", "requestnetworkSetHeaders");
                     logicEditor.a(" ", "requestnetworkStartRequestNetwork");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TEXT_TO_SPEECH)) {
-                    logicEditor.a("TextToSpeech", 0xff555555);
+                    logicEditor.a("TextToSpeech", getTitleBgColor());
                     logicEditor.a("b", "textToSpeechIsSpeaking");
                     logicEditor.a(" ", "textToSpeechSetPitch");
                     logicEditor.a(" ", "textToSpeechSetSpeechRate");
@@ -1106,13 +1127,13 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "textToSpeechShutdown");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SPEECH_TO_TEXT)) {
-                    logicEditor.a("SpeechToText", 0xff555555);
+                    logicEditor.a("SpeechToText", getTitleBgColor());
                     logicEditor.a(" ", "speechToTextStartListening");
                     logicEditor.a(" ", "speechToTextStopListening");
                     logicEditor.a(" ", "speechToTextShutdown");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_BLUETOOTH_CONNECT)) {
-                    logicEditor.a("Bluetooth", 0xff555555);
+                    logicEditor.a("Bluetooth", getTitleBgColor());
                     logicEditor.a("b", "bluetoothConnectIsBluetoothEnabled");
                     logicEditor.a("b", "bluetoothConnectIsBluetoothActivated");
                     logicEditor.a("s", "bluetoothConnectGetRandomUuid");
@@ -1126,7 +1147,7 @@ public class ExtraPaletteBlock {
                     logicEditor.a(" ", "bluetoothConnectGetPairedDevices");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_LOCATION_MANAGER)) {
-                    logicEditor.a("LocationManager", 0xff555555);
+                    logicEditor.a("LocationManager", getTitleBgColor());
                     logicEditor.a(" ", "locationManagerRequestLocationUpdates");
                     logicEditor.a(" ", "locationManagerRemoveUpdates");
                 }
@@ -1134,7 +1155,7 @@ public class ExtraPaletteBlock {
                         || extraBlocks.isCustomVarUsed("ProgressDialog")
                         || eventName.equals("onPreExecute") || eventName.equals("onProgressUpdate")
                         || eventName.equals("onPostExecute")) {
-                    logicEditor.a("ProgressDialog", 0xff555555);
+                    logicEditor.a("ProgressDialog", getTitleBgColor());
                     logicEditor.a(" ", "progressdialogCreate");
                     logicEditor.a(" ", "progressdialogSetTitle");
                     logicEditor.a(" ", "progressdialogSetMessage");
@@ -1158,13 +1179,13 @@ public class ExtraPaletteBlock {
                 }
                 moreBlocks();
                 if (ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_SHOW_BUILT_IN_BLOCKS)) {
-                    logicEditor.a("Command Blocks", 0xff555555);
+                    logicEditor.a("Command Blocks", getTitleBgColor());
                     logicEditor.a("c", "CommandBlockJava");
-                    logicEditor.a("c", "CommandBlockXML");
-                    logicEditor.a("Permission Command Blocks", 0xff555555);
+                    logicEditor.addDeprecatedBlock("Deprecated: Use XML Command Manager", "c", "CommandBlockXML");
+                    logicEditor.a("Permission Command Blocks", getTitleBgColor());
                     logicEditor.a(" ", "addPermission");
                     logicEditor.a(" ", "removePermission");
-                    logicEditor.a("Other Command Blocks", 0xff555555);
+                    logicEditor.a("Other Command Blocks", getTitleBgColor());
                     logicEditor.a(" ", "addCustomVariable");
                     logicEditor.a(" ", "addInitializer");
                     return;
@@ -1190,8 +1211,7 @@ public class ExtraPaletteBlock {
                                 if (typeString.equals("h")) {
                                     Object spec = map.get("spec");
                                     if (spec instanceof String specString) {
-
-                                        logicEditor.a(specString, 0xff555555);
+                                        logicEditor.a(specString, getTitleBgColor());
                                     } else {
                                         SketchwareUtil.toastError("Custom Block #" + paletteBlocks +
                                                 " of current palette has an invalid spec data type");
@@ -1224,5 +1244,9 @@ public class ExtraPaletteBlock {
                 }
                 break;
         }
+    }
+
+    private @ColorInt int getTitleBgColor() {
+        return getColor(logicEditor, isDarkThemeEnabled(logicEditor) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceInverse);
     }
 }

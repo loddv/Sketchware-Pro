@@ -1,18 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <item
         android:id="@+id/searchProjects"
-        android:icon="@drawable/search_icon_white"
+        android:icon="@drawable/ic_mtrl_search"
         android:title="@string/search_menu_title"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="always|collapseActionView"
         tools:ignore="AlwaysShowAction" />
 
-    <item
-        android:id="@+id/sortProject"
-        android:title="@string/sort_projects"
-        app:showAsAction="never" />
 </menu>

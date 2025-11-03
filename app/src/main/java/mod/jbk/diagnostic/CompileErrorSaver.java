@@ -5,8 +5,8 @@ import android.content.Intent;
 
 import com.besome.sketch.tools.CompileLogActivity;
 
-import mod.agus.jcoderz.lib.FilePathUtil;
-import mod.agus.jcoderz.lib.FileUtil;
+import pro.sketchware.utility.FilePathUtil;
+import pro.sketchware.utility.FileUtil;
 
 public class CompileErrorSaver {
 
@@ -57,7 +57,7 @@ public class CompileErrorSaver {
      * @return The last saved error text
      */
     public String getLogsFromFile() {
-        if (!logFileExists()) return MESSAGE_NO_COMPILE_ERRORS_SAVED;
+        if (!logFileExists()) return null;
         return FileUtil.readFile(path);
     }
 

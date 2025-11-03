@@ -9,6 +9,8 @@ import android.widget.EditText;
 
 import com.google.android.material.textfield.TextInputLayout;
 
+import mod.hey.studios.util.Helper;
+
 public abstract class MB implements TextWatcher, InputFilter {
 
     public Context a;
@@ -26,7 +28,7 @@ public abstract class MB implements TextWatcher, InputFilter {
     }
 
     public String a() {
-        return c.getText().toString();
+        return Helper.getText(c);
     }
 
     public void a(String str) {
@@ -40,12 +42,13 @@ public abstract class MB implements TextWatcher, InputFilter {
     }
 
     @Override
-    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
     }
 
     @Override
     public void afterTextChanged(Editable editable) {
         if (editable.toString().isEmpty()) {
+            b.setError(null);
             b.setErrorEnabled(false);
         }
     }

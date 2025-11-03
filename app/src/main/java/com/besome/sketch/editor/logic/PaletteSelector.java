@@ -1,108 +1,174 @@
 package com.besome.sketch.editor.logic;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
 import android.util.AttributeSet;
-import android.view.View;
-import android.widget.LinearLayout;
 
-import com.sketchware.remod.R;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputLayout;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Executors;
 
 import a.a.a.Vs;
-import a.a.a.Ws;
-import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.databinding.PalettesSearchDialogBinding;
 
-public class PaletteSelector extends LinearLayout implements View.OnClickListener {
+public class PaletteSelector extends RecyclerView {
 
-    private Context context;
-    private Vs onBlockCategorySelectListener;
+    private final Context context;
 
-    public PaletteSelector(Context context) {
-        super(context);
-        initialize(context);
-    }
+    private final String[] MainCategoriesNames = {
+            Helper.getResString(R.string.block_category_var),
+            Helper.getResString(R.string.block_category_list),
+            Helper.getResString(R.string.block_category_control),
+            Helper.getResString(R.string.block_category_operator),
+            Helper.getResString(R.string.block_category_math),
+            Helper.getResString(R.string.block_category_file),
+            Helper.getResString(R.string.block_category_view_func),
+            Helper.getResString(R.string.block_category_component_func),
+            Helper.getResString(R.string.xml_strings),
+            Helper.getResString(R.string.block_category_moreblock)
+    };
 
-    public PaletteSelector(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
-        initialize(context);
-    }
+    private final int[] MainCategoriesColors = {
+            0xffee7d16, 0xffcc5b22, 0xffe1a92a,
+            0xff5cb722, 0xff23b9a9, 0xffa1887f,
+            0xff4a6cd4, 0xff2ca5e2, 0xff7c83db,
+            0xff8a55d7
+    };
 
-    private void initialize(Context context) {
+    private final int[] MainCategoriesIds = {
+            0, 1, 2, 3, 4, 5, 6, 7, -1, 8
+    };
+
+    private String searchValue = "";
+    private PaletteSelectorAdapter paletteAdapter;
+    private List<paletteSelectorRecord> allPalettes;
+
+    public PaletteSelector(Context context, AttributeSet attrs) {
+        super(context, attrs);
         this.context = context;
-        setOrientation(LinearLayout.VERTICAL);
-        setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
-        setPadding(
-                (int) wB.a(context, 8f),
-                (int) wB.a(context, 4f),
-                (int) wB.a(context, 8f),
-                (int) wB.a(context, 4f)
+    }
+
+    private void initialize(Vs onBlockCategorySelectListener) {
+        paletteAdapter = new PaletteSelectorAdapter(this, onBlockCategorySelectListener);
+        setAdapter(paletteAdapter);
+
+        Executors.newSingleThreadExecutor().execute(() ->
+                new Handler(Looper.getMainLooper()).post(this::initializePalettes)
         );
-        initializePalettes();
-    }
-
-    private void unselectAllPalettes() {
-        for (int i = 0; i < getChildCount(); i++) {
-            Ws childAt = (Ws) getChildAt(i);
-            if (childAt != null) {
-                childAt.setSelected(false);
-            }
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v instanceof Ws) {
-            unselectAllPalettes();
-            Ws paletteView = (Ws) v;
-            paletteView.setSelected(true);
-            onBlockCategorySelectListener.a(paletteView.getId(), paletteView.getColor());
-        }
-    }
-
-    public void setOnBlockCategorySelectListener(Vs listener) {
-        onBlockCategorySelectListener = listener;
     }
 
     private void initializePalettes() {
-        addPalette(0, Helper.getResString(R.string.block_category_var),
-                0xffee7d16);
-        addPalette(1, Helper.getResString(R.string.block_category_list),
-                0xffcc5b22);
-        addPalette(2, Helper.getResString(R.string.block_category_control),
-                0xffe1a92a);
-        addPalette(3, Helper.getResString(R.string.block_category_operator),
-                0xff5cb722);
-        addPalette(4, Helper.getResString(R.string.block_category_math),
-                0xff23b9a9);
-        addPalette(5, Helper.getResString(R.string.block_category_file),
-                0xffa1887f);
-        addPalette(6, Helper.getResString(R.string.block_category_view_func),
-                0xff4a6cd4);
-        addPalette(7, Helper.getResString(R.string.block_category_component_func),
-                0xff2ca5e2);
-        addPalette(8, Helper.getResString(R.string.block_category_moreblock),
-                0xff8a55d7);
+        allPalettes = new ArrayList<>();
 
-        for (HashMap<String, Object> palette : new mod.agus.jcoderz.editor.manage.block.palette.PaletteSelector().getPaletteSelector()) {
-            addPalette(
-                    Integer.parseInt(palette.get("index").toString()),
-                    palette.get("text").toString(),
-                    Integer.parseInt(palette.get("color").toString())
-            );
+        for (int i = 0; i < MainCategoriesNames.length; i++) {
+            allPalettes.add(new paletteSelectorRecord(MainCategoriesIds[i], MainCategoriesNames[i], MainCategoriesColors[i]));
+        }
+
+        new mod.agus.jcoderz.editor.manage.block.palette.PaletteSelector()
+                .getPaletteSelector()
+                .forEach(this::addDynamicPalette);
+
+        paletteAdapter.setPalettes(allPalettes);
+
+        if (paletteAdapter.getItemCount() > 0) {
+            paletteAdapter.selectPosition(0);
         }
     }
 
-    private void addPalette(int id, String title, int color) {
-        Ws paletteView = new Ws(context, id, title, color);
-        paletteView.setTag(String.valueOf(id));
-        paletteView.setOnClickListener(this);
-        addView(paletteView);
-        if (id == 0) {
-            paletteView.setSelected(true);
+    public void performClickPalette(int tag) {
+        paletteAdapter.selectPaletteById(tag);
+    }
+
+    private void addDynamicPalette(HashMap<String, Object> paletteMap) {
+        String text = Objects.requireNonNull(paletteMap.get("text")).toString();
+        if (matchesSearch(text)) {
+            int index = Integer.parseInt(Objects.requireNonNull(paletteMap.get("index")).toString());
+            int color = Integer.parseInt(Objects.requireNonNull(paletteMap.get("color")).toString());
+            allPalettes.add(new paletteSelectorRecord(index, text, color));
+        }
+    }
+
+    public boolean matchesSearch(String title) {
+        return searchValue.isEmpty() || title.toLowerCase().contains(searchValue.toLowerCase());
+    }
+
+    public void showSearchDialog() {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(context);
+        PalettesSearchDialogBinding binding = PalettesSearchDialogBinding.inflate(((Activity) context).getLayoutInflater());
+
+        dialog.setTitle(Helper.getResString(R.string.search_in_palettes_dialog_title));
+        dialog.setPositiveButton(Helper.getResString(R.string.search), (v1, which) -> {
+            if (binding.textInputLayoutSearch.getError() == null) {
+                startSearch(v1, Helper.getText(binding.edittextSearchValue).trim());
+            }
+            v1.dismiss();
+        });
+        dialog.setNegativeButton(Helper.getResString(R.string.cancel), (v1, which) -> v1.dismiss());
+        if (!searchValue.isEmpty()) {
+            dialog.setNeutralButton(Helper.getResString(R.string.restore), (v1, which) -> startSearch(v1, ""));
+        }
+        dialog.setView(binding.getRoot());
+        binding.edittextSearchValue.setText(searchValue);
+        binding.edittextSearchValue.addTextChangedListener(new SimpleTextWatcher(s -> validateSearch(s.toString(), binding.textInputLayoutSearch)));
+        dialog.show();
+    }
+
+    private boolean canSearch(String query) {
+        String trimmedQuery = query.trim().toLowerCase();
+        return allPalettes.stream().anyMatch(palette -> {
+            String title = palette.text().toLowerCase();
+            return title.contains(trimmedQuery);
+        });
+    }
+
+    private void validateSearch(String query, TextInputLayout layout) {
+        layout.setError(canSearch(query) ? null : Helper.getResString(R.string.search_error_message));
+    }
+
+    private void startSearch(DialogInterface dialog, String query) {
+        searchValue = query;
+        Executors.newSingleThreadExecutor().execute(() ->
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    initializePalettes();
+                    dialog.dismiss();
+                })
+        );
+    }
+
+    public void setOnBlockCategorySelectListener(Vs listener) {
+        initialize(listener);
+    }
+
+    public record paletteSelectorRecord(int index, String text, int color) {
+    }
+
+    public record SimpleTextWatcher(
+            java.util.function.Consumer<CharSequence> onTextChanged) implements android.text.TextWatcher {
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onTextChanged.accept(s);
         }
     }
 }

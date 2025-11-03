@@ -5,15 +5,15 @@ import android.content.Context;
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconAnalogClock extends IconBase {
 
     public IconAnalogClock(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_timer);
+        setWidgetImage(R.drawable.ic_mtrl_clock);
         setWidgetName("AnalogClock");
     }
 

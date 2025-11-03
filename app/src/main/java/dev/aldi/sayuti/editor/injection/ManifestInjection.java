@@ -2,9 +2,9 @@ package dev.aldi.sayuti.editor.injection;
 
 import java.util.ArrayList;
 
-import com.sketchware.remod.xml.XmlBuilder;
 import a.a.a.jq;
-import mod.agus.jcoderz.lib.FileUtil;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.xml.XmlBuilder;
 
 public class ManifestInjection {
 
@@ -22,7 +22,7 @@ public class ManifestInjection {
     public void b(XmlBuilder nx, String str, String str2) {
         path = FileUtil.getExternalStorageDir() + "/.sketchware/data/" + jq.sc_id + "/injection/manifest/" + str;
         if (FileUtil.isExistFile(path)) {
-            FileUtil.readFile(path).equals("");
+            FileUtil.readFile(path).isEmpty();
         }
     }
 }

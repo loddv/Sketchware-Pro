@@ -9,7 +9,8 @@ import com.besome.sketch.beans.ImageBean;
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.TextBean;
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+
+import pro.sketchware.R;
 
 public class sq {
 
@@ -69,7 +70,7 @@ public class sq {
         m = new Pair[]{new Pair<>(ViewBean.PROGRESSBAR_STYLE_CIRCLE, "Circle"), new Pair<>(ViewBean.PROGRESSBAR_STYLE_HORIZONTAL, "Horizontal")};
         n = new Pair[]{new Pair<>(10, "10sp"), new Pair<>(11, "11sp"), new Pair<>(12, "12sp"), new Pair<>(13, "13sp"), new Pair<>(14, "14sp"), new Pair<>(15, "15sp"), new Pair<>(16, "16sp"), new Pair<>(17, "17sp"), new Pair<>(18, "18sp")};
         o = new Pair[]{new Pair<>(10, "10sp"), new Pair<>(11, "11sp"), new Pair<>(12, "12sp"), new Pair<>(14, "14sp"), new Pair<>(16, "16sp"), new Pair<>(18, "18sp"), new Pair<>(20, "20sp"), new Pair<>(25, "25sp"), new Pair<>(30, "30sp"), new Pair<>(40, "40sp"), new Pair<>(50, "50sp"), new Pair<>(60, "60sp"), new Pair<>(70, "70sp"), new Pair<>(80, "80sp"), new Pair<>(90, "90sp"), new Pair<>(100, "100sp")};
-        p = new ColorBean[]{new ColorBean("#F44336", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FFEBEE", "RED", "#212121", 0x7f0700e4), new ColorBean("#FFCDD2", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#EF9A9A", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#E57373", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#EF5350", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#F44336", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#E53935", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D32F2F", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#C62828", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#B71C1C", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FF8A80", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#FF5252", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FF1744", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D50000", "RED", "#ffffff", R.drawable.checked_white_32)};
+        p = new ColorBean[]{new ColorBean("#F44336", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FFEBEE", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#FFCDD2", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#EF9A9A", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#E57373", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#EF5350", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#F44336", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#E53935", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D32F2F", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#C62828", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#B71C1C", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FF8A80", "RED", "#212121", R.drawable.checked_grey_32), new ColorBean("#FF5252", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FF1744", "RED", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D50000", "RED", "#ffffff", R.drawable.checked_white_32)};
         q = new ColorBean[]{new ColorBean("#E91E63", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FCE4EC", "PINK", "#212121", R.drawable.checked_grey_32), new ColorBean("#F8BBD0", "PINK", "#212121", R.drawable.checked_grey_32), new ColorBean("#F48FB1", "PINK", "#212121", R.drawable.checked_grey_32), new ColorBean("#F06292", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#EC407A", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#E91E63", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D81B60", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#C2185B", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#AD1457", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#880E4F", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#FF80AB", "PINK", "#212121", R.drawable.checked_grey_32), new ColorBean("#FF4081", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#F50057", "PINK", "#ffffff", R.drawable.checked_white_32), new ColorBean("#C51162", "PINK", "#ffffff", R.drawable.checked_white_32)};
         r = new ColorBean[]{new ColorBean("#9C27B0", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#F3E5F5", "PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#E1BEE7", "PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#CE93D8", "PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#BA68C8", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#AB47BC", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#9C27B0", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#8E24AA", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#7B1FA2", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#6A1B9A", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#4A148C", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#EA80FC", "PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#E040FB", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#D500F9", "PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#AA00FF", "PURPLE", "#ffffff", R.drawable.checked_white_32)};
         s = new ColorBean[]{new ColorBean("#673AB7", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#EDE7F6", "DEEP PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#D1C4E9", "DEEP PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#B39DDB", "DEEP PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#9575CD", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#7E57C2", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#673AB7", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#5E35B1", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#512DA8", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#4527A0", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#311B92", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#B388FF", "DEEP PURPLE", "#212121", R.drawable.checked_grey_32), new ColorBean("#7C4DFF", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#651FFF", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32), new ColorBean("#6200EA", "DEEP PURPLE", "#ffffff", R.drawable.checked_white_32)};
@@ -90,8 +91,8 @@ public class sq {
         H = new ColorBean[]{new ColorBean("#607D8B", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#ECEFF1", "BLUE GREY", "#212121", R.drawable.checked_grey_32), new ColorBean("#CFD8DC", "BLUE GREY", "#212121", R.drawable.checked_grey_32), new ColorBean("#B0BEC5", "BLUE GREY", "#212121", R.drawable.checked_grey_32), new ColorBean("#90A4AE", "BLUE GREY", "#212121", R.drawable.checked_grey_32), new ColorBean("#78909C", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#607D8B", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#546E7A", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#455A64", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#37474F", "BLUE GREY", "#ffffff", R.drawable.checked_white_32), new ColorBean("#263238", "BLUE GREY", "#ffffff", R.drawable.checked_white_32)};
         I = new ColorBean[]{new ColorBean("#000000", "BLACK", "#ffffff", R.drawable.checked_white_32)};
         J = new ColorBean[]{new ColorBean("#ffffff", "WHITE", "#212121", R.drawable.checked_grey_32)};
-        K = new ColorBean[]{new ColorBean(Color.TRANSPARENT, "TRANSPARENT", Color.parseColor("#212121"), R.drawable.checked_grey_32)};
-        L = new ColorBean[]{new ColorBean(0xffffff, "NONE", Color.parseColor("#212121"), R.drawable.checked_grey_32)};
+        K = new ColorBean[]{new ColorBean(Color.TRANSPARENT, "TRANSPARENT", Color.parseColor("#9E9E9E"), R.drawable.checked_grey_32)};
+        L = new ColorBean[]{new ColorBean(0xffffff, "NONE", Color.parseColor("#9E9E9E"), R.drawable.checked_grey_32)};
         M = new int[]{R.color.scolor_blue_01, R.color.scolor_red_02, R.color.scolor_green_02, R.color.scolor_dark_yellow_01};
     }
 
@@ -107,22 +108,22 @@ public class sq {
             }
 
             if ((horizontalGravity & Gravity.RIGHT) == Gravity.RIGHT) {
-                if (gravityValue.length() > 0) gravityValue += ", ";
+                if (!gravityValue.isEmpty()) gravityValue += ", ";
                 gravityValue += "right";
             }
         }
 
         if (verticalGravity == Gravity.CENTER_VERTICAL) {
-            if (gravityValue.length() > 0) gravityValue += ", ";
+            if (!gravityValue.isEmpty()) gravityValue += ", ";
             gravityValue += "center_vertical";
         } else {
             if ((verticalGravity & Gravity.TOP) == Gravity.TOP) {
-                if (gravityValue.length() > 0) gravityValue += ", ";
+                if (!gravityValue.isEmpty()) gravityValue += ", ";
                 gravityValue += "top";
             }
 
             if ((verticalGravity & Gravity.BOTTOM) == Gravity.BOTTOM) {
-                if (gravityValue.length() > 0) gravityValue += ", ";
+                if (!gravityValue.isEmpty()) gravityValue += ", ";
                 gravityValue += "bottom";
             }
         }
@@ -151,38 +152,18 @@ public class sq {
     }
 
     public static Pair<Integer, String>[] a(String property) {
-        switch (property) {
-            case "property_layout_width":
-            case "property_layout_height":
-                return a;
-
-            case "property_orientation":
-                return b;
-
-            case "property_text_size":
-                return o;
-
-            case "property_text_style":
-                return d;
-
-            case "property_input_type":
-                return i;
-
-            case "property_ime_option":
-                return e;
-
-            case "property_spinner_mode":
-                return f;
-
-            case "property_choice_mode":
-                return g;
-
-            case "property_first_day_of_week":
-                return h;
-
-            default:
-                return new Pair[0];
-        }
+        return switch (property) {
+            case "property_layout_width", "property_layout_height" -> a;
+            case "property_orientation" -> b;
+            case "property_text_size" -> o;
+            case "property_text_style" -> d;
+            case "property_input_type" -> i;
+            case "property_ime_option" -> e;
+            case "property_spinner_mode" -> f;
+            case "property_choice_mode" -> g;
+            case "property_first_day_of_week" -> h;
+            default -> new Pair[0];
+        };
     }
 
     public static Pair<String, String>[] b(String property) {

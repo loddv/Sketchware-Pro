@@ -1,82 +1,73 @@
 package mod.hilal.saif.activities.android_manifest;
 
-import static mod.SketchwareUtil.getDip;
+import static pro.sketchware.utility.GsonUtils.getGson;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
 import android.os.Bundle;
-import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
 
-import androidx.cardview.widget.CardView;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 
-import com.google.gson.Gson;
-import com.sketchware.remod.R;
+import com.besome.sketch.editor.manage.library.LibraryCategoryView;
+import com.besome.sketch.editor.manage.library.LibraryItemView;
+import com.besome.sketch.lib.base.BaseAppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 import a.a.a.jC;
+import a.a.a.wB;
 import a.a.a.yq;
-import io.github.rosemoe.sora.widget.CodeEditor;
-import io.github.rosemoe.sora.widget.component.Magnifier;
-import mod.SketchwareUtil;
-import mod.agus.jcoderz.lib.FileUtil;
 import mod.hey.studios.code.SrcCodeEditor;
-import mod.hey.studios.code.SrcCodeEditorLegacy;
 import mod.hey.studios.util.Helper;
-import mod.hilal.saif.activities.tools.ConfigActivity;
 import mod.hilal.saif.android_manifest.AndroidManifestInjector;
-import mod.hilal.saif.asd.DialogButtonGradientDrawable;
-import mod.jbk.code.CodeEditorColorSchemes;
-import mod.jbk.code.CodeEditorLanguages;
+import mod.remaker.view.CustomAttributeView;
+import pro.sketchware.R;
+import pro.sketchware.activities.editor.view.CodeViewerActivity;
+import pro.sketchware.databinding.AndroidManifestInjectionBinding;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 @SuppressLint("SetTextI18n")
-public class AndroidManifestInjection extends Activity {
+public class AndroidManifestInjection extends BaseAppCompatActivity {
 
-    private final ArrayList<HashMap<String, Object>> list_map = new ArrayList<>();
-    private ViewGroup base;
-    private ListView act_list;
+    private final ArrayList<HashMap<String, Object>> activitiesListMap = new ArrayList<>();
+    private AndroidManifestInjectionBinding binding;
     private String sc_id;
-    private String activityName;
+    private String currentActivityName;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.view_events);
-        RecyclerView dump = findViewById(R.id.list_events);
-        base = (ViewGroup) dump.getParent();
-        base.removeView(dump);
+        binding = AndroidManifestInjectionBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
         if (getIntent().hasExtra("sc_id") && getIntent().hasExtra("file_name")) {
             sc_id = getIntent().getStringExtra("sc_id");
-            activityName = getIntent().getStringExtra("file_name").replaceAll(".java", "");
+            currentActivityName = getIntent().getStringExtra("file_name").replaceAll(".java", "");
         }
-        createToolbar(base);
+
+        setupCustomToolbar();
         checkAttrs();
-        setupViews();
+        setupOptions();
         refreshList();
         checkAttrs();
+
+        binding.addActivity.setOnClickListener(v -> showAddActivityDialog());
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         checkAttrs();
         refreshList();
@@ -85,15 +76,13 @@ public class AndroidManifestInjection extends Activity {
     private void checkAttrs() {
         String path = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/attributes.json");
         if (FileUtil.isExistFile(path)) {
-            ArrayList<HashMap<String, Object>> data = new Gson().fromJson(FileUtil.readFile(path),
-                    Helper.TYPE_MAP_LIST);
+            ArrayList<HashMap<String, Object>> data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
             for (int i = 0; i < data.size(); i++) {
                 String str = (String) data.get(i).get("name");
                 if (Objects.requireNonNull(str).equals("_application_attrs")) {
                     String str2 = (String) data.get(i).get("value");
                     if (Objects.requireNonNull(str2).contains("android:theme")) {
                         return;
-
                     }
                 }
             }
@@ -101,141 +90,57 @@ public class AndroidManifestInjection extends Activity {
             _item.put("name", "_application_attrs");
             _item.put("value", "android:theme=\"@style/AppTheme\"");
             data.add(_item);
-            FileUtil.writeFile(path, new Gson().toJson(data));
+            FileUtil.writeFile(path, getGson().toJson(data));
         }
     }
 
-    private void setupViews() {
-        CardView application_card = newCard(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-        LinearLayout application_skin = newLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0);
-        application_card.addView(application_skin);
-        makeup(application_skin, R.drawable.icons8_app_attrs, "Application", "Default properties for the app");
-        base.addView(application_card);
-        application_skin.setOnClickListener(v -> {
+    private void setupOptions() {
+        List<LibraryCategoryView> options = new ArrayList<>();
+
+        LibraryCategoryView basicCategoryView = new LibraryCategoryView(this);
+        basicCategoryView.setTitle(null);
+        options.add(basicCategoryView);
+
+        basicCategoryView.addLibraryItem(createOption("Application", "Default properties for the app", R.drawable.ic_mtrl_settings_applications, v -> {
             Intent intent = new Intent();
             intent.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
             intent.putExtra("sc_id", sc_id);
-            intent.putExtra("file_name", activityName);
+            intent.putExtra("file_name", currentActivityName);
             intent.putExtra("type", "application");
             startActivity(intent);
-        });
+        }), true);
+        basicCategoryView.addLibraryItem(createOption("Permissions", "Add custom Permissions to the app", R.drawable.ic_mtrl_shield_check, v -> {
+            Intent intent = new Intent();
+            intent.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
+            intent.putExtra("sc_id", sc_id);
+            intent.putExtra("file_name", currentActivityName);
+            intent.putExtra("type", "permission");
+            startActivity(intent);
+        }), true);
+        basicCategoryView.addLibraryItem(createOption("Launcher Activity", "Change the default Launcher Activity", R.drawable.ic_mtrl_login, v -> showLauncherActDialog(AndroidManifestInjector.getLauncherActivity(sc_id))), true);
+        basicCategoryView.addLibraryItem(createOption("All Activities", "Add attributes for all Activities", R.drawable.ic_mtrl_frame_source, v -> {
+            Intent intent = new Intent();
+            intent.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
+            intent.putExtra("sc_id", sc_id);
+            intent.putExtra("file_name", currentActivityName);
+            intent.putExtra("type", "all");
+            startActivity(intent);
+        }), true);
+        basicCategoryView.addLibraryItem(createOption("App Components", "Add extra components", R.drawable.ic_mtrl_component, v -> showAppComponentDialog()), false);
 
-        {
-            CardView permission_card = newCard(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-            LinearLayout permission_skin = newLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0);
-            permission_card.addView(permission_skin);
-            makeup(permission_skin, R.drawable.event_on_signin_complete_48dp, "Permissions", "Add custom Permissions to the app");
-            base.addView(permission_card);
-            permission_skin.setOnClickListener(_view -> {
-                Intent inta = new Intent();
-                inta.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
-                inta.putExtra("sc_id", sc_id);
-                inta.putExtra("file_name", activityName);
-                inta.putExtra("type", "permission");
-                startActivity(inta);
-            });
-        }
+        options.forEach(binding.cards::addView);
+    }
 
-        {
-            CardView permission_card = newCard(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-            LinearLayout permission_skin = newLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0);
-            permission_card.addView(permission_skin);
-            makeup(permission_skin, R.drawable.recycling_48, "Launcher Activity", "Change the default Launcher Activity");
-            base.addView(permission_card);
-            permission_skin.setOnClickListener(v -> showLauncherActDialog(AndroidManifestInjector.getLauncherActivity(sc_id)));
-        }
-
-        CardView allAct_card = newCard(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-        LinearLayout allAct_skin = newLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0);
-        allAct_card.addView(allAct_skin);
-        makeup(allAct_skin, R.drawable.icons8_all_activities_attrs, "All Activities", "Add attributes for all Activities");
-        base.addView(allAct_card);
-        allAct_skin.setOnClickListener(v -> {
-            Intent inta = new Intent();
-            inta.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
-            inta.putExtra("sc_id", sc_id);
-            inta.putExtra("file_name", activityName);
-            inta.putExtra("type", "all");
-            startActivity(inta);
-        });
-
-        CardView appCom_card = newCard(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-        LinearLayout appCom_skin = newLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0);
-        appCom_card.addView(appCom_skin);
-        makeup(appCom_skin, R.drawable.icons8_app_components, "App Components", "Add extra components");
-        base.addView(appCom_card);
-        appCom_skin.setOnClickListener(v -> showAppComponentDialog());
-
-        LinearLayout sub_skin = newLayout(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                0);
-        sub_skin.setBackgroundColor(0x00000000);
-        sub_skin.setPadding(
-                (int) getDip(8),
-                (int) getDip(8),
-                (int) getDip(8),
-                (int) getDip(8));
-        sub_skin.setFocusable(false);
-        sub_skin.setGravity(Gravity.CENTER_VERTICAL);
-        TextView sub = newText("Activities:", 16, false, Color.GRAY, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0);
-        sub_skin.addView(sub);
-        base.addView(sub_skin);
-
-
-        LinearLayout bottom = new LinearLayout(this);
-        bottom.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1.0f));
-        bottom.setPadding(
-                (int) getDip(1),
-                0,
-                (int) getDip(1),
-                (int) getDip(1));
-        act_list = new ListView(this);
-        act_list.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                1.0f));
-        act_list.setDividerHeight(0);
-        bottom.addView(act_list);
-        base.addView(bottom);
-
-        TextView addnew = new TextView(getApplicationContext());
-        addnew.setLayoutParams(new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                (int) getDip(45),
-                0.0f));
-        ((LinearLayout.LayoutParams) addnew.getLayoutParams()).setMargins(
-                (int) getDip(8),
-                (int) getDip(8),
-                (int) getDip(8),
-                (int) getDip(8));
-        addnew.setText("Add Activity");
-        addnew.setTextColor(Color.WHITE);
-        addnew.setPadding(
-                (int) getDip(50),
-                (int) getDip(8),
-                (int) getDip(50),
-                (int) getDip(8));
-        addnew.setGravity(Gravity.CENTER);
-        addnew.setBackgroundColor(0xff008dcd);
-        addnew.setTextSize(15);
-        addnew.setBackground(new DialogButtonGradientDrawable()
-                .getIns((int) getDip(4), 0, 0xff2196f3, 0xff2196f3));
-        addnew.setElevation((int) getDip(1));
-        base.addView(addnew);
-        addnew.setOnClickListener(v -> showAddActivityDialog());
+    private LibraryItemView createOption(String title, String description, int icon, View.OnClickListener onClick) {
+        var card = new LibraryItemView(this);
+        makeup(card, icon, title, description);
+        card.setOnClickListener(onClick);
+        return card;
     }
 
     private void showAppComponentDialog() {
         Intent intent = new Intent();
-        if (ConfigActivity.isLegacyCeEnabled()) {
-            intent.setClass(getApplicationContext(), SrcCodeEditorLegacy.class);
-        } else {
-            intent.setClass(getApplicationContext(), SrcCodeEditor.class);
-        }
+        intent.setClass(getApplicationContext(), SrcCodeEditor.class);
 
         String APP_COMPONENTS_PATH = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/app_components.txt");
         if (!FileUtil.isExistFile(APP_COMPONENTS_PATH)) FileUtil.writeFile(APP_COMPONENTS_PATH, "");
@@ -246,70 +151,59 @@ public class AndroidManifestInjection extends Activity {
         startActivity(intent);
     }
 
-
     private void showLauncherActDialog(String actnamr) {
-        final AlertDialog create = new AlertDialog.Builder(this).create();
-        View inflate = getLayoutInflater().inflate(R.layout.custom_dialog_attribute, null);
-        create.setView(inflate);
-        create.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        final TextView btnSave = inflate.findViewById(R.id.dialog_btn_save);
-        final TextView btnCancel = inflate.findViewById(R.id.dialog_btn_cancel);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setIcon(R.drawable.ic_mtrl_lifecycle);
+        dialog.setTitle(Helper.getResString(R.string.change_launcher_activity_dialog_title));
+        View view = wB.a(this, R.layout.dialog_add_custom_activity);
 
-        final EditText inputRes = inflate.findViewById(R.id.dialog_input_res);
-        inputRes.setVisibility(View.GONE);
-        final EditText inputAttr = inflate.findViewById(R.id.dialog_input_attr);
-        inputAttr.setVisibility(View.GONE);
-        final EditText inputValue = inflate.findViewById(R.id.dialog_input_value);
-        final TextView textView = (TextView) ((ViewGroup) inputAttr.getParent()).getChildAt(0);
-        textView.setText("Launcher Activity (e.g. main)");
-        inputValue.setText(actnamr);
-        inputValue.setHint("Activity name");
+        TextInputEditText activity_name_input = view.findViewById(R.id.activity_name_input);
 
-        btnSave.setOnClickListener(v -> {
-            create.dismiss();
-            AndroidManifestInjector.setLauncherActivity(sc_id, inputValue.getText().toString());
-            SketchwareUtil.toast("Saved");
+        activity_name_input.setText(actnamr);
+
+        dialog.setView(view);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
+            if (!Helper.getText(activity_name_input).trim().isEmpty()) {
+                AndroidManifestInjector.setLauncherActivity(sc_id, Helper.getText(activity_name_input));
+                SketchwareUtil.toast("Saved");
+                v.dismiss();
+            } else {
+                activity_name_input.setError("Enter activity name");
+            }
         });
-
-        btnCancel.setOnClickListener(Helper.getDialogDismissListener(create));
-        create.show();
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+        dialog.show();
     }
 
-    private void showAddActivityDialog() {
-        final AlertDialog create = new AlertDialog.Builder(this).create();
-        View inflate = getLayoutInflater().inflate(R.layout.custom_dialog_attribute, null);
-        create.setView(inflate);
-        create.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        final TextView btnSave = inflate.findViewById(R.id.dialog_btn_save);
-        final TextView btnCancel = inflate.findViewById(R.id.dialog_btn_cancel);
+    public void showAddActivityDialog() {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setIcon(R.drawable.ic_mtrl_add);
+        dialog.setTitle(Helper.getResString(R.string.common_word_add_activtiy));
+        View inflate = wB.a(this, R.layout.dialog_add_custom_activity);
 
-        final EditText inputRes = inflate.findViewById(R.id.dialog_input_res);
-        inputRes.setVisibility(View.GONE);
-        final EditText inputAttr = inflate.findViewById(R.id.dialog_input_attr);
-        inputAttr.setVisibility(View.GONE);
-        final EditText inputValue = inflate.findViewById(R.id.dialog_input_value);
-        final TextView textView = (TextView) ((ViewGroup) inputAttr.getParent()).getChildAt(0);
-        textView.setText("Activity name");
-        inputValue.setText(activityName);
-        inputValue.setHint("Activity name");
+        TextInputEditText activity_name_input = inflate.findViewById(R.id.activity_name_input);
 
-        btnSave.setOnClickListener(v -> {
-            addNewActivity(inputValue.getText().toString());
+        activity_name_input.setText(currentActivityName);
 
-            create.dismiss();
-            SketchwareUtil.toast("New Activity added");
+        dialog.setView(inflate);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
+            if (!Helper.getText(activity_name_input).trim().isEmpty()) {
+                addNewActivity(Helper.getText(activity_name_input));
+                SketchwareUtil.toast("New Activity added");
+                v.dismiss();
+            } else {
+                activity_name_input.setError("Enter activity name");
+            }
         });
-
-        btnCancel.setOnClickListener(Helper.getDialogDismissListener(create));
-
-        create.show();
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+        dialog.show();
     }
 
     private void addNewActivity(String componentName) {
         String path = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/attributes.json");
         ArrayList<HashMap<String, Object>> data = new ArrayList<>();
         if (FileUtil.isExistFile(path)) {
-            data = new Gson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+            data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
         }
         {
             HashMap<String, Object> _item = new HashMap<>();
@@ -355,32 +249,17 @@ public class AndroidManifestInjection extends Activity {
             data.add(_item);
         }
 
-
-        FileUtil.writeFile(path, new Gson().toJson(data));
+        FileUtil.writeFile(path, getGson().toJson(data));
         refreshList();
-
-    }
-
-    private void a(View view, int i2, int i3) {
-        GradientDrawable gradientDrawable = new GradientDrawable();
-        gradientDrawable.setShape(GradientDrawable.RECTANGLE);
-        gradientDrawable.setCornerRadii(new float[]{(float) i2, (float) i2, (float) i2 / 2, (float) i2 / 2, (float) i2, (float) i2, (float) i2 / 2, (float) i2 / 2});
-        gradientDrawable.setColor(Color.parseColor("#ffffff"));
-        RippleDrawable rippleDrawable = new RippleDrawable(new ColorStateList(new int[][]{new int[0]}, new int[]{Color.parseColor("#20008DCD")}), gradientDrawable, null);
-        ((LinearLayout.LayoutParams) view.getLayoutParams()).setMargins((int) getDip(4), (int) getDip(2), (int) getDip(4), (int) getDip(2));
-        view.setElevation((float) i3);
-        view.setBackground(rippleDrawable);
-        view.setClickable(true);
-        view.setFocusable(true);
     }
 
     private void refreshList() {
-        list_map.clear();
+        activitiesListMap.clear();
         String path = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/attributes.json");
         ArrayList<String> temp = new ArrayList<>();
         ArrayList<HashMap<String, Object>> data;
         if (FileUtil.isExistFile(path)) {
-            data = new Gson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+            data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
             for (int i = 0; i < data.size(); i++) {
                 if (!temp.contains(Objects.requireNonNull(data.get(i).get("name")).toString())) {
                     if (!Objects.requireNonNull(data.get(i).get("name")).equals("_application_attrs") && !Objects.requireNonNull(data.get(i).get("name")).equals("_apply_for_all_activities") && !Objects.requireNonNull(data.get(i).get("name")).equals("_application_permissions")) {
@@ -391,36 +270,35 @@ public class AndroidManifestInjection extends Activity {
             for (int i = 0; i < temp.size(); i++) {
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("act_name", temp.get(i));
-                list_map.add(map);
+                activitiesListMap.add(map);
             }
-            act_list.setAdapter(new ListAdapter(list_map));
-            ((BaseAdapter) act_list.getAdapter()).notifyDataSetChanged();
+            binding.activitiesListView.setAdapter(new ListAdapter(activitiesListMap));
+            ((BaseAdapter) binding.activitiesListView.getAdapter()).notifyDataSetChanged();
         }
     }
 
     private void deleteActivity(int pos) {
-
-        String activity_name = (String) list_map.get(pos).get("act_name");
+        String activity_name = (String) activitiesListMap.get(pos).get("act_name");
         String path = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/attributes.json");
         ArrayList<HashMap<String, Object>> data;
-        data = new Gson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+        data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
         for (int i = data.size() - 1; i > -1; i--) {
             String temp = (String) data.get(i).get("name");
             if (Objects.requireNonNull(temp).equals(activity_name)) {
                 data.remove(i);
             }
         }
-        FileUtil.writeFile(path, new Gson().toJson(data));
+        FileUtil.writeFile(path, getGson().toJson(data));
         refreshList();
         removeComponents(activity_name);
-        SketchwareUtil.toast("activity removed");
+        SketchwareUtil.toast("Activity removed");
     }
 
     private void removeComponents(String str) {
         String path = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id).concat("/Injection/androidmanifest/activities_components.json");
         ArrayList<HashMap<String, Object>> data;
         if (FileUtil.isExistFile(path)) {
-            data = new Gson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+            data = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
             for (int i = data.size() - 1; i > -1; i--) {
                 String name = (String) data.get(i).get("name");
                 if (Objects.requireNonNull(name).equals(str)) {
@@ -428,126 +306,61 @@ public class AndroidManifestInjection extends Activity {
                     break;
                 }
             }
-            FileUtil.writeFile(path, new Gson().toJson(data));
+            FileUtil.writeFile(path, getGson().toJson(data));
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private CardView newCard(int width, int height, float weight) {
-        CardView temp_card = new CardView(this);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(width, height, weight);
-        lp.setMargins((int) getDip(4), (int) getDip(2), (int) getDip(4), (int) getDip(2));
-        temp_card.setLayoutParams(lp);
-        temp_card.setPadding((int) getDip(2), (int) getDip(2), (int) getDip(2), (int) getDip(2));
-        temp_card.setCardBackgroundColor(0xFFFFFFFF);
-        temp_card.setRadius(getDip(4));
-        return temp_card;
+    private void setupCustomToolbar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setTitle("AndroidManifest Manager");
+        toolbar.setNavigationOnClickListener(view -> onBackPressed());
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private LinearLayout newLayout(int width, int height, float weight) {
-        LinearLayout temp_card = new LinearLayout(this);
-        temp_card.setLayoutParams(new LinearLayout.LayoutParams(width, height, weight));
-        temp_card.setPadding((int) getDip(1), (int) getDip(1), (int) getDip(1), (int) getDip(1));
-        //temp_card.setBackgroundColor(0x00ffffff);
-        GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.WHITE);
-        RippleDrawable rpl = new RippleDrawable(new ColorStateList(new int[][]{new int[]{}}, new int[]{Color.parseColor("#64B5F6")}), gd, null);
-        temp_card.setBackground(rpl);
-        temp_card.setClickable(true);
-        temp_card.setFocusable(true);
-        return temp_card;
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Show Manifest Source").setIcon(getDrawable(R.drawable.ic_mtrl_code)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        return true;
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private TextView newText(String str, float size, boolean is, int color, int width, int height, float weight) {
-        TextView temp_card = new TextView(this);
-        temp_card.setLayoutParams(new LinearLayout.LayoutParams(width, height, weight));
-        temp_card.setPadding((int) getDip(4), (int) getDip(4), (int) getDip(4), (int) getDip(4));
-        temp_card.setTextColor(color);
-        temp_card.setText(str);
-        temp_card.setTextSize(size);
-        if (is) {
-            temp_card.setTypeface(Typeface.DEFAULT_BOLD);
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
+        String title = menuItem.getTitle().toString();
+        if (title.equals("Show Manifest Source")) {
+            showQuickManifestSourceDialog();
+        } else {
+            return false;
         }
-        return temp_card;
-    }
-
-    private void createToolbar(View v) {
-        View toolbar = getLayoutInflater().inflate(R.layout.toolbar_improved, null);
-
-        ImageView _back = toolbar.findViewById(R.id.ig_toolbar_back);
-        Helper.applyRippleToToolbarView(_back);
-        ImageView _quickSource = toolbar.findViewById(R.id.ig_toolbar_load_file);
-
-        TextView _title = toolbar.findViewById(R.id.tx_toolbar_title);
-        _title.setText("AndroidManifest Manager");
-        _back.setOnClickListener(Helper.getBackPressedClickListener(this));
-
-        _quickSource.setImageResource(R.drawable.code_white_48);
-        _quickSource.setVisibility(View.VISIBLE);
-        Helper.applyRippleToToolbarView(_quickSource);
-        _quickSource.setOnClickListener((v1 -> showQuickManifestSourceDialog()));
-
-        v.setPadding(0, 0, 0, 0);
-        ((ViewGroup) v).addView(toolbar, 0);
+        return super.onOptionsItemSelected(menuItem);
     }
 
     private void showQuickManifestSourceDialog() {
-        ProgressDialog progress = new ProgressDialog(this);
-        progress.setMessage("Generating source...");
-        progress.show();
-
+        k();
         new Thread(() -> {
-            final String source = new yq(getApplicationContext(), sc_id).getFileSrc("AndroidManifest.xml", jC.b(sc_id), jC.a(sc_id), jC.c(sc_id));
-
-            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this)
-                    .setTitle("AndroidManifest.xml")
-                    .setPositiveButton("Dismiss", null);
+            String source = new yq(getApplicationContext(), sc_id).getFileSrc("AndroidManifest.xml", jC.b(sc_id), jC.a(sc_id), jC.c(sc_id));
 
             runOnUiThread(() -> {
                 if (isFinishing()) return;
-                progress.dismiss();
-
-                CodeEditor editor = new CodeEditor(this);
-                editor.setTypefaceText(Typeface.MONOSPACE);
-                editor.setEditable(false);
-                editor.setColorScheme(CodeEditorColorSchemes.loadTextMateColorScheme(CodeEditorColorSchemes.THEME_GITHUB));
-                editor.setEditorLanguage(CodeEditorLanguages.loadTextMateLanguage(CodeEditorLanguages.SCOPE_NAME_XML));
-                editor.setTextSize(14);
-                editor.setText(!source.equals("") ? source : "Failed to generate source.");
-                editor.getComponent(Magnifier.class).setWithinEditorForcibly(true);
-
-                AlertDialog dialog = dialogBuilder.create();
-                dialog.setView(editor,
-                        (int) getDip(24),
-                        (int) getDip(8),
-                        (int) getDip(24),
-                        (int) getDip(8));
-                dialog.show();
+                h();
+                var intent = new Intent(this, CodeViewerActivity.class);
+                intent.putExtra("code", !source.isEmpty() ? source : "Failed to generate source.");
+                intent.putExtra("sc_id", sc_id);
+                intent.putExtra("scheme", CodeViewerActivity.SCHEME_XML);
+                startActivity(intent);
             });
         }).start();
-
     }
 
-    private void makeup(View v, int icon, String title, String desc) {
-        View _view = getLayoutInflater().inflate(R.layout.manage_library_base_item, null);
-        ImageView _img = _view.findViewById(R.id.lib_icon);
-        TextView _title = _view.findViewById(R.id.lib_title);
-        TextView _desc = _view.findViewById(R.id.lib_desc);
-        TextView _un = _view.findViewById(R.id.tv_enable);
-
-        _un.setVisibility(View.GONE);
-        _img.setImageResource(icon);
-        ((LinearLayout) _img.getParent()).setGravity(Gravity.CENTER);
-        _title.setText(title);
-        _desc.setText(desc);
-
-        ((ViewGroup) v).addView(_view);
+    private void makeup(LibraryItemView parent, int icon, String title, String description) {
+        parent.enabled.setVisibility(View.GONE);
+        parent.icon.setImageResource(icon);
+        parent.title.setText(title);
+        parent.description.setText(description);
     }
 
     private class ListAdapter extends BaseAdapter {
-
         private final ArrayList<HashMap<String, Object>> _data;
 
         public ListAdapter(ArrayList<HashMap<String, Object>> data) {
@@ -570,21 +383,12 @@ public class AndroidManifestInjection extends Activity {
         }
 
         @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = getLayoutInflater().inflate(R.layout.custom_view_attribute, parent, false);
-            }
-            LinearLayout linearLayout = convertView.findViewById(R.id.cus_attr_layout);
-            TextView textView = convertView.findViewById(R.id.cus_attr_text);
-            final ImageView imageView = convertView.findViewById(R.id.cus_attr_btn);
-            imageView.setVisibility(View.GONE);
-            a(linearLayout, (int) getDip(4), (int) getDip(2));
-            textView.setText((String) list_map.get(position).get("act_name"));
-            textView.setPadding((int) getDip(8), (int) getDip(8), (int) getDip(8), (int) getDip(8));
-            textView.setTextSize(15);
-            textView.setTypeface(Typeface.DEFAULT);
-            linearLayout.setVisibility(View.VISIBLE);
-            linearLayout.setOnClickListener(v -> {
+        public View getView(int position, View convertView, ViewGroup parent) {
+            CustomAttributeView attributeView = new CustomAttributeView(parent.getContext());
+
+            attributeView.getImageView().setVisibility(View.GONE);
+            attributeView.getTextView().setText((String) activitiesListMap.get(position).get("act_name"));
+            attributeView.setOnClickListener(v -> {
                 Intent intent = new Intent();
                 intent.setClass(getApplicationContext(), AndroidManifestInjectionDetails.class);
                 intent.putExtra("sc_id", sc_id);
@@ -592,22 +396,24 @@ public class AndroidManifestInjection extends Activity {
                 intent.putExtra("type", "activity");
                 startActivity(intent);
             });
-            linearLayout.setOnLongClickListener(v -> {
-                new AlertDialog.Builder(AndroidManifestInjection.this)
-                        .setTitle((String) _data.get(position).get("act_name"))
-                        .setMessage("Delete all attributes related to this activity?")
-                        .setPositiveButton(R.string.common_word_delete, (dialog, which) -> deleteActivity(position))
-                        .setNegativeButton(R.string.common_word_cancel, null)
-                        .show();
+            attributeView.setOnLongClickListener(v -> {
+                {
+                    MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(AndroidManifestInjection.this);
+                    dialog.setIcon(R.drawable.icon_delete);
+                    dialog.setTitle(Helper.getResString(R.string.delete_custom_activity_dialog_title));
+                    dialog.setMessage(Helper.getResString(R.string.delete_custom_activity_dialog_message).replace("%1$s", (String) _data.get(position).get("act_name")));
+
+                    dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (v1, which) -> {
+                        deleteActivity(position);
+                        v1.dismiss();
+                    });
+                    dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+                    dialog.show();
+                }
                 return true;
             });
 
-            return convertView;
+            return attributeView;
         }
     }
 }
-
-
-
-
-

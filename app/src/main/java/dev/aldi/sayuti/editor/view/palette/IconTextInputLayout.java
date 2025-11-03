@@ -4,16 +4,17 @@ import android.content.Context;
 import android.view.ViewGroup;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.AndroidxOrMaterialView;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
-public class IconTextInputLayout extends IconBase {
+public class IconTextInputLayout extends IconBase implements AndroidxOrMaterialView {
 
     public IconTextInputLayout(Context context) {
         super(context);
-        setWidgetImage(R.drawable.widget_edit_text);
+        setWidgetImage(R.drawable.ic_mtrl_edittext);
         setWidgetName("TextInputLayout");
     }
 

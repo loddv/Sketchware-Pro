@@ -10,12 +10,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+import com.besome.sketch.editor.view.ItemView;
 
-import a.a.a.sy;
 import a.a.a.wB;
+import pro.sketchware.R;
 
-public class ItemCodeView extends LinearLayout implements sy {
+public class ItemCodeView extends LinearLayout implements ItemView {
 
     private final Paint paint;
     private final Rect rect;
@@ -58,6 +58,7 @@ public class ItemCodeView extends LinearLayout implements sy {
         return hasFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         hasFixed = z;
     }

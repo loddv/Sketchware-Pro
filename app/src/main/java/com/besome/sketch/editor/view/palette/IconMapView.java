@@ -4,19 +4,21 @@ import android.content.Context;
 
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+
+import pro.sketchware.R;
 
 public class IconMapView extends IconBase {
     public IconMapView(Context context) {
         super(context);
+        initialize();
     }
 
-    public void a(Context context) {
-        super.a(context);
-        setWidgetImage(R.drawable.widget_google_map);
+    private void initialize() {
+        setWidgetImage(R.drawable.ic_mtrl_map);
         setWidgetName("MapView");
     }
 
+    @Override
     public ViewBean getBean() {
         ViewBean viewBean = new ViewBean();
         viewBean.type = 18;

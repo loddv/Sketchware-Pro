@@ -1,9 +1,13 @@
 package a.a.a;
 
+import android.content.pm.PackageManager;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import pro.sketchware.R;
 
 public abstract class DA extends qA {
     public DA() {
@@ -23,32 +27,32 @@ public abstract class DA extends qA {
     public abstract void c(int var1);
 
     public boolean c() {
-        return ContextCompat.checkSelfPermission(getContext(), "android.permission.WRITE_EXTERNAL_STORAGE") == 0
-                && ContextCompat.checkSelfPermission(getContext(), "android.permission.READ_EXTERNAL_STORAGE") == 0;
+        return ContextCompat.checkSelfPermission(requireContext(), "android.permission.WRITE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(requireContext(), "android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED;
     }
 
     public abstract void d();
 
     public void d(int var1) {
         if (!Sp.a) {
-            aB dialog = new aB(super.a);
-            dialog.b(xB.b().a(getContext(), R.string.common_message_permission_title_storage));
-            dialog.a(R.drawable.break_warning_96_red);
-            dialog.a(xB.b().a(getContext(), R.string.common_message_permission_storage));
-            dialog.b(xB.b().a(getContext(), R.string.common_word_ok), view -> {
+            MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(super.a);
+            dialog.setTitle(R.string.common_message_permission_title_storage);
+            dialog.setIcon(R.drawable.break_warning_96_red);
+            dialog.setMessage(R.string.common_message_permission_storage);
+            dialog.setPositiveButton(R.string.common_word_ok, (view, which) -> {
                 if (!mB.a()) {
                     requestPermissions(new String[]{"android.permission.WRITE_EXTERNAL_STORAGE",
                             "android.permission.READ_EXTERNAL_STORAGE"}, var1);
-                    dialog.dismiss();
+                    view.dismiss();
                 }
             });
-            dialog.a(xB.b().a(getContext(), R.string.common_word_cancel), view -> {
+            dialog.setNegativeButton(R.string.common_word_cancel, (view, which) -> {
                 d();
-                dialog.dismiss();
+                view.dismiss();
             });
             dialog.setOnDismissListener(dialog1 -> Sp.a = false);
             dialog.setCancelable(false);
-            dialog.setCanceledOnTouchOutside(false);
+            dialog.create().setCanceledOnTouchOutside(false);
             dialog.show();
             Sp.a = true;
         }
@@ -58,22 +62,24 @@ public abstract class DA extends qA {
 
     public void e(int var1) {
         if (!Sp.a) {
-            aB dialog = new aB(super.a);
-            dialog.b(xB.b().a(getContext(), R.string.common_message_permission_title_storage));
-            dialog.a(R.drawable.break_warning_96_red);
-            dialog.a(xB.b().a(getContext(), R.string.common_message_permission_storage1));
-            dialog.b(xB.b().a(getContext(), R.string.common_word_settings), view -> {
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(super.a);
+            builder.setTitle(R.string.common_message_permission_title_storage);
+            builder.setIcon(R.drawable.break_warning_96_red);
+            builder.setMessage(R.string.common_message_permission_storage1);
+            builder.setPositiveButton(R.string.common_word_settings, (view, which) -> {
                 if (!mB.a()) {
                     c(var1);
-                    dialog.dismiss();
+                    view.dismiss();
                 }
             });
-            dialog.a(xB.b().a(getContext(), R.string.common_word_cancel), view -> {
+            builder.setNegativeButton(R.string.common_word_cancel, (view, which) -> {
                 e();
-                dialog.dismiss();
+                view.dismiss();
             });
-            dialog.setOnDismissListener(dialog1 -> Sp.a = false);
-            dialog.setCancelable(false);
+            builder.setOnDismissListener(dialog1 -> Sp.a = false);
+            builder.setCancelable(false);
+
+            var dialog = builder.create();
             dialog.setCanceledOnTouchOutside(false);
             dialog.show();
             Sp.a = true;

@@ -1,16 +1,17 @@
 package com.besome.sketch.lib.ui;
 
-import a.a.a.wB;
-
 import android.content.Context;
+import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import a.a.a.wB;
+import pro.sketchware.R;
 
 public class PropertyOneLineItem extends RelativeLayout {
     private int key = -1;
     private TextView tvName;
+    private View divider;
 
     public PropertyOneLineItem(Context context) {
         super(context);
@@ -20,6 +21,7 @@ public class PropertyOneLineItem extends RelativeLayout {
     private void initialize(Context context) {
         wB.a(context, this, R.layout.program_info_item);
         tvName = findViewById(R.id.tv_name);
+        divider = findViewById(R.id.layout_divider);
         setClickable(true);
     }
 
@@ -33,5 +35,9 @@ public class PropertyOneLineItem extends RelativeLayout {
 
     public void setName(String txt) {
         tvName.setText(txt);
+    }
+
+    public void setHideDivider(boolean hideDivider) {
+        divider.setVisibility(hideDivider ? View.GONE : View.VISIBLE);
     }
 }

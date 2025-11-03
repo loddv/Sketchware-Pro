@@ -1,7 +1,6 @@
 package com.besome.sketch.editor.property;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.view.View;
 import android.widget.EditText;
@@ -9,14 +8,14 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import a.a.a.Kw;
-import a.a.a.TB;
-import a.a.a.aB;
 import a.a.a.mB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.lib.validator.MinMaxInputValidator;
 
 @SuppressLint("ViewConstructor")
 public class PropertySizeItem extends RelativeLayout implements View.OnClickListener {
@@ -46,7 +45,7 @@ public class PropertySizeItem extends RelativeLayout implements View.OnClickList
         int identifier = getResources().getIdentifier(str, "string", getContext().getPackageName());
         if (identifier > 0) {
             tvName.setText(Helper.getResString(identifier));
-            icon = R.drawable.expand_48;
+            icon = R.drawable.ic_mtrl_expand;
             if (propertyMenuItem.getVisibility() == VISIBLE) {
                 ((ImageView) findViewById(R.id.img_icon)).setImageResource(icon);
                 ((TextView) findViewById(R.id.tv_title)).setText(Helper.getResString(identifier));
@@ -83,9 +82,13 @@ public class PropertySizeItem extends RelativeLayout implements View.OnClickList
         if (orientationItem == 0) {
             propertyItem.setVisibility(GONE);
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyItem.setOnClickListener(null);
+            propertyMenuItem.setOnClickListener(this);
         } else {
             propertyItem.setVisibility(VISIBLE);
             propertyMenuItem.setVisibility(GONE);
+            propertyItem.setOnClickListener(this);
+            propertyMenuItem.setOnClickListener(null);
         }
     }
 
@@ -97,31 +100,31 @@ public class PropertySizeItem extends RelativeLayout implements View.OnClickList
         imgLeftIcon = findViewById(R.id.img_left_icon);
         propertyItem = findViewById(R.id.property_item);
         propertyMenuItem = findViewById(R.id.property_menu_item);
-        if (z) {
-            setSoundEffectsEnabled(true);
-            setOnClickListener(this);
-        }
+//        if (z) {
+//            propertyMenuItem.setSoundEffectsEnabled(true);
+//            propertyMenuItem.setOnClickListener(this);
+//        }
     }
 
     private void showDialog() {
-        aB dialog = new aB((Activity) getContext());
-        dialog.b(tvName.getText().toString());
-        dialog.a(icon);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(getContext());
+        dialog.setTitle(Helper.getText(tvName));
+        dialog.setIcon(icon);
         View view = wB.a(getContext(), R.layout.property_popup_input_size);
         EditText input = view.findViewById(R.id.et_input);
-        TB validator = new TB(context, view.findViewById(R.id.ti_input), 0, 999);
+        MinMaxInputValidator validator = new MinMaxInputValidator(context, view.findViewById(R.id.ti_input), 0, 999);
         validator.a(String.valueOf(value));
-        dialog.a(view);
-        dialog.b(Helper.getResString(R.string.common_word_save), v -> {
+        dialog.setView(view);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
             if (validator.b()) {
-                setValue(Integer.parseInt(input.getText().toString()));
+                setValue(Integer.parseInt(Helper.getText(input)));
                 if (valueChangeListener != null) {
                     valueChangeListener.a(key, value);
                 }
-                dialog.dismiss();
+                v.dismiss();
             }
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 }

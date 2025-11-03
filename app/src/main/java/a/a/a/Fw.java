@@ -7,10 +7,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,67 +19,56 @@ import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.manage.view.AddViewActivity;
 import com.besome.sketch.editor.manage.view.ManageViewActivity;
 import com.besome.sketch.editor.manage.view.PresetSettingActivity;
-import com.sketchware.remod.R;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+
+import pro.sketchware.R;
+import pro.sketchware.databinding.ManageViewListItemBinding;
 
 public class Fw extends qA {
 
     private static final int REQUEST_CODE_PRESET_ACTIVITY = 276;
     private static final int REQUEST_CODE_ADD_VIEW_ACTIVITY = 265;
+    private final int[] m = new int[19];
     private RecyclerView activitiesList;
     private Boolean k = false;
     private TextView tvGuide;
-    private final int[] m = new int[19];
     private ProjectFilesAdapter projectFilesAdapter = null;
     private String sc_id;
     private String isAppCompatUsed = "N";
     private ArrayList<ProjectFileBean> activitiesFiles;
 
-    public Fw() {
-    }
-
-    public final String a(int var1, String var2) {
-        String var3 = wq.b(var1);
-        StringBuilder var4 = new StringBuilder();
-        var4.append(var3);
-        int[] var5 = m;
-        int var6 = var5[var1] + 1;
-        var5[var1] = var6;
-        var4.append(var6);
-        String var9 = var4.toString();
-        ArrayList<ViewBean> var12 = jC.a(sc_id).d(var2);
-        var2 = var9;
+    public final String a(int beanType, String xmlName) {
+        String baseName = wq.b(beanType);
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append(baseName);
+        int[] nameCounters = m;
+        int counter = nameCounters[beanType] + 1;
+        nameCounters[beanType] = counter;
+        nameBuilder.append(counter);
+        String newName = nameBuilder.toString();
+        ArrayList<ViewBean> viewBeans = jC.a(sc_id).d(xmlName);
+        xmlName = newName;
 
         while (true) {
-            boolean var7 = false;
-            Iterator<ViewBean> var10 = var12.iterator();
-
-            boolean var13;
-            while (true) {
-                var13 = var7;
-                if (!var10.hasNext()) {
-                    break;
-                }
-
-                if (var2.equals(var10.next().id)) {
-                    var13 = true;
+            boolean nameExists = false;
+            for (ViewBean viewBean : viewBeans) {
+                if (xmlName.equals(viewBean.id)) {
+                    nameExists = true;
                     break;
                 }
             }
 
-            if (!var13) {
-                return var2;
+            if (!nameExists) {
+                return xmlName;
             }
 
-            StringBuilder var8 = new StringBuilder();
-            var8.append(var3);
-            int[] var11 = m;
-            var6 = var11[var1] + 1;
-            var11[var1] = var6;
-            var8.append(var6);
-            var2 = var8.toString();
+            nameBuilder = new StringBuilder();
+            nameBuilder.append(baseName);
+            counter = nameCounters[beanType] + 1;
+            nameCounters[beanType] = counter;
+            nameBuilder.append(counter);
+            xmlName = nameBuilder.toString();
         }
     }
 
@@ -187,7 +174,7 @@ public class Fw extends qA {
 
     public void g() {
         if (activitiesFiles != null) {
-            if (activitiesFiles.size() == 0) {
+            if (activitiesFiles.isEmpty()) {
                 tvGuide.setVisibility(View.VISIBLE);
                 activitiesList.setVisibility(View.GONE);
             } else {
@@ -238,7 +225,7 @@ public class Fw extends qA {
         projectFilesAdapter = new ProjectFilesAdapter(activitiesList);
         activitiesList.setAdapter(projectFilesAdapter);
         tvGuide = root.findViewById(R.id.tv_guide);
-        tvGuide.setText(xB.b().a(getActivity(), R.string.design_manager_view_description_guide_create_activity));
+        tvGuide.setText(R.string.design_manager_view_description_guide_create_activity);
         return root;
     }
 
@@ -251,21 +238,20 @@ public class Fw extends qA {
     }
 
     public class ProjectFilesAdapter extends RecyclerView.Adapter<ProjectFilesAdapter.ViewHolder> {
-        public int layoutPosition;
+        public int layoutPosition = -1;
 
         public ProjectFilesAdapter(RecyclerView recyclerView) {
-            layoutPosition = -1;
             if (recyclerView.getLayoutManager() instanceof LinearLayoutManager) {
                 recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                     @Override
                     public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                         super.onScrolled(recyclerView, dx, dy);
                         if (dy > 2) {
-                            if (((ManageViewActivity) getActivity()).s.isEnabled()) {
-                                ((ManageViewActivity) getActivity()).s.hide();
+                            if (((ManageViewActivity) requireActivity()).s.isEnabled()) {
+                                ((ManageViewActivity) requireActivity()).s.hide();
                             }
-                        } else if (dy < -2 && ((ManageViewActivity) getActivity()).s.isEnabled()) {
-                            ((ManageViewActivity) getActivity()).s.show();
+                        } else if (dy < -2 && ((ManageViewActivity) requireActivity()).s.isEnabled()) {
+                            ((ManageViewActivity) requireActivity()).s.show();
                         }
                     }
                 });
@@ -279,26 +265,23 @@ public class Fw extends qA {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
-            viewHolder.imgActivity.setVisibility(View.VISIBLE);
-            viewHolder.deleteImgContainer.setVisibility(View.GONE);
-            if (position == 0) {
-                viewHolder.checkBox.setVisibility(View.GONE);
-            } else {
-                viewHolder.deleteImgContainer.setVisibility(k ? View.VISIBLE : View.GONE);
-                viewHolder.imgActivity.setVisibility(k ? View.GONE : View.VISIBLE);
-            }
-
             ProjectFileBean projectFileBean = activitiesFiles.get(position);
-            viewHolder.imgActivity.setImageResource(getImageResByOptions(projectFileBean.options));
-            viewHolder.tvScreenName.setText(projectFileBean.getXmlName());
-            viewHolder.tvActivityName.setText(projectFileBean.getJavaName());
-            viewHolder.imgDelete.setImageResource(projectFileBean.isSelected ? R.drawable.ic_checkmark_green_48dp : R.drawable.ic_trashcan_white_48dp);
+
+            // Displaying selection state
+            viewHolder.binding.chkSelect.setChecked(projectFileBean.isSelected);
+            viewHolder.binding.chkSelect.setVisibility(position == 0 ? View.GONE : k ? View.VISIBLE : View.GONE);
+            viewHolder.binding.imgActivity.setVisibility(k && position != 0 ? View.GONE : View.VISIBLE);
+
+            viewHolder.binding.imgActivity.setImageResource(getImageResByOptions(projectFileBean.options));
+            viewHolder.binding.tvScreenName.setText(projectFileBean.getXmlName());
+            viewHolder.binding.tvActivityName.setText(projectFileBean.getJavaName());
         }
 
         @Override
         @NonNull
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.manage_view_list_item, parent, false));
+            ManageViewListItemBinding binding = ManageViewListItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            return new ViewHolder(binding);
         }
 
         private int getImageResByOptions(int options) {
@@ -308,51 +291,47 @@ public class Fw extends qA {
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
-            public final ImageView imgPresetSettings;
-            public final CheckBox checkBox;
-            public final View viewItem;
-            public final ImageView imgActivity;
-            public final TextView tvScreenName;
-            public final TextView tvActivityName;
-            public final LinearLayout deleteImgContainer;
-            public final ImageView imgDelete;
+            private final ManageViewListItemBinding binding;
 
-            public ViewHolder(View itemView) {
-                super(itemView);
-                checkBox = itemView.findViewById(R.id.chk_select);
-                viewItem = itemView.findViewById(R.id.view_item);
-                imgActivity = itemView.findViewById(R.id.img_activity);
-                tvScreenName = itemView.findViewById(R.id.tv_screen_name);
-                tvActivityName = itemView.findViewById(R.id.tv_activity_name);
-                deleteImgContainer = itemView.findViewById(R.id.delete_img_container);
-                imgDelete = itemView.findViewById(R.id.img_delete);
-                imgPresetSettings = itemView.findViewById(R.id.img_preset_setting);
-                checkBox.setVisibility(View.GONE);
-                viewItem.setOnClickListener(view -> {
+            public ViewHolder(ManageViewListItemBinding binding) {
+                super(binding.getRoot());
+                this.binding = binding;
+
+                binding.viewItem.setOnClickListener(view -> {
                     if (!mB.a()) {
                         layoutPosition = getLayoutPosition();
-                        if (Fw.this.k) {
+                        ProjectFileBean projectFileBean = activitiesFiles.get(layoutPosition);
+
+                        if (k) {
                             if (layoutPosition != 0) {
-                                checkBox.setChecked(!checkBox.isChecked());
-                                activitiesFiles.get(layoutPosition).isSelected = checkBox.isChecked();
+                                projectFileBean.isSelected = !projectFileBean.isSelected;
+                                binding.chkSelect.setChecked(projectFileBean.isSelected);
                                 notifyItemChanged(layoutPosition);
                             }
                         } else {
                             Intent intent = new Intent(getContext(), AddViewActivity.class);
-                            intent.putExtra("project_file", activitiesFiles.get(layoutPosition));
+                            intent.putExtra("project_file", projectFileBean);
                             intent.putExtra("request_code", REQUEST_CODE_ADD_VIEW_ACTIVITY);
                             startActivityForResult(intent, REQUEST_CODE_ADD_VIEW_ACTIVITY);
                         }
                     }
                 });
-                viewItem.setOnLongClickListener(view -> {
+
+                binding.viewItem.setOnLongClickListener(view -> {
+                    if (getLayoutPosition() == 0) {
+                        Toast.makeText(getContext(), "Main activity cannot be deleted", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
                     ((ManageViewActivity) getActivity()).a(true);
                     layoutPosition = getLayoutPosition();
-                    checkBox.setChecked(!checkBox.isChecked());
-                    activitiesFiles.get(layoutPosition).isSelected = checkBox.isChecked();
+                    ProjectFileBean projectFileBean = activitiesFiles.get(layoutPosition);
+                    projectFileBean.isSelected = !projectFileBean.isSelected;
+                    binding.chkSelect.setChecked(projectFileBean.isSelected);
+                    notifyItemChanged(layoutPosition);
                     return true;
                 });
-                imgPresetSettings.setOnClickListener(view -> {
+
+                binding.imgPresetSetting.setOnClickListener(view -> {
                     if (!mB.a()) {
                         layoutPosition = getLayoutPosition();
                         Intent intent = new Intent(getContext(), PresetSettingActivity.class);

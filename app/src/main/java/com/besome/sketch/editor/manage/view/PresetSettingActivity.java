@@ -8,13 +8,13 @@ import android.widget.TextView;
 
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.lib.base.BaseDialogActivity;
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 
-import a.a.a.aB;
 import a.a.a.rq;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class PresetSettingActivity extends BaseDialogActivity implements View.OnClickListener {
 
@@ -26,20 +26,12 @@ public class PresetSettingActivity extends BaseDialogActivity implements View.On
     private ArrayList<ProjectFileBean> presets;
 
     private void applyPresetData(String presetName) {
-        int resDrawable;
-        switch (requestCode) {
-            case 276:
-                resDrawable = rq.e(presetName);
-                break;
-            case AddCustomViewActivity.REQ_CD_PRESET_ACTIVITY:
-                resDrawable = rq.a(presetName);
-                break;
-            case 278:
-                resDrawable = rq.c(presetName);
-                break;
-            default:
-                resDrawable = -1;
-        }
+        int resDrawable = switch (requestCode) {
+            case 276 -> rq.e(presetName);
+            case AddCustomViewActivity.REQ_CD_PRESET_ACTIVITY -> rq.a(presetName);
+            case 278 -> rq.c(presetName);
+            default -> -1;
+        };
 
         activity.setImageResource(resDrawable);
         activityName.setText(presetName);
@@ -53,13 +45,13 @@ public class PresetSettingActivity extends BaseDialogActivity implements View.On
     }
 
     private void confirmBeforeClose() {
-        aB dialog = new aB(this);
-        dialog.b(Helper.getResString(R.string.preset_setting_title));
-        dialog.a(R.drawable.ic_detail_setting_48dp);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setTitle(Helper.getResString(R.string.preset_setting_title));
+        dialog.setIcon(R.drawable.ic_detail_setting_48dp);
         dialog.setCancelable(false);
-        dialog.a(Helper.getResString(R.string.preset_setting_edit_warning));
-        dialog.b(Helper.getResString(R.string.common_word_ok), v -> close());
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setMessage(Helper.getResString(R.string.preset_setting_edit_warning));
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_ok), (v, which) -> close());
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 

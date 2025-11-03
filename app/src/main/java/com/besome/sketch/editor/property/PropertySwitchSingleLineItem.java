@@ -5,15 +5,15 @@ import android.content.Context;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 import a.a.a.Kw;
 import a.a.a.mB;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 @SuppressLint("ViewConstructor")
 public class PropertySwitchSingleLineItem extends LinearLayout implements View.OnClickListener {
@@ -21,7 +21,7 @@ public class PropertySwitchSingleLineItem extends LinearLayout implements View.O
     private String key = "";
     private boolean value = false;
     private TextView tvName;
-    private Switch switchValue;
+    private MaterialSwitch switchValue;
     private ImageView imgLeftIcon;
     private int icon;
     private View propertyItem;
@@ -40,10 +40,10 @@ public class PropertySwitchSingleLineItem extends LinearLayout implements View.O
         imgLeftIcon = findViewById(R.id.img_left_icon);
         propertyItem = findViewById(R.id.property_item);
         propertyMenuItem = findViewById(R.id.property_menu_item);
-        if (z) {
-            setOnClickListener(this);
-            setSoundEffectsEnabled(true);
-        }
+//        if (z) {
+//            propertyMenuItem.setOnClickListener(this);
+//            propertyMenuItem.setSoundEffectsEnabled(true);
+//        }
     }
 
     public String getKey() {
@@ -58,7 +58,7 @@ public class PropertySwitchSingleLineItem extends LinearLayout implements View.O
             tvName.setText(Helper.getResString(identifier));
             switch (this.key) {
                 case "property_checked":
-                    icon = R.drawable.ok_48;
+                    icon = R.drawable.ic_mtrl_check;
                     break;
 
                 case "property_single_line":
@@ -66,11 +66,11 @@ public class PropertySwitchSingleLineItem extends LinearLayout implements View.O
                     break;
 
                 case "property_enabled":
-                    icon = R.drawable.light_on_48;
+                    icon = R.drawable.ic_mtrl_bulb;
                     break;
 
                 case "property_clickable":
-                    icon = R.drawable.natural_user_interface2_48;
+                    icon = R.drawable.ic_mtrl_touch;
             }
             if (propertyMenuItem.getVisibility() == VISIBLE) {
                 ((ImageView) findViewById(R.id.img_icon)).setImageResource(icon);
@@ -106,9 +106,13 @@ public class PropertySwitchSingleLineItem extends LinearLayout implements View.O
         if (orientationItem == 0) {
             propertyItem.setVisibility(GONE);
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyItem.setOnClickListener(null);
+            propertyMenuItem.setOnClickListener(this);
         } else {
             propertyItem.setVisibility(VISIBLE);
             propertyMenuItem.setVisibility(GONE);
+            propertyItem.setOnClickListener(this);
+            propertyMenuItem.setOnClickListener(null);
         }
     }
 }

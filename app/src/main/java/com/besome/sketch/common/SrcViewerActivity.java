@@ -1,23 +1,22 @@
 package com.besome.sketch.common;
 
-import android.app.AlertDialog;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
-import android.widget.Spinner;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.besome.sketch.beans.SrcCodeBean;
 import com.besome.sketch.ctrls.CommonSpinnerItem;
-import com.sketchware.remod.R;
+import com.besome.sketch.lib.base.BaseAppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 
@@ -25,58 +24,49 @@ import a.a.a.ProjectBuilder;
 import a.a.a.bB;
 import a.a.a.jC;
 import a.a.a.yq;
-import io.github.rosemoe.sora.langs.java.JavaLanguage;
-import io.github.rosemoe.sora.widget.CodeEditor;
-import io.github.rosemoe.sora.widget.schemes.EditorColorScheme;
 import mod.hey.studios.util.Helper;
-import mod.jbk.code.CodeEditorColorSchemes;
-import mod.jbk.code.CodeEditorLanguages;
+import pro.sketchware.R;
+import pro.sketchware.databinding.SrcViewerBinding;
+import pro.sketchware.utility.EditorUtils;
 
-public class SrcViewerActivity extends AppCompatActivity {
+public class SrcViewerActivity extends BaseAppCompatActivity {
 
+    private SrcViewerBinding binding;
     private String sc_id;
-    private Spinner filesListSpinner;
-    private ImageView changeFontSize;
-    private LinearLayout progressContainer;
-    private ArrayList<SrcCodeBean> srcCodeBean;
-    /**
-     * Corresponds to the filename of which layout or activity the user is currently in.
-     */
-    private String currentPageFileName;
-    private int sourceCodeFontSize = 12;
-    private CodeEditor codeViewer;
+    private ArrayList<SrcCodeBean> sourceCodeBeans;
+
+    private String currentFileName;
+    private int editorFontSize = 12;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.src_viewer);
+        binding = SrcViewerBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        currentFileName = getIntent().hasExtra("current") ? getIntent().getStringExtra("current") : "";
+        sc_id = savedInstanceState != null ? savedInstanceState.getString("sc_id") : getIntent().getStringExtra("sc_id");
 
-        currentPageFileName = getIntent().hasExtra("current") ? getIntent().getStringExtra("current") : "";
+        ViewCompat.setOnApplyWindowInsetsListener(binding.getRoot(), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), systemBars.bottom);
+            return insets;
+        });
 
-        codeViewer = new CodeEditor(this);
-        codeViewer.setTypefaceText(Typeface.MONOSPACE);
-        codeViewer.setEditable(false);
-        codeViewer.setTextSize(sourceCodeFontSize);
-        codeViewer.setPinLineNumber(true);
-        setCorrectCodeEditorLanguage();
+        configureEditor();
 
-        LinearLayout contentLayout = (LinearLayout) (findViewById(R.id.pager_soruce_code).getParent());
-        contentLayout.removeAllViews();
-        contentLayout.addView(codeViewer);
+        binding.changeFontSize.setOnClickListener(v -> showChangeFontSizeDialog());
 
-        sc_id = (savedInstanceState != null) ? savedInstanceState.getString("sc_id") : getIntent().getStringExtra("sc_id");
-
-        changeFontSize = findViewById(R.id.imgv_src_size);
-        changeFontSize.setOnClickListener((v -> showChangeFontSizeDialog()));
-
-        filesListSpinner = findViewById(R.id.spn_src_list);
-        filesListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        binding.filesListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                SrcCodeBean bean = srcCodeBean.get(position);
-                codeViewer.setText(bean.source);
-                currentPageFileName = bean.srcFileName;
-                setCorrectCodeEditorLanguage();
+                SrcCodeBean bean = sourceCodeBeans.get(position);
+                binding.editor.setText(bean.source);
+                currentFileName = bean.srcFileName;
+                if (currentFileName.endsWith(".xml")) {
+                    EditorUtils.loadXmlConfig(binding.editor);
+                } else {
+                    EditorUtils.loadJavaConfig(binding.editor);
+                }
             }
 
             @Override
@@ -84,47 +74,32 @@ public class SrcViewerActivity extends AppCompatActivity {
             }
         });
 
-        LinearLayout layoutSrcList = findViewById(R.id.layout_srclist);
-        for (int i = 0; i < layoutSrcList.getChildCount(); i++) {
-            View child = layoutSrcList.getChildAt(i);
-
-            if (child instanceof LinearLayout) {
-                // Found the LinearLayout containing the ProgressBar and TextView!
-                progressContainer = (LinearLayout) child;
-
-                filesListSpinner.setVisibility(View.GONE);
-                changeFontSize.setVisibility(View.GONE);
-                progressContainer.setVisibility(View.VISIBLE);
-            }
-        }
+        k(); // show loading
 
         new Thread(() -> {
             var yq = new yq(getBaseContext(), sc_id);
             var fileManager = jC.b(sc_id);
             var dataManager = jC.a(sc_id);
             var libraryManager = jC.c(sc_id);
-            yq.a(libraryManager, fileManager, dataManager, false);
+            yq.a(libraryManager, fileManager, dataManager, a.a.a.yq.ExportType.SOURCE_CODE_VIEWING);
             ProjectBuilder builder = new ProjectBuilder(this, yq);
             builder.buildBuiltInLibraryInformation();
-            srcCodeBean = yq.a(fileManager, dataManager, builder.getBuiltInLibraryManager());
+            sourceCodeBeans = yq.a(fileManager, dataManager, builder.getBuiltInLibraryManager());
 
             try {
                 runOnUiThread(() -> {
-                    if (srcCodeBean == null) {
+                    if (sourceCodeBeans == null) {
                         bB.b(getApplicationContext(), Helper.getResString(R.string.common_error_unknown), bB.TOAST_NORMAL).show();
                     } else {
-                        filesListSpinner.setAdapter(new FilesListSpinnerAdapter());
-                        for (SrcCodeBean src : srcCodeBean) {
-                            if (src.srcFileName.equals(currentPageFileName)) {
-                                filesListSpinner.setSelection(srcCodeBean.indexOf(src));
+                        binding.filesListSpinner.setAdapter(new FilesListSpinnerAdapter());
+                        for (SrcCodeBean src : sourceCodeBeans) {
+                            if (src.srcFileName.equals(currentFileName)) {
+                                binding.filesListSpinner.setSelection(sourceCodeBeans.indexOf(src));
                                 break;
                             }
                         }
-                        codeViewer.setText(srcCodeBean.get(filesListSpinner.getSelectedItemPosition()).source);
-
-                        progressContainer.setVisibility(View.GONE);
-                        filesListSpinner.setVisibility(View.VISIBLE);
-                        changeFontSize.setVisibility(View.VISIBLE);
+                        binding.editor.setText(sourceCodeBeans.get(binding.filesListSpinner.getSelectedItemPosition()).source);
+                        h(); // hide loading
                     }
                 });
             } catch (Exception ignored) {
@@ -133,20 +108,23 @@ public class SrcViewerActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void configureEditor() {
+        binding.editor.setTypefaceText(EditorUtils.getTypeface(this));
+        binding.editor.setEditable(false);
+        binding.editor.setTextSize(editorFontSize);
+        binding.editor.setPinLineNumber(true);
+
+        if (currentFileName.endsWith(".xml")) {
+            EditorUtils.loadXmlConfig(binding.editor);
+        } else {
+            EditorUtils.loadJavaConfig(binding.editor);
+        }
+    }
+
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putString("sc_id", sc_id);
         super.onSaveInstanceState(outState);
-    }
-
-    private void setCorrectCodeEditorLanguage() {
-        if (currentPageFileName.endsWith(".xml")) {
-            codeViewer.setColorScheme(CodeEditorColorSchemes.loadTextMateColorScheme(CodeEditorColorSchemes.THEME_GITHUB));
-            codeViewer.setEditorLanguage(CodeEditorLanguages.loadTextMateLanguage(CodeEditorLanguages.SCOPE_NAME_XML));
-        } else {
-            codeViewer.setColorScheme(new EditorColorScheme());
-            codeViewer.setEditorLanguage(new JavaLanguage());
-        }
     }
 
     private void showChangeFontSizeDialog() {
@@ -154,7 +132,7 @@ public class SrcViewerActivity extends AppCompatActivity {
         picker.setMinValue(8);
         picker.setMaxValue(30);
         picker.setWrapSelectorWheel(false);
-        picker.setValue(sourceCodeFontSize);
+        picker.setValue(editorFontSize);
 
         LinearLayout layout = new LinearLayout(this);
         layout.addView(picker, new LinearLayout.LayoutParams(
@@ -162,13 +140,13 @@ public class SrcViewerActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 Gravity.CENTER));
 
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle("Select font size")
-                .setIcon(R.drawable.ic_font_48dp)
+                .setIcon(R.drawable.ic_mtrl_formattext)
                 .setView(layout)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    sourceCodeFontSize = picker.getValue();
-                    codeViewer.setTextSize(sourceCodeFontSize);
+                .setPositiveButton("Apply", (dialog, which) -> {
+                    editorFontSize = picker.getValue();
+                    binding.editor.setTextSize(editorFontSize);
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
@@ -177,26 +155,26 @@ public class SrcViewerActivity extends AppCompatActivity {
     public class FilesListSpinnerAdapter extends BaseAdapter {
 
         private View getCustomSpinnerView(int position, View view, boolean isCurrentlyViewingFile) {
-            CommonSpinnerItem spinnerItem = (view != null) ? (CommonSpinnerItem) view :
+            CommonSpinnerItem spinnerItem = view != null ? (CommonSpinnerItem) view :
                     new CommonSpinnerItem(SrcViewerActivity.this);
-            spinnerItem.a((srcCodeBean.get(position)).srcFileName, isCurrentlyViewingFile);
+            spinnerItem.a(sourceCodeBeans.get(position).srcFileName, isCurrentlyViewingFile);
             return spinnerItem;
         }
 
         @Override
         public int getCount() {
-            return srcCodeBean.size();
+            return sourceCodeBeans.size();
         }
 
         @Override
         public View getDropDownView(int position, View convertView, ViewGroup parent) {
-            boolean isCheckmarkVisible = (filesListSpinner.getSelectedItemPosition() == position);
+            boolean isCheckmarkVisible = binding.filesListSpinner.getSelectedItemPosition() == position;
             return getCustomSpinnerView(position, convertView, isCheckmarkVisible);
         }
 
         @Override
         public Object getItem(int position) {
-            return srcCodeBean.get(position);
+            return sourceCodeBeans.get(position);
         }
 
         @Override

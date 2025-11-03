@@ -4,12 +4,12 @@ import android.content.Context;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.RelativeLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 import a.a.a.wB;
+import pro.sketchware.R;
 
 public class PropertySwitchItem extends RelativeLayout implements View.OnClickListener {
 
@@ -17,7 +17,7 @@ public class PropertySwitchItem extends RelativeLayout implements View.OnClickLi
     private boolean value = false;
     private TextView tvName;
     private TextView tvDesc;
-    private Switch switchValue;
+    private MaterialSwitch switchValue;
 
     public PropertySwitchItem(Context context) {
         super(context);

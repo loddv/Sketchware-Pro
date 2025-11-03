@@ -1,40 +1,47 @@
 package a.a.a;
 
 import android.app.Activity;
-import android.app.Dialog;
-import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager.LayoutParams;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
+import androidx.appcompat.app.AlertDialog;
 
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-/**
- * A Sketchware-styled dialog.
- */
-public class aB extends Dialog {
+public class aB extends AlertDialog {
 
-    private int dialogImageResId = -1;
-    private String dialogTitleText = "";
-    private String dialogMessageText = "";
-    private boolean msgIsSelectable = false;
-    private View dialogCustomView;
-    private View dialogButtonsContainer;
-    private String dialogDefaultText = "Default";
-    private View.OnClickListener dialogDefaultListener = null;
-    private String dialogNoText = "No";
-    private View.OnClickListener dialogNoListener = null;
-    private String dialogYesText = "Yes";
-    private View.OnClickListener dialogYesListener = null;
+    private final Activity activity;
+    public int dialogImageResId = -1;
+    public String dialogTitleText = "";
+    public String dialogMessageText = "";
+    public boolean msgIsSelectable = false;
+    public boolean canDismissDialogOnDefaultBtnClicked = true;
+    public View dialogCustomView;
+    public String dialogDefaultText = "Default";
+    public View.OnClickListener dialogDefaultListener = null;
+    public String dialogNoText = "No";
+    public View.OnClickListener dialogNoListener = null;
+    public String dialogYesText = "Yes";
+    public View.OnClickListener dialogYesListener = null;
+    public boolean cancelable = true;
+    public boolean canceledOnTouchOutside = true;
+    private AlertDialog dialog;
 
     public aB(Activity activity) {
         super(activity);
+        this.activity = activity;
+    }
+
+    @Override
+    public void setCancelable(boolean cancelable) {
+        this.cancelable = cancelable;
+    }
+
+    @Override
+    public void setCanceledOnTouchOutside(boolean canceledOnTouchOutside) {
+        this.canceledOnTouchOutside = canceledOnTouchOutside;
     }
 
     /**
@@ -85,88 +92,93 @@ public class aB extends Dialog {
         dialogDefaultText = defaultText;
         dialogDefaultListener = defaultListener;
     }
-    
+
+    public void setDismissOnDefaultButtonClick(boolean dismissOnDefaultClick) {
+        canDismissDialogOnDefaultBtnClicked = dismissOnDefaultClick;
+    }
+
     public void setMessageIsSelectable(boolean msgIsSelectable) {
         this.msgIsSelectable = msgIsSelectable;
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setBackgroundDrawableResource(R.drawable.custom_dialog_inset_white);
+    public void show() {
+        MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(activity);
+        builder.setCancelable(cancelable);
 
-        {
-            LayoutParams attributes = getWindow().getAttributes();
-            attributes.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            getWindow().setAttributes(attributes);
-        }
-        setContentView(R.layout.dialog);
-
-        ImageView dialogImage = findViewById(R.id.dialog_img);
-        TextView dialogTitle = findViewById(R.id.dialog_title);
-        TextView dialogMessage = findViewById(R.id.dialog_msg);
-        dialogMessage.setTextIsSelectable(msgIsSelectable);
-        FrameLayout dialogCustomViewContainer = findViewById(R.id.custom_view);
-
-        dialogButtonsContainer = findViewById(R.id.layout_button);
-        TextView dialogDefault = findViewById(R.id.common_dialog_default_button);
-        dialogDefault.setText(dialogDefaultText);
-        dialogDefault.setOnClickListener(dialogDefaultListener);
-        TextView dialogNo = findViewById(R.id.dialog_btn_no);
-        dialogNo.setText(dialogNoText);
-        dialogNo.setOnClickListener(dialogNoListener);
-        TextView dialogYes = findViewById(R.id.dialog_btn_yes);
-        dialogYes.setText(dialogYesText);
-        dialogYes.setOnClickListener(dialogYesListener);
-
-        if (dialogTitleText.isEmpty()) {
-            dialogTitle.setVisibility(View.GONE);
-        } else {
-            dialogTitle.setVisibility(View.VISIBLE);
-            dialogTitle.setText(dialogTitleText);
-        }
-
-        if (dialogMessageText.isEmpty()) {
-            dialogMessage.setVisibility(View.GONE);
-        } else {
-            dialogMessage.setVisibility(View.VISIBLE);
-            dialogMessage.setText(dialogMessageText);
-        }
-
-        if (dialogDefaultListener == null) {
-            dialogDefault.setVisibility(View.GONE);
-        }
-
-        if (dialogNoListener == null) {
-            dialogNo.setVisibility(View.GONE);
-        }
-
-        if (dialogYesListener == null) {
-            dialogYes.setVisibility(View.GONE);
-        }
-
-        if (dialogImageResId == -1) {
-            dialogImage.setVisibility(View.GONE);
-        } else {
-            dialogImage.setImageResource(dialogImageResId);
+        if (!dialogTitleText.isEmpty()) {
+            builder.setTitle(dialogTitleText);
         }
 
         if (dialogCustomView != null) {
-            dialogCustomViewContainer.setVisibility(View.VISIBLE);
-            dialogCustomViewContainer.addView(dialogCustomView);
-        } else {
-            dialogCustomViewContainer.setVisibility(View.GONE);
+            builder.setView(dialogCustomView);
+        } else if (!dialogMessageText.isEmpty()) {
+            builder.setMessage(dialogMessageText);
+        }
+
+        if (dialogImageResId != -1) {
+            builder.setIcon(dialogImageResId);
+        }
+
+        if (dialogDefaultListener != null) {
+            builder.setNeutralButton(dialogDefaultText, null);
+        }
+
+        if (dialogNoListener != null) {
+            builder.setNegativeButton(dialogNoText, null);
+        }
+
+        if (dialogYesListener != null) {
+            builder.setPositiveButton(dialogYesText, null);
+        }
+
+        dialog = builder.create();
+
+        if (msgIsSelectable) {
+            dialog.setOnShowListener(dialogInterface -> {
+                TextView messageView = dialog.findViewById(android.R.id.message);
+                if (messageView != null) {
+                    messageView.setTextIsSelectable(true);
+                }
+            });
+        }
+
+        dialog.setCanceledOnTouchOutside(canceledOnTouchOutside);
+        dialog.show();
+
+        if (dialogDefaultListener != null) {
+            Button neutralButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            neutralButton.setOnClickListener(v -> {
+                dialogDefaultListener.onClick(v);
+                if (canDismissDialogOnDefaultBtnClicked) {
+                    dialog.dismiss();
+                }
+            });
+        }
+
+        if (dialogNoListener != null) {
+            Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            negativeButton.setOnClickListener(v -> {
+                dialogNoListener.onClick(v);
+                dialog.dismiss();
+            });
+        }
+
+        if (dialogYesListener != null) {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                dialogYesListener.onClick(v);
+                dialog.dismiss();
+            });
         }
     }
 
     @Override
-    public void show() {
-        super.show();
-        if (dialogDefaultListener == null && dialogYesListener == null && dialogNoListener == null) {
-            if (dialogButtonsContainer != null) {
-                dialogButtonsContainer.setVisibility(View.GONE);
-            }
+    public void dismiss() {
+        if (dialog != null) {
+            dialog.dismiss();
+        } else {
+            super.dismiss();
         }
     }
 }

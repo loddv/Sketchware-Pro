@@ -1,11 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <include layout="@layout/toolbar" />
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:contentInsetStart="0dp"
+        app:contentInsetStart="0dp" />
 
     <LinearLayout
         android:id="@+id/layout_content"
@@ -32,12 +37,12 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:singleLine="true"
-                android:textColor="@color/scolor_red_02"
+                android:textColor="?colorError"
                 android:textSize="14sp"
                 tools:text="@string/design_library_settings_title_enabled" />
 
-            <Switch
-                android:id="@id/lib_switch"
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/lib_switch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
@@ -73,23 +78,24 @@
                             android:layout_height="18dp"
                             android:layout_gravity="center_vertical"
                             android:layout_marginRight="8dp"
-                            android:src="@drawable/widget_file" />
+                            android:src="@drawable/ic_mtrl_id" />
 
                         <TextView
                             android:id="@+id/tv_title_app_id"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:textColor="#ff4d4d4d"
+                            android:text="@string/design_library_admob_title_app_id"
                             android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:text="@string/design_library_admob_title_app_id" />
+                            android:textStyle="bold" />
                     </LinearLayout>
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="?attr/materialCardViewFilledStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="4dp">
+                        android:layout_margin="4dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -107,11 +113,11 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <LinearLayout
@@ -131,23 +137,24 @@
                             android:layout_height="18dp"
                             android:layout_gravity="center_vertical"
                             android:layout_marginRight="8dp"
-                            android:src="@drawable/widget_file" />
+                            android:src="@drawable/ic_mtrl_file" />
 
                         <TextView
                             android:id="@+id/tv_title_banner"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:textColor="#ff4d4d4d"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             tools:text="@string/design_library_admob_title_banner" />
                     </LinearLayout>
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="?attr/materialCardViewFilledStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="4dp">
+                        android:layout_margin="4dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -166,7 +173,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_name" />
 
@@ -175,7 +181,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
 
@@ -189,7 +195,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_unit_id" />
 
@@ -198,11 +203,11 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <LinearLayout
@@ -219,26 +224,27 @@
 
                         <ImageView
                             android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_height="match_parent"
                             android:layout_gravity="center_vertical"
                             android:layout_marginRight="8dp"
-                            android:src="@drawable/widget_file" />
+                            android:src="@drawable/ic_mtrl_file" />
 
                         <TextView
                             android:id="@+id/tv_title_inter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:textColor="#ff4d4d4d"
                             android:textSize="14sp"
                             android:textStyle="bold"
                             tools:text="@string/design_library_admob_title_interstitial" />
                     </LinearLayout>
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="?attr/materialCardViewFilledStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="4dp">
+                        android:layout_margin="4dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -257,7 +263,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_name" />
 
@@ -266,7 +271,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
 
@@ -280,7 +285,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_unit_id" />
 
@@ -289,11 +293,11 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <LinearLayout
@@ -313,23 +317,24 @@
                             android:layout_height="18dp"
                             android:layout_gravity="center_vertical"
                             android:layout_marginRight="8dp"
-                            android:src="@drawable/widget_file" />
+                            android:src="@drawable/ic_mtrl_star" />
 
                         <TextView
                             android:id="@+id/tv_title_reward"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:textColor="#ff4d4d4d"
+                            android:text="Rewarded Ad"
                             android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:text="Rewarded Ad" />
+                            android:textStyle="bold" />
                     </LinearLayout>
 
-                    <androidx.cardview.widget.CardView
+                    <com.google.android.material.card.MaterialCardView
+                        style="?attr/materialCardViewFilledStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="4dp">
+                        android:layout_margin="4dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -348,7 +353,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_name" />
 
@@ -357,7 +361,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
 
@@ -371,7 +375,6 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff404040"
                                     android:textSize="14sp"
                                     tools:text="@string/design_library_admob_title_ad_unit_id" />
 
@@ -380,11 +383,11 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:gravity="center|left"
-                                    android:textColor="#ff7d7d7d"
+                                    android:textColor="?attr/colorOnSurfaceVariant"
                                     android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
-                    </androidx.cardview.widget.CardView>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
                 <LinearLayout
@@ -399,23 +402,24 @@
                         android:layout_height="18dp"
                         android:layout_gravity="center_vertical"
                         android:layout_marginRight="8dp"
-                        android:src="@drawable/ic_test_device_48dp" />
+                        android:src="@drawable/ic_mtrl_devices" />
 
                     <TextView
                         android:id="@+id/tv_title_test_device"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
-                        android:textColor="#ff4d4d4d"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         tools:text="@string/design_library_admob_dialog_set_test_device_title" />
                 </LinearLayout>
 
-                <androidx.cardview.widget.CardView
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewFilledStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_margin="4dp">
+                    android:layout_margin="4dp"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/list_test_device"
@@ -423,17 +427,15 @@
                         android:layout_height="match_parent"
                         android:padding="8dp"
                         tools:listitem="@layout/manage_library_setting_admob_test_device_item" />
-                </androidx.cardview.widget.CardView>
+                </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </ScrollView>
 
         <Button
             android:id="@+id/btn_console"
+            style="@style/Widget.Material3Expressive.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#ffffffff"
-            android:textSize="@dimen/text_size_button_material"
-            android:theme="@style/AppTheme.Button.LightBlue"
             tools:text="@string/design_library_admob_button_goto_console" />
     </LinearLayout>
 </LinearLayout>

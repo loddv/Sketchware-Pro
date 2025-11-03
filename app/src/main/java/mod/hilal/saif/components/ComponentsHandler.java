@@ -6,10 +6,8 @@ import android.text.TextUtils;
 import android.util.Pair;
 import android.widget.Toast;
 
-import com.besome.sketch.SketchApplication;
 import com.besome.sketch.beans.ComponentBean;
 import com.google.gson.Gson;
-import com.sketchware.remod.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,11 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import a.a.a.Lx;
-import a.a.a.xB;
-import mod.SketchwareUtil;
-import mod.agus.jcoderz.lib.FileUtil;
 import mod.hey.studios.util.Helper;
 import mod.jbk.util.OldResourceIdMapper;
+import pro.sketchware.R;
+import pro.sketchware.SketchApplication;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 //responsible code :
 //ComponentBean == sketchware / beans √
 //Manage components == agus /component √
@@ -47,7 +46,7 @@ public class ComponentsHandler {
      * Called at {@link ComponentBean#getComponentTypeByTypeName(String)}.
      */
     //√ give typeName and return id
-    public static int id(final String name) {
+    public static int id(String name) {
         if (name.equals("AsyncTask")) {
             return 36;
         }
@@ -220,7 +219,7 @@ public class ComponentsHandler {
     public static String description(int id) {
         int componentBeanDescriptionResId = ComponentBean.getDescStrResource(id);
         if (componentBeanDescriptionResId != 0) {
-            return xB.b().a(SketchApplication.getContext(), componentBeanDescriptionResId);
+            return SketchApplication.getContext().getString(componentBeanDescriptionResId);
         } else {
             return description2(id);
         }
@@ -348,7 +347,7 @@ public class ComponentsHandler {
 
     /**
      * Adds Custom Components to available Components section.
-     * Used at {@link com.besome.sketch.editor.component.ComponentAddActivity#onPostCreate(Bundle)}.
+     * Used at {@link com.besome.sketch.editor.component.AddComponentBottomSheet#onCreate(Bundle)}.
      */
     // √ add components to sk
     //structure : list.add(new ComponentBean(27));
@@ -530,8 +529,7 @@ public class ComponentsHandler {
                     if (name.equals(componentVarName)) {
                         Object componentImports = component.get("imports");
 
-                        if (componentImports instanceof String) {
-                            String componentImportsString = (String) componentImports;
+                        if (componentImports instanceof String componentImportsString) {
                             String[] componentImportsArray = componentImportsString.split("\n");
                             arrayList.addAll(Arrays.asList(componentImportsArray));
                         } else {

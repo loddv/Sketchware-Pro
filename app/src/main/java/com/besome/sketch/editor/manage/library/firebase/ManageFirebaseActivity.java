@@ -4,58 +4,58 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 
 import com.besome.sketch.beans.ProjectLibraryBean;
 import com.besome.sketch.lib.base.BaseAppCompatActivity;
-import com.github.angads25.filepicker.model.DialogConfigs;
-import com.github.angads25.filepicker.model.DialogProperties;
-import com.github.angads25.filepicker.view.FilePickerDialog;
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
+import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import a.a.a.DB;
 import a.a.a.GB;
-import a.a.a.aB;
 import a.a.a.bB;
-import mod.SketchwareUtil;
-import mod.agus.jcoderz.lib.FileUtil;
+import dev.pranav.filepicker.FilePickerCallback;
+import dev.pranav.filepicker.FilePickerDialogFragment;
+import dev.pranav.filepicker.FilePickerOptions;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.SketchwareUtil;
 
 public class ManageFirebaseActivity extends BaseAppCompatActivity implements View.OnClickListener {
     private final String realtime_db = "realtime_db";
     private final String app_id = "app_id";
     private final String api_key = "api_key";
     private final String storage_bucket = "storage_bucket";
-
-    private final ActivityResultLauncher<Intent> openSettings = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-        if (result.getResultCode() == Activity.RESULT_OK) {
-            assert result.getData() != null;
-            initializeLibrary(result.getData().getParcelableExtra("firebase"));
-        }
-    });
-
-    private Switch libSwitch;
+    private MaterialSwitch libSwitch;
     private TextView tvProjectId;
     private TextView tvAppId;
     private TextView tvApiKey;
     private TextView tvStorageUrl;
     private DB s = null;
     private ProjectLibraryBean firebaseLibraryBean;
+    private final ActivityResultLauncher<Intent> openSettings = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() == Activity.RESULT_OK) {
+            assert result.getData() != null;
+            initializeLibrary(result.getData().getParcelableExtra("firebase"));
+        }
+    });
     private String sc_id;
 
     private void initializeLibrary(ProjectLibraryBean libraryBean) {
@@ -96,34 +96,34 @@ public class ManageFirebaseActivity extends BaseAppCompatActivity implements Vie
     }
 
     private void downloadChromeDialog() {
-        final aB dialog = new aB(this);
-        dialog.a(R.drawable.chrome_96);
-        dialog.b(Helper.getResString(R.string.title_compatible_chrome_browser));
-        dialog.a(Helper.getResString(R.string.message_compatible_chrome_brower));
-        dialog.b(Helper.getResString(R.string.common_word_ok), v -> {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setIcon(R.drawable.chrome_96);
+        dialog.setTitle(Helper.getResString(R.string.title_compatible_chrome_browser));
+        dialog.setMessage(Helper.getResString(R.string.message_compatible_chrome_brower));
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_ok), (v, which) -> {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse("market://details?id=com.android.chrome"));
             startActivity(intent);
-            dialog.dismiss();
+            v.dismiss();
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
     private void configureLibraryDialog() {
-        final aB dialog = new aB(this);
-        dialog.b(Helper.getResString(R.string.common_word_warning));
-        dialog.a(R.drawable.delete_96);
-        dialog.a(Helper.getResString(R.string.design_library_firebase_dialog_description_confirm_uncheck_firebase));
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setTitle(Helper.getResString(R.string.common_word_warning));
+        dialog.setIcon(R.drawable.delete_96);
+        dialog.setMessage(Helper.getResString(R.string.design_library_firebase_dialog_description_confirm_uncheck_firebase));
         dialog.setCancelable(false);
-        dialog.b(Helper.getResString(R.string.common_word_delete), v -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (v, which) -> {
             firebaseLibraryBean.useYn = "N";
             libSwitch.setChecked(false);
-            dialog.dismiss();
+            v.dismiss();
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), v -> {
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v, which) -> {
             libSwitch.setChecked(true);
-            dialog.dismiss();
+            v.dismiss();
         });
         dialog.show();
     }
@@ -170,7 +170,7 @@ public class ManageFirebaseActivity extends BaseAppCompatActivity implements Vie
         getSupportActionBar().setTitle(Helper.getResString(R.string.design_library_firebase_title_firebase_manager));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(true);
-        toolbar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         s = new DB(getApplicationContext(), "P1");
         firebaseLibraryBean = getIntent().getParcelableExtra("firebase");
@@ -201,17 +201,25 @@ public class ManageFirebaseActivity extends BaseAppCompatActivity implements Vie
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.manage_firebase_menu, menu);
+        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Help").setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_help)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Config").setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_settings)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem menuItem) {
-        int itemId = menuItem.getItemId();
-        if (itemId == R.id.menu_firebase_help) {
-            openDoc();
-        } else if (itemId == R.id.menu_firebase_settings) {
-            toFirebaseActivity();
+    public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
+        String title = menuItem.getTitle().toString();
+        switch (title) {
+            case "Help":
+                openDoc();
+                break;
+
+            case "Config":
+                toFirebaseActivity();
+                break;
+
+            default:
+                return false;
         }
         return super.onOptionsItemSelected(menuItem);
     }
@@ -262,25 +270,26 @@ public class ManageFirebaseActivity extends BaseAppCompatActivity implements Vie
     }
 
     private void showImportJsonDialog() {
-        DialogProperties properties = new DialogProperties();
+        FilePickerOptions options = new FilePickerOptions();
+        options.setExtensions(new String[]{"json"});
+        options.setTitle("Select your google-services.json");
 
-        properties.selection_mode = DialogConfigs.SINGLE_MODE;
-        properties.selection_type = DialogConfigs.FILE_SELECT;
-        properties.root = Environment.getExternalStorageDirectory();
-        properties.error_dir = Environment.getExternalStorageDirectory();
-        properties.offset = Environment.getExternalStorageDirectory();
-        properties.extensions = new String[]{"json"};
+        FilePickerCallback callback = new FilePickerCallback() {
+            @Override
+            public void onFileSelected(File file) {
+                // Handle file selection
+                String filePath = file.getAbsolutePath();
+                String fileContent = FileUtil.readFile(filePath);
+                parseDataFromGoogleServicesJson(fileContent);
+            }
 
-        FilePickerDialog pickerDialog = new FilePickerDialog(this, properties);
+            @Override
+            public boolean onFileSelectionCancelled() {
+                return true;
+            }
+        };
 
-        pickerDialog.setTitle("Select your google-services.json");
-        pickerDialog.setDialogSelectionListener(selections -> {
-            // Since the picker's in single mode, only one element can exist.
-            String fileContent = FileUtil.readFile(selections[0]);
-            parseDataFromGoogleServicesJson(fileContent);
-        });
-
-        pickerDialog.show();
+        new FilePickerDialogFragment(options, callback).show(getSupportFragmentManager(), "filePicker");
     }
 
     private void parseDataFromGoogleServicesJson(String _data) {

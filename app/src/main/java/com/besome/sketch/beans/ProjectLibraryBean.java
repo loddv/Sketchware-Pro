@@ -6,9 +6,11 @@ import android.os.Parcelable;
 import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.Expose;
-import com.sketchware.remod.R;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import pro.sketchware.R;
 
 public class ProjectLibraryBean implements Parcelable {
     public static final Parcelable.Creator<ProjectLibraryBean> CREATOR = new Parcelable.Creator<>() {
@@ -29,6 +31,12 @@ public class ProjectLibraryBean implements Parcelable {
     public static final int PROJECT_LIB_TYPE_COMPAT = 1;
     public static final int PROJECT_LIB_TYPE_FIREBASE = 0;
     public static final int PROJECT_LIB_TYPE_GOOGLE_MAP = 3;
+
+    public static final int PROJECT_LIB_TYPE_LOCAL_LIB = 4;
+    public static final int PROJECT_LIB_TYPE_NATIVE_LIB = 5;
+    public static final int PROJECT_LIB_TYPE_EXCLUDE_BUILTIN_LIBRARIES = 6;
+    public static final int PROJECT_LIB_TYPE_MATERIAL3 = 7;
+
     @Expose
     public String appId;
     @Expose
@@ -47,6 +55,8 @@ public class ProjectLibraryBean implements Parcelable {
     public ArrayList<AdTestDeviceBean> testDevices;
     @Expose
     public String useYn;
+    @Expose
+    public HashMap<String, Object> configurations;
 
     public ProjectLibraryBean(int i) {
         appId = "";
@@ -58,6 +68,7 @@ public class ProjectLibraryBean implements Parcelable {
         reserved3 = "";
         adUnits = new ArrayList<>();
         testDevices = new ArrayList<>();
+        configurations = new HashMap<>();
     }
 
     public ProjectLibraryBean(Parcel parcel) {
@@ -72,6 +83,8 @@ public class ProjectLibraryBean implements Parcelable {
         parcel.readTypedList(adUnits, AdUnitBean.getCreator());
         testDevices = new ArrayList<>();
         parcel.readTypedList(testDevices, AdTestDeviceBean.getCreator());
+        configurations = new HashMap<>();
+        parcel.readMap(configurations, ProjectLibraryBean.class.getClassLoader());
     }
 
     public static Parcelable.Creator<ProjectLibraryBean> getCreator() {
@@ -79,49 +92,39 @@ public class ProjectLibraryBean implements Parcelable {
     }
 
     public static int getLibraryIcon(int i) {
-        switch (i) {
-            case 0:
-                return R.drawable.widget_firebase;
-            case 1:
-                return R.drawable.connected_96;
-            case 2:
-                return R.drawable.widget_admob;
-            case 3:
-                return R.drawable.widget_google_map;
-            default:
-                return 0;
-        }
+        return switch (i) {
+            case 0 -> R.drawable.ic_mtrl_firebase;
+            case 1 -> R.drawable.ic_mtrl_design;
+            case 2 -> R.drawable.ic_mtrl_admob;
+            case 3 -> R.drawable.ic_mtrl_map;
+            case 4 -> R.drawable.ic_mtrl_box;
+            case 5 -> R.drawable.ic_mtrl_settings_input;
+            default -> 0;
+        };
     }
 
     public static int getLibraryResDesc(int i) {
-        switch (i) {
-            case 0:
-                return R.string.design_library_description_firebase;
-            case 1:
-                return R.string.design_library_description_appcompat_and_design;
-            case 2:
-                return R.string.design_library_description_admob;
-            case 3:
-                return R.string.design_library_description_google_map;
-            default:
-                return 0;
-        }
+        return switch (i) {
+            case 0 -> R.string.design_library_description_firebase;
+            case 1 -> R.string.design_library_description_appcompat_and_design;
+            case 2 -> R.string.design_library_description_admob;
+            case 3 -> R.string.design_library_description_google_map;
+            case 4 -> R.string.text_subtitle_menu_local_library;
+            case 5 -> R.string.design_drawer_menu_nativelibs_subtitle;
+            default -> 0;
+        };
     }
 
     public static int getLibraryResName(int i) {
-        switch (i) {
-            case 0:
-                return R.string.design_library_firebase_title_firebase;
-            case 1:
-                return R.string.design_library_title_appcompat_and_design;
-            case 2:
-                return R.string.design_library_admob_title_admob;
-            case 3:
-                return R.string.design_library_google_map_title;
-            default:
-                return 0;
-
-        }
+        return switch (i) {
+            case 0 -> R.string.design_library_firebase_title_firebase;
+            case 1 -> R.string.design_library_title_appcompat_and_design;
+            case 2 -> R.string.design_library_admob_title_admob;
+            case 3 -> R.string.design_library_google_map_title;
+            case 4 -> R.string.text_title_menu_local_library;
+            case 5 -> R.string.design_drawer_menu_nativelibs;
+            default -> 0;
+        };
     }
 
     public void copy(ProjectLibraryBean projectLibraryBean) {
@@ -142,6 +145,8 @@ public class ProjectLibraryBean implements Parcelable {
                 testDevices.add(adTestDeviceBean.clone());
             }
         }
+
+        configurations = new HashMap<>(projectLibraryBean.configurations);
     }
 
     @Override
@@ -167,6 +172,7 @@ public class ProjectLibraryBean implements Parcelable {
         parcel.writeString(reserved3);
         parcel.writeTypedList(adUnits);
         parcel.writeTypedList(testDevices);
+        parcel.writeMap(configurations);
     }
 
     @Override

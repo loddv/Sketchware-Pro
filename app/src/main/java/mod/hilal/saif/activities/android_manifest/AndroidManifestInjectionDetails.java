@@ -1,52 +1,50 @@
 package mod.hilal.saif.activities.android_manifest;
 
-import static mod.SketchwareUtil.getDip;
+import static pro.sketchware.utility.GsonUtils.getGson;
+import static pro.sketchware.utility.SketchwareUtil.getDip;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.RippleDrawable;
-import android.os.Build;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.gson.Gson;
-import com.sketchware.remod.R;
+import com.besome.sketch.lib.base.BaseAppCompatActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import mod.agus.jcoderz.lib.FileUtil;
+import mod.hey.studios.code.SrcCodeEditor;
 import mod.hey.studios.util.Helper;
-import mod.hilal.saif.android_manifest.ActComponentsDialog;
+import mod.remaker.view.CustomAttributeView;
+import pro.sketchware.R;
+import pro.sketchware.databinding.ActivityManageCustomAttributeBinding;
+import pro.sketchware.databinding.CustomDialogAttributeBinding;
+import pro.sketchware.databinding.DialogCreateNewFileLayoutBinding;
+import pro.sketchware.utility.FileUtil;
+import pro.sketchware.utility.ThemeUtils;
 
-public class AndroidManifestInjectionDetails extends Activity {
+public class AndroidManifestInjectionDetails extends BaseAppCompatActivity {
 
     private static String ATTRIBUTES_FILE_PATH;
     private final ArrayList<HashMap<String, Object>> listMap = new ArrayList<>();
-    private ListView listView;
     private String src_id;
     private String activityName;
     private String type;
     private String constant;
 
+    private ActivityManageCustomAttributeBinding binding;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.add_custom_attribute);
+        binding = ActivityManageCustomAttributeBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
         if (getIntent().hasExtra("sc_id") && getIntent().hasExtra("file_name") && getIntent().hasExtra("type")) {
             src_id = getIntent().getStringExtra("sc_id");
@@ -80,9 +78,7 @@ public class AndroidManifestInjectionDetails extends Activity {
     }
 
     private void setupViews() {
-        FloatingActionButton fab = findViewById(R.id.add_attr_fab);
-        fab.setOnClickListener(v -> showAddDial());
-        listView = findViewById(R.id.add_attr_listview);
+        binding.addAttrFab.setOnClickListener(v -> showAddDial());
         refreshList();
     }
 
@@ -90,111 +86,91 @@ public class AndroidManifestInjectionDetails extends Activity {
         listMap.clear();
         ArrayList<HashMap<String, Object>> data;
         if (FileUtil.isExistFile(ATTRIBUTES_FILE_PATH)) {
-            data = new Gson().fromJson(FileUtil.readFile(ATTRIBUTES_FILE_PATH), Helper.TYPE_MAP_LIST);
-            for (int i = 0; i < data.size(); i++) {
-                String str = (String) data.get(i).get("name");
+            data = getGson().fromJson(FileUtil.readFile(ATTRIBUTES_FILE_PATH), Helper.TYPE_MAP_LIST);
+            for (HashMap<String, Object> item : data) {
+                String str = (String) item.get("name");
                 if (str.equals(constant)) {
-                    listMap.add(data.get(i));
+                    listMap.add(item);
                 }
             }
-            listView.setAdapter(new ListAdapter(listMap));
-            ((BaseAdapter) listView.getAdapter()).notifyDataSetChanged();
+            binding.addAttrListview.setAdapter(new ListAdapter(listMap));
+            ((BaseAdapter) binding.addAttrListview.getAdapter()).notifyDataSetChanged();
         }
     }
 
-    private void a(View view, int i2, int i3) {
-        GradientDrawable gradientDrawable = new GradientDrawable();
-        gradientDrawable.setShape(GradientDrawable.RECTANGLE);
-        gradientDrawable.setCornerRadii(new float[]{(float) i2, (float) i2, (float) i2 / 2, (float) i2 / 2, (float) i2, (float) i2, (float) i2 / 2, (float) i2 / 2});
-        gradientDrawable.setColor(Color.parseColor("#ffffff"));
-        RippleDrawable rippleDrawable = new RippleDrawable(new ColorStateList(new int[][]{new int[0]}, new int[]{Color.parseColor("#20008DCD")}), gradientDrawable, null);
-        if (Build.VERSION.SDK_INT >= 21) {
-            view.setElevation((float) i3);
-            view.setBackground(rippleDrawable);
-            view.setClickable(true);
-            view.setFocusable(true);
+    private void setToolbar() {
+        String str = switch (type) {
+            case "all" -> "Attributes for all activities";
+            case "application" -> "Application Attributes";
+            case "permission" -> "Application Permissions";
+            default -> activityName;
+        };
+        binding.toolbar.setTitle(str);
+
+        binding.toolbar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
+
+        if (!str.equals("Attributes for all activities") && !str.equals("Application Attributes") && !str.equals("Application Permissions")) {
+            binding.toolbar.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == R.id.asd_components) {
+                    Intent intent = new Intent(this, SrcCodeEditor.class);
+                    intent.putExtra(SrcCodeEditor.FLAG_FROM_ANDROID_MANIFEST, true);
+                    intent.putExtra("title", activityName + " Components");
+                    intent.putExtra("sc_id", src_id);
+                    intent.putExtra("activity_name", activityName);
+                    startActivity(intent);
+                    return true;
+                }
+                return false;
+            });
+        } else {
+            binding.toolbar.getMenu().clear();
         }
     }
 
     private void showDial(int pos) {
-        final AlertDialog create = new AlertDialog.Builder(this).create();
-        View inflate = getLayoutInflater().inflate(R.layout.custom_dialog_attribute, null);
-        create.setView(inflate);
-        create.setCanceledOnTouchOutside(true);
-        ///create.setCancelable(true);
-        create.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        final TextView textsave = inflate.findViewById(R.id.dialog_btn_save);
-        final TextView textcancel = inflate.findViewById(R.id.dialog_btn_cancel);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setTitle("Edit Value");
+        DialogCreateNewFileLayoutBinding attributeBinding = DialogCreateNewFileLayoutBinding.inflate(getLayoutInflater());
+        attributeBinding.chipGroupTypes.setVisibility(View.GONE);
+        dialog.setView(attributeBinding.getRoot());
 
-        final EditText editText3 = inflate.findViewById(R.id.dialog_input_res);
-        editText3.setVisibility(View.GONE);
-        final EditText editText2 = inflate.findViewById(R.id.dialog_input_attr);
-        editText2.setVisibility(View.GONE);
-        final EditText editText = inflate.findViewById(R.id.dialog_input_value);
-        final TextView textView = (TextView) ((ViewGroup) editText2.getParent()).getChildAt(0);
-        textView.setText("Edit Value");
-        editText.setText((String) listMap.get(pos).get("value"));
-        editText.setHint("android:attr=\"value\"");
-        textsave.setOnClickListener(view -> {
-            listMap.get(pos).put("value", editText.getText().toString());
+        attributeBinding.inputText.setText((String) listMap.get(pos).get("value"));
+        attributeBinding.inputText.setHint("android:attr=\"value\"");
+        dialog.setPositiveButton(R.string.common_word_save, (dialog1, which) -> {
+            listMap.get(pos).put("value", Helper.getText(attributeBinding.inputText));
             applyChange();
-            create.dismiss();
         });
 
-        textcancel.setOnClickListener(Helper.getDialogDismissListener(create));
-
-        create.show();
+        dialog.show();
     }
 
     private void showAddDial() {
-        final AlertDialog create = new AlertDialog.Builder(this).create();
-        View inflate = getLayoutInflater().inflate(R.layout.custom_dialog_attribute, null);
-        create.setView(inflate);
-        create.setCanceledOnTouchOutside(true);
-        ///create.setCancelable(true);
-        create.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        final TextView textsave = inflate.findViewById(R.id.dialog_btn_save);
-        final TextView textcancel = inflate.findViewById(R.id.dialog_btn_cancel);
-
-        final EditText editText3 = inflate.findViewById(R.id.dialog_input_res);
-        //editText3.setVisibility(View.GONE);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setTitle(type.equals("permission") ? "Add new permission" : "Add new attribute");
+        CustomDialogAttributeBinding attributeBinding = CustomDialogAttributeBinding.inflate(getLayoutInflater());
+        dialog.setView(attributeBinding.getRoot());
         if (type.equals("permission")) {
-            editText3.setText("android");
+            attributeBinding.inputRes.setText("android");
+            attributeBinding.inputAttr.setText("name");
+            attributeBinding.inputLayoutValue.setHint("permission");
         }
-        final EditText editText2 = inflate.findViewById(R.id.dialog_input_attr);
-        //editText2.setVisibility(View.GONE);
-        if (type.equals("permission")) {
-            editText2.setText("name");
-        }
-        final EditText editText = inflate.findViewById(R.id.dialog_input_value);
-        if (type.equals("permission")) {
-            editText3.setHint("permission");
-        }
-        final TextView textView = (TextView) ((ViewGroup) editText2.getParent()).getChildAt(0);
-        if (type.equals("permission")) {
-            textView.setText("Add new Permission");
-        } else {
-            textView.setText("Add new Attribute");
-        }
-
-        textsave.setOnClickListener(_view -> {
-            String fstr = editText3.getText().toString().trim() + ":" + editText2.getText().toString().trim() + "=\"" + editText.getText().toString().trim() + "\"";
+        dialog.setPositiveButton(R.string.common_word_save, (dialog1, which) -> {
+            String fstr = Helper.getText(attributeBinding.inputRes).trim() + ":" + Helper.getText(attributeBinding.inputAttr).trim() + "=\"" + Helper.getText(attributeBinding.inputValue).trim() + "\"";
             HashMap<String, Object> map = new HashMap<>();
             map.put("name", constant);
             map.put("value", fstr);
             listMap.add(map);
             applyChange();
-            create.dismiss();
+            dialog1.dismiss();
         });
-
-        textcancel.setOnClickListener(Helper.getDialogDismissListener(create));
-        create.show();
+        dialog.setNegativeButton(R.string.common_word_cancel, (dialog1, which) -> dialog1.dismiss());
+        dialog.show();
     }
 
     private void applyChange() {
         ArrayList<HashMap<String, Object>> data;
         if (FileUtil.isExistFile(ATTRIBUTES_FILE_PATH)) {
-            data = new Gson().fromJson(FileUtil.readFile(ATTRIBUTES_FILE_PATH), Helper.TYPE_MAP_LIST);
+            data = getGson().fromJson(FileUtil.readFile(ATTRIBUTES_FILE_PATH), Helper.TYPE_MAP_LIST);
             for (int i = data.size() - 1; i > -1; i--) {
                 String str = (String) data.get(i).get("name");
                 if (str.equals(constant)) {
@@ -205,7 +181,7 @@ public class AndroidManifestInjectionDetails extends Activity {
         } else {
             data = new ArrayList<>(listMap);
         }
-        FileUtil.writeFile(ATTRIBUTES_FILE_PATH, new Gson().toJson(data));
+        FileUtil.writeFile(ATTRIBUTES_FILE_PATH, getGson().toJson(data));
         refreshList();
     }
 
@@ -219,44 +195,7 @@ public class AndroidManifestInjectionDetails extends Activity {
         return temp_card;
     }
 
-    private void setToolbar() {
-        String str = "";
-        switch (type) {
-            case "all":
-                str = "Attributes for all activities";
-                break;
-
-            case "application":
-                str = "Application Attributes";
-                break;
-
-            case "permission":
-                str = "Application Permissions";
-                break;
-
-            default:
-                str = activityName;
-                break;
-        }
-        ((TextView) findViewById(R.id.tx_toolbar_title)).setText(str);
-        ViewGroup par = (ViewGroup) findViewById(R.id.tx_toolbar_title).getParent();
-        ImageView _img = findViewById(R.id.ig_toolbar_back);
-        _img.setOnClickListener(Helper.getBackPressedClickListener(this));
-        if (!str.equals("Attributes for all activities") && !str.equals("Application Attributes") && !str.equals("Application Permissions")) {
-            // Feature description: allows to inject anything into the {@code activity} tag of the Activity
-            // (yes, Command Blocks can do that too, but removing features is bad.)
-            TextView actComponent = newText("Components ASD", 15, Color.parseColor("#ffffff"), -2, -2, 0);
-            actComponent.setTypeface(Typeface.DEFAULT_BOLD);
-            par.addView(actComponent);
-            actComponent.setOnClickListener(v -> {
-                ActComponentsDialog acd = new ActComponentsDialog(this, src_id, activityName);
-                acd.show();
-            });
-        }
-    }
-
     private class ListAdapter extends BaseAdapter {
-
         private final ArrayList<HashMap<String, Object>> _data;
 
         public ListAdapter(ArrayList<HashMap<String, Object>> _arr) {
@@ -279,33 +218,27 @@ public class AndroidManifestInjectionDetails extends Activity {
         }
 
         @Override
-        public View getView(final int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = getLayoutInflater().inflate(R.layout.custom_view_attribute, parent, false);
-            }
-
-            LinearLayout root = convertView.findViewById(R.id.cus_attr_layout);
-            TextView attribute = convertView.findViewById(R.id.cus_attr_text);
-            ImageView options = convertView.findViewById(R.id.cus_attr_btn);
-            options.setVisibility(View.GONE);
-            a(root, (int) getDip(4), (int) getDip(2));
+        public View getView(int position, View convertView, ViewGroup parent) {
+            CustomAttributeView attributeView = new CustomAttributeView(parent.getContext());
 
             try {
-                SpannableString spannableString = new SpannableString((String) _data.get(position).get("value"));
-                spannableString.setSpan(new ForegroundColorSpan(0xff7a2e8c), 0, ((String) _data.get(position).get("value")).indexOf(":"), 33);
-                spannableString.setSpan(new ForegroundColorSpan(0xff212121), ((String) _data.get(position).get("value")).indexOf(":"), ((String) _data.get(position).get("value")).indexOf("=") + 1, 33);
-                spannableString.setSpan(new ForegroundColorSpan(0xff45a245), ((String) _data.get(position).get("value")).indexOf("\""), ((String) _data.get(position).get("value")).length(), 33);
-                attribute.setText(spannableString);
-            } catch (Exception e) {
-                attribute.setText((String) _data.get(position).get("value"));
-            }
-            attribute.setPadding((int) getDip(12), (int) getDip(12), (int) getDip(12), (int) getDip(12));
-            attribute.setTextSize(16);
-            root.setVisibility(View.VISIBLE);
+                int violet = ThemeUtils.getColor(attributeView, R.attr.colorViolet);
+                int onSurface = ThemeUtils.getColor(attributeView, R.attr.colorOnSurface);
+                int green = ThemeUtils.getColor(attributeView, R.attr.colorGreen);
 
-            root.setOnClickListener(v -> showDial(position));
-            root.setOnLongClickListener(v -> {
-                new AlertDialog.Builder(AndroidManifestInjectionDetails.this)
+                SpannableString spannableString = new SpannableString((String) _data.get(position).get("value"));
+                spannableString.setSpan(new ForegroundColorSpan(violet), 0, ((String) _data.get(position).get("value")).indexOf(":"), 33);
+                spannableString.setSpan(new ForegroundColorSpan(onSurface), ((String) _data.get(position).get("value")).indexOf(":"), ((String) _data.get(position).get("value")).indexOf("=") + 1, 33);
+                spannableString.setSpan(new ForegroundColorSpan(green), ((String) _data.get(position).get("value")).indexOf("\""), ((String) _data.get(position).get("value")).length(), 33);
+                attributeView.getTextView().setText(spannableString);
+            } catch (Exception e) {
+                attributeView.getTextView().setText((String) _data.get(position).get("value"));
+            }
+
+            attributeView.getImageView().setVisibility(View.GONE);
+            attributeView.setOnClickListener(v -> showDial(position));
+            attributeView.setOnLongClickListener(v -> {
+                new MaterialAlertDialogBuilder(AndroidManifestInjectionDetails.this)
                         .setTitle("Delete this attribute?")
                         .setMessage("This action cannot be undone.")
                         .setPositiveButton(R.string.common_word_delete, (dialog, which) -> {
@@ -318,7 +251,7 @@ public class AndroidManifestInjectionDetails extends Activity {
                 return true;
             });
 
-            return convertView;
+            return attributeView;
         }
     }
 }

@@ -1,257 +1,232 @@
 package com.besome.sketch.design;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ImageView;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
-import com.sketchware.remod.R;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
-import a.a.a.mB;
-import a.a.a.wB;
+import com.google.android.material.divider.MaterialDivider;
+import com.google.android.material.shape.MaterialShapeDrawable;
+import com.google.android.material.shape.MaterialShapeUtils;
+import com.google.android.material.shape.ShapeAppearanceModel;
+
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.databinding.DesignDrawerItemBinding;
+import pro.sketchware.utility.SketchwareUtil;
+import pro.sketchware.utility.ThemeUtils;
+import pro.sketchware.utility.UI;
 
-public class DesignDrawer extends LinearLayout implements View.OnClickListener {
+public class DesignDrawer extends LinearLayout {
+    @SuppressLint("NonConstantResourceId")
+    private final View.OnClickListener drawerItemClickListener = v -> {
+        Activity activity = (Activity) getContext();
+        if (!(activity instanceof DesignActivity designActivity)) return;
+        int id = v.getId();
 
-    private Context context;
+        if (id == R.id.item_library_manager) {
+            designActivity.toLibraryManager();
+        } else if (id == R.id.item_view_manager) {
+            designActivity.toViewManager();
+        } else if (id == R.id.item_image_manager) {
+            designActivity.toImageManager();
+        } else if (id == R.id.item_sound_manager) {
+            designActivity.toSoundManager();
+        } else if (id == R.id.item_font_manager) {
+            designActivity.toFontManager();
+        } else if (id == R.id.item_java_manager) {
+            designActivity.toJavaManager();
+        } else if (id == R.id.item_resource_manager) {
+            designActivity.toResourceManager();
+        } else if (id == R.id.item_resource_editor) {
+            designActivity.toResourceEditor();
+        } else if (id == R.id.item_assets_manager) {
+            designActivity.toAssetManager();
+        } else if (id == R.id.item_permission_manager) {
+            designActivity.toPermissionManager();
+        } else if (id == R.id.item_appcompat_manager) {
+            designActivity.toAppCompatInjectionManager();
+        } else if (id == R.id.item_manifest_manager) {
+            designActivity.toAndroidManifestManager();
+        } else if (id == R.id.item_used_custom_blocks) {
+            designActivity.toCustomBlocksViewer();
+        } else if (id == R.id.item_code_shrinking_manager) {
+            designActivity.toProguardManager();
+        } else if (id == R.id.item_stringfog_manager) {
+            designActivity.toStringFogManager();
+        } else if (id == R.id.item_show_src) {
+            designActivity.toSourceCodeViewer();
+        } else if (id == R.id.item_xml_command_manager) {
+            designActivity.toXMLCommandManager();
+        } else if (id == R.id.item_logcat_reader) {
+            designActivity.toLogReader();
+        } else if (id == R.id.item_collection_manager) {
+            designActivity.toCollectionManager();
+        } else {
+            throw new IllegalArgumentException("Invalid item id: " + id);
+        }
+    };
 
     public DesignDrawer(Context context) {
-        super(context);
-        initialize(context);
+        this(context, null);
     }
 
-    public DesignDrawer(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
-        initialize(context);
-    }
+    @SuppressLint("NonConstantResourceId")
+    public DesignDrawer(@NonNull Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+        setOrientation(VERTICAL);
+        setFocusable(true);
+        setClickable(true);
 
-    private DrawerItem addDrawerItem(int tag, boolean useSeparator, int iconResId, int titleResId, int descriptionResId) {
-        DrawerItem drawerItem = new DrawerItem(context, tag);
-        drawerItem.setContent(iconResId, Helper.getResString(titleResId), Helper.getResString(descriptionResId));
-        drawerItem.setTag(tag);
-        drawerItem.setOnClickListener(this);
-        drawerItem.setSeparatorVisibility(useSeparator);
-        drawerItem.setSubSeparatorVisibility(!useSeparator);
-        return drawerItem;
-    }
+        ShapeAppearanceModel shape = ShapeAppearanceModel.builder()
+                .setTopLeftCornerSize(SketchwareUtil.getDip(24))
+                .setBottomLeftCornerSize(SketchwareUtil.getDip(24))
+                .build();
 
-    private void initialize(Context context) {
-        this.context = context;
-        wB.a(context, this, R.layout.design_drawer);
-        TextView tv_title_configuration = findViewById(R.id.tv_title_configuration);
-        tv_title_configuration.setText(Helper.getResString(R.string.design_drawer_menu_title));
-        ((TextView) findViewById(R.id.tv_title_global)).setText(Helper.getResString(R.string.design_drawer_menu_bottom_title));
-        LinearLayout menusLayout = findViewById(R.id.layout_menus);
-        LinearLayout bottomMenusLayout = findViewById(R.id.layout_bottom_menus);
-        /* Add collection item */
-        bottomMenusLayout.addView(addDrawerItem(1, false,
-                R.drawable.ic_bookmark_red_48dp, R.string.design_drawer_menu_title_collection, R.string.design_drawer_menu_description_collection
-        ));
-        /* Add built-in Library Manager (AppCompat, Firebase, AdMob, Google Maps SDK) */
-        /* INCLUDES SECTION SEPARATOR */
-        menusLayout.addView(addDrawerItem(3, true,
-                R.drawable.categorize_48, R.string.design_drawer_menu_title_library, R.string.design_drawer_menu_description_library
-        ));
-        /* Add View Manager */
-        menusLayout.addView(addDrawerItem(4, false,
-                R.drawable.multiple_devices_48, R.string.design_drawer_menu_title_view, R.string.design_drawer_menu_description_view
-        ));
-        /* Add Image Manager */
-        menusLayout.addView(addDrawerItem(5, false,
-                R.drawable.ic_picture_48dp, R.string.design_drawer_menu_title_image, R.string.design_drawer_menu_description_image
-        ));
-        /* Add Sound Manager */
-        menusLayout.addView(addDrawerItem(6, false,
-                R.drawable.ic_sound_wave_48dp, R.string.design_drawer_menu_title_sound, R.string.design_drawer_menu_description_sound
-        ));
-        /* Add Font Manager */
-        menusLayout.addView(addDrawerItem(7, false,
-                R.drawable.ic_font_48dp, R.string.design_drawer_menu_title_font, R.string.design_drawer_menu_description_font
-        ));
-        /* Add Java Manager */
-        menusLayout.addView(addDrawerItem(8, false,
-                R.drawable.java_96, R.string.text_title_menu_java, R.string.text_subtitle_menu_java
-        ));
-        /* Add Resource Manager */
-        menusLayout.addView(addDrawerItem(9, false,
-                R.drawable.file_app_icon, R.string.text_title_menu_resource, R.string.text_subtitle_menu_resource
-        ));
-        /* Add Asset Manager */
-        menusLayout.addView(addDrawerItem(10, false,
-                R.drawable.file_48_blue, R.string.text_title_menu_assets, R.string.text_subtitle_menu_assets
-        ));
-        /* Add Permission Manager */
-        menusLayout.addView(addDrawerItem(11, false,
-                R.drawable.plugin_purple_96, R.string.text_title_menu_permission, R.string.text_subtitle_menu_permission
-        ));
-        /* Add AppCompat Injection Manager */
-        menusLayout.addView(addDrawerItem(12, false,
-                R.drawable.ic_property_inject, R.string.design_drawer_menu_injection, R.string.design_drawer_menu_injection_subtitle
-        ));
-        /* Add AndroidManifest Manager */
-        menusLayout.addView(addDrawerItem(13, false,
-                R.drawable.icon8_code_am, R.string.design_drawer_menu_androidmanifest, R.string.design_drawer_menu_androidmanifest_subtitle
-        ));
-        /* Add Used Custom Blocks */
-        menusLayout.addView(addDrawerItem(20, false,
-                R.drawable.block_96_blue, R.string.design_drawer_menu_customblocks, R.string.design_drawer_menu_customblocks_subtitle
-        ));
-        /* Add Local library Manager */
-        menusLayout.addView(addDrawerItem(14, false,
-                R.drawable.open_box_48, R.string.text_title_menu_local_library, R.string.text_subtitle_menu_local_library
-        ));
-        /* Add Native library Manager */
-        menusLayout.addView(addDrawerItem(19, false,
-                R.drawable.cpp, R.string.design_drawer_menu_nativelibs, R.string.design_drawer_menu_nativelibs_subtitle));
-        /* Add ProGuard Manager */
-        menusLayout.addView(addDrawerItem(17, false,
-                R.drawable.connected_96, R.string.design_drawer_menu_proguard, R.string.design_drawer_menu_proguard_subtitle));
-        /* Add StringFog Manager */
-        /* INCLUDES SECTION SEPARATOR */
-        menusLayout.addView(addDrawerItem(18, true,
-                R.drawable.color_lock_96, R.string.design_drawer_menu_stringfog, R.string.design_drawer_menu_stringfog_subtitle));
-        /* Add Source Code Viewer */
-        menusLayout.addView(addDrawerItem(16, false,
-                R.drawable.code_icon, R.string.design_drawer_menu_title_source_code, R.string.design_drawer_menu_description_source_code));
-        /* Add Logcat Reader */
-        menusLayout.addView(addDrawerItem(22,false,
-                R.drawable.icons8_app_components,R.string.design_drawer_menu_title_logcat_reader,R.string.design_drawer_menu_subtitle_logcat_reader));
+        MaterialShapeDrawable background = new MaterialShapeDrawable(shape);
+        background.setFillColor(ColorStateList.valueOf(ThemeUtils.getColor(context, R.attr.colorSurfaceContainerLow)));
+        background.initializeElevationOverlay(context);
+        setBackground(background);
+        setElevation(3f);
+        setPadding(0, 0, 0, SketchwareUtil.dpToPx(4));
+
+        ScrollView scrollView = new ScrollView(context);
+        scrollView.setFillViewport(true);
+        scrollView.setClipToPadding(false);
+        addView(scrollView, new LayoutParams(LayoutParams.MATCH_PARENT, 0, 1));
+
+        LinearLayout content = new LinearLayout(getContext());
+        content.setOrientation(VERTICAL);
+        scrollView.addView(content);
+
+        UI.addSystemWindowInsetToPadding(scrollView, false, true, false, false);
+        UI.addSystemWindowInsetToPadding(this, false, false, true, true);
+
+        addDrawerSubheaderItem(R.string.design_drawer_menu_title, content);
+        addDrawerItem(R.id.item_library_manager, R.drawable.ic_mtrl_category, R.string.design_drawer_menu_title_library, R.string.design_drawer_menu_description_library, content);
+        addDrawerItem(R.id.item_view_manager, R.drawable.ic_mtrl_devices, R.string.design_drawer_menu_title_view, R.string.design_drawer_menu_description_view, content);
+        addDrawerItem(R.id.item_image_manager, R.drawable.ic_mtrl_image, R.string.design_drawer_menu_title_image, R.string.design_drawer_menu_description_image, content);
+        addDrawerItem(R.id.item_sound_manager, R.drawable.ic_mtrl_music, R.string.design_drawer_menu_title_sound, R.string.design_drawer_menu_description_sound, content);
+        addDrawerItem(R.id.item_font_manager, R.drawable.ic_mtrl_font, R.string.design_drawer_menu_title_font, R.string.design_drawer_menu_description_font, content);
+        addDrawerItem(R.id.item_java_manager, R.drawable.ic_mtrl_java, R.string.text_title_menu_java, R.string.text_subtitle_menu_java, content);
+        addDrawerItem(R.id.item_resource_manager, R.drawable.ic_mtrl_folder, R.string.text_title_menu_resource, R.string.text_subtitle_menu_resource, content);
+        addDrawerItem(R.id.item_resource_editor, R.drawable.ic_mtrl_folder_code, R.string.text_title_menu_resource_editor, R.string.text_subtitle_menu_resource_editor, content);
+        addDrawerItem(R.id.item_assets_manager, R.drawable.ic_mtrl_file_present, R.string.text_title_menu_assets, R.string.text_subtitle_menu_assets, content);
+        addDrawerItem(R.id.item_permission_manager, R.drawable.ic_mtrl_shield_check, R.string.text_title_menu_permission, R.string.text_subtitle_menu_permission, content);
+        addDrawerItem(R.id.item_appcompat_manager, R.drawable.ic_mtrl_inject, R.string.design_drawer_menu_injection, R.string.design_drawer_menu_injection_subtitle, content);
+        addDrawerItem(R.id.item_manifest_manager, R.drawable.ic_mtrl_deployed_code, R.string.design_drawer_menu_androidmanifest, R.string.design_drawer_menu_androidmanifest_subtitle, content);
+        addDrawerItem(R.id.item_used_custom_blocks, R.drawable.ic_mtrl_block, R.string.design_drawer_menu_customblocks, R.string.design_drawer_menu_customblocks_subtitle, content);
+        addDrawerItem(R.id.item_code_shrinking_manager, R.drawable.ic_mtrl_shield_lock, R.string.design_drawer_menu_proguard, R.string.design_drawer_menu_proguard_subtitle, content);
+        addDrawerItem(R.id.item_stringfog_manager, R.drawable.ic_mtrl_regular_expression, R.string.design_drawer_menu_stringfog, R.string.design_drawer_menu_stringfog_subtitle, content);
+        addDrawerItem(R.id.item_show_src, R.drawable.ic_mtrl_frame_source, R.string.design_drawer_menu_title_source_code, R.string.design_drawer_menu_description_source_code, content);
+        addDrawerItem(R.id.item_xml_command_manager, R.drawable.ic_mtrl_code, R.string.design_drawer_menu_title_xml_command, R.string.design_drawer_menu_description_xml_command, content);
+        addDrawerItem(R.id.item_logcat_reader, R.drawable.ic_mtrl_article, R.string.design_drawer_menu_title_logcat_reader, R.string.design_drawer_menu_subtitle_logcat_reader, content);
+
+        // if you want to show text "Global", uncomment next line
+        // addDrawerSubheaderItem(R.string.design_drawer_menu_bottom_title, this);
+        addDrawerDivider(this);
+        addDrawerItem(R.id.item_collection_manager, R.drawable.ic_mtrl_bookmark, R.string.design_drawer_menu_title_collection, R.string.design_drawer_menu_description_collection, this);
     }
 
     @Override
-    public void onClick(View view) {
-        if (!mB.a()) {
-            if (context instanceof DesignActivity) {
-                DesignActivity designActivity = (DesignActivity) context;
-                switch ((Integer) view.getTag()) {
-                    case 1:
-                        designActivity.toCollectionManager();
-                        return;
-
-                    case 3:
-                        designActivity.toLibraryManager();
-                        return;
-
-                    case 4:
-                        designActivity.toViewManager();
-                        return;
-
-                    case 5:
-                        designActivity.toImageManager();
-                        return;
-
-                    case 6:
-                        designActivity.toSoundManager();
-                        return;
-
-                    case 7:
-                        designActivity.toFontManager();
-                        return;
-
-                    case 8:
-                        designActivity.toJavaManager();
-                        return;
-
-                    case 9:
-                        designActivity.toResourceManager();
-                        return;
-
-                    case 10:
-                        designActivity.toAssetManager();
-                        return;
-
-                    case 11:
-                        designActivity.toPermissionManager();
-                        return;
-
-                    case 12:
-                        designActivity.toAppCompatInjectionManager();
-                        return;
-
-                    case 13:
-                        designActivity.toAndroidManifestManager();
-                        return;
-
-                    case 14:
-                        designActivity.toLocalLibraryManager();
-                        return;
-
-                    case 16:
-                        designActivity.toSourceCodeViewer();
-                        return;
-
-                    case 17:
-                        designActivity.toProguardManager();
-                        return;
-
-                    case 18:
-                        designActivity.toStringFogManager();
-                        return;
-
-                    case 19:
-                        designActivity.toNativeLibraryManager();
-                        return;
-
-                    case 20:
-                        designActivity.toCustomBlocksViewer();
-                        return;
-
-                    case 22:
-                        designActivity.toLogReader();
-                        return;
-                    case 2:
-                    default:
-                }
-            }
-        }
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        MaterialShapeUtils.setParentAbsoluteElevation(this);
     }
 
-    static class DrawerItem extends LinearLayout {
+    @Override
+    public void setElevation(float elevation) {
+        super.setElevation(elevation);
+        MaterialShapeUtils.setElevation(this, elevation);
+    }
 
-        private ImageView imgIcon;
-        private TextView titleTextView;
-        private TextView subTitleTextView;
-        private View subSeparator;
-        private View separator;
+    @Override
+    protected void onMeasure(int widthSpec, int heightSpec) {
+        int maxWidth = SketchwareUtil.dpToPx(300);
+        switch (MeasureSpec.getMode(widthSpec)) {
+            case MeasureSpec.EXACTLY:
+                // nothing
+                break;
+            case MeasureSpec.AT_MOST:
+                widthSpec = MeasureSpec.makeMeasureSpec(Math.min(MeasureSpec.getSize(widthSpec), maxWidth), MeasureSpec.EXACTLY);
+                break;
+            case MeasureSpec.UNSPECIFIED:
+                widthSpec = MeasureSpec.makeMeasureSpec(maxWidth, MeasureSpec.EXACTLY);
+                break;
+        }
+        super.onMeasure(widthSpec, heightSpec);
+    }
+
+    private void addDrawerItem(int id, int iconResId, int titleResId, int descriptionResId, ViewGroup view) {
+        DrawerItem drawerItem = new DrawerItem(getContext());
+        drawerItem.setContent(iconResId, Helper.getResString(drawerItem, titleResId), Helper.getResString(drawerItem, descriptionResId));
+        drawerItem.setOnClickListener(id, drawerItemClickListener);
+        view.addView(drawerItem);
+    }
+
+    private void addDrawerSubheaderItem(@StringRes int subheaderResId, ViewGroup view) {
+        TextView subheader = new TextView(getContext());
+        subheader.setEllipsize(TextUtils.TruncateAt.END);
+        subheader.setGravity(Gravity.CENTER_VERTICAL);
+        subheader.setText(subheaderResId);
+
+        LayoutParams textLp = new LayoutParams(LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        textLp.topMargin = SketchwareUtil.dpToPx(8);
+        textLp.bottomMargin = SketchwareUtil.dpToPx(8);
+        textLp.setMarginStart(SketchwareUtil.dpToPx(20));
+
+        subheader.setLayoutParams(textLp);
+        view.addView(subheader);
+    }
+
+    private void addDrawerDivider(ViewGroup view) {
+        MaterialDivider divider = new MaterialDivider(getContext());
+        divider.setDividerInsetEnd(SketchwareUtil.dpToPx(20));
+        divider.setDividerInsetStart(SketchwareUtil.dpToPx(20));
+
+        LayoutParams dividerLp = new LayoutParams(LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        dividerLp.topMargin = SketchwareUtil.dpToPx(8);
+        dividerLp.bottomMargin = SketchwareUtil.dpToPx(8);
+
+        divider.setLayoutParams(dividerLp);
+        view.addView(divider);
+    }
+
+    private static class DrawerItem extends LinearLayout {
+        private final DesignDrawerItemBinding binding;
 
         public DrawerItem(Context context) {
-            super(context);
-            new DrawerItem(context, 0);
+            this(context, null);
         }
 
-        public DrawerItem(Context context, AttributeSet set) {
-            super(context, set);
-            new DrawerItem(context, 0);
-        }
-
-        public DrawerItem(Context context, int tag) {
-            super(context);
-            initialize(context, tag);
+        public DrawerItem(Context context, AttributeSet attrs) {
+            super(context, attrs);
+            LayoutInflater inflater = LayoutInflater.from(context);
+            binding = DesignDrawerItemBinding.inflate(inflater, this, true);
         }
 
         public void setContent(int iconResId, String rootTitleText, String subTitleText) {
-            imgIcon.setImageResource(iconResId);
-            titleTextView.setText(rootTitleText);
-            subTitleTextView.setText(subTitleText);
+            binding.imgIcon.setImageResource(iconResId);
+            binding.tvRootTitle.setText(rootTitleText);
+            binding.tvSubTitle.setText(subTitleText);
         }
 
-        public final void initialize(Context context, int tag) {
-            wB.a(context, this, R.layout.design_drawer_item);
-            imgIcon = findViewById(R.id.img_icon);
-            titleTextView = findViewById(R.id.tv_root_title);
-            subTitleTextView = findViewById(R.id.tv_sub_title);
-            subSeparator = findViewById(R.id.sub_separator);
-            separator = findViewById(R.id.separator);
-        }
-
-        public void setSeparatorVisibility(boolean visible) {
-            separator.setVisibility(visible ? VISIBLE : GONE);
-        }
-
-        public void setSubSeparatorVisibility(boolean visible) {
-            subSeparator.setVisibility(visible ? VISIBLE : GONE);
+        public void setOnClickListener(int id, OnClickListener listener) {
+            binding.getRoot().setId(id);
+            binding.getRoot().setOnClickListener(listener);
         }
     }
 }

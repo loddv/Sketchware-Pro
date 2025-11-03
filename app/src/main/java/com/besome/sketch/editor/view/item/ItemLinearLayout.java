@@ -1,9 +1,5 @@
 package com.besome.sketch.editor.view.item;
 
-import a.a.a.sy;
-import a.a.a.ty;
-import a.a.a.wB;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -12,8 +8,12 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
+import com.besome.sketch.editor.view.ScrollContainer;
 
-public class ItemLinearLayout extends LinearLayout implements sy, ty {
+import a.a.a.wB;
+
+public class ItemLinearLayout extends LinearLayout implements ItemView, ScrollContainer {
 
     private ViewBean viewBean = null;
     private boolean isSelected = false;
@@ -29,15 +29,15 @@ public class ItemLinearLayout extends LinearLayout implements sy, ty {
     }
 
     @Override
-    public void a() {
+    public void reindexChildren() {
         int var1 = 0;
 
         int var4;
         for (int i = 0; var1 < getChildCount(); i = var4) {
             View child = getChildAt(var1);
             var4 = i;
-            if (child instanceof sy) {
-                ((sy) child).getBean().index = i;
+            if (child instanceof ItemView) {
+                ((ItemView) child).getBean().index = i;
                 var4 = i + 1;
             }
 
@@ -94,16 +94,37 @@ public class ItemLinearLayout extends LinearLayout implements sy, ty {
     }
 
     @Override
+    public void setBean(ViewBean viewBean) {
+        this.viewBean = viewBean;
+    }
+
+    @Override
     public boolean getFixed() {
         return isFixed;
+    }
+
+    @Override
+    public void setFixed(boolean isFixed) {
+        this.isFixed = isFixed;
     }
 
     public int getLayoutGravity() {
         return layoutGravity;
     }
 
+    public void setLayoutGravity(int layoutGravity) {
+        this.layoutGravity = layoutGravity;
+        super.setGravity(layoutGravity);
+    }
+
     public boolean getSelection() {
         return isSelected;
+    }
+
+    @Override
+    public void setSelection(boolean selected) {
+        isSelected = selected;
+        invalidate();
     }
 
     @Override
@@ -129,45 +150,25 @@ public class ItemLinearLayout extends LinearLayout implements sy, ty {
     }
 
     @Override
-    public void setBean(ViewBean viewBean) {
-        this.viewBean = viewBean;
-    }
-
-    @Override
-    public void setChildScrollEnabled(boolean childScrollEnabled) {
+    public void setChildScrollEnabled(boolean scrollEnabled) {
         for (int i = 0; i < getChildCount(); ++i) {
             View child = getChildAt(i);
-            if (child instanceof ty) {
-                ((ty) child).setChildScrollEnabled(childScrollEnabled);
+            if (child instanceof ScrollContainer) {
+                ((ScrollContainer) child).setChildScrollEnabled(scrollEnabled);
             }
 
             if (child instanceof ItemHorizontalScrollView) {
-                ((ItemHorizontalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemHorizontalScrollView) child).setScrollEnabled(scrollEnabled);
             }
 
             if (child instanceof ItemVerticalScrollView) {
-                ((ItemVerticalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemVerticalScrollView) child).setScrollEnabled(scrollEnabled);
             }
         }
-    }
-
-    public void setFixed(boolean isFixed) {
-        this.isFixed = isFixed;
-    }
-
-    public void setLayoutGravity(int layoutGravity) {
-        this.layoutGravity = layoutGravity;
-        super.setGravity(layoutGravity);
     }
 
     @Override
     public void setPadding(int left, int top, int right, int bottom) {
         super.setPadding((int) wB.a(getContext(), (float) left), (int) wB.a(getContext(), (float) top), (int) wB.a(getContext(), (float) right), (int) wB.a(getContext(), (float) bottom));
-    }
-
-    @Override
-    public void setSelection(boolean selected) {
-        isSelected = selected;
-        invalidate();
     }
 }

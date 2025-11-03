@@ -7,12 +7,12 @@ import android.graphics.Rect;
 import android.widget.DigitalClock;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
 
-import a.a.a.sy;
 import a.a.a.wB;
 
 @Deprecated
-public class ItemDigitalClock extends DigitalClock implements sy {
+public class ItemDigitalClock extends DigitalClock implements ItemView {
 
     private final Paint paint;
     private final int paddingFactor;
@@ -46,6 +46,7 @@ public class ItemDigitalClock extends DigitalClock implements sy {
         return isFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         isFixed = z;
     }

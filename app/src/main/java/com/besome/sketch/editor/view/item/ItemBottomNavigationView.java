@@ -10,24 +10,24 @@ import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.sketchware.remod.R;
 
-import a.a.a.sy;
 import a.a.a.wB;
+import pro.sketchware.R;
 
-public class ItemBottomNavigationView extends BottomNavigationView implements sy {
+public class ItemBottomNavigationView extends BottomNavigationView implements ItemView {
 
     private final Paint paint;
     private final Rect rect;
-    private final float paddingFactor;
+    private final float dip;
     private ViewBean viewBean;
     private boolean hasSelection;
     private boolean hasFixed;
 
     public ItemBottomNavigationView(Context context) {
         super(context);
-        paddingFactor = wB.a(context, 1.0f);
+        dip = wB.a(context, 1.0f);
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setColor(0x9599d5d0);
         rect = new Rect();
@@ -37,11 +37,11 @@ public class ItemBottomNavigationView extends BottomNavigationView implements sy
         setClickable(false);
         var menu = getMenu();
         menu.add(Menu.NONE, 1, Menu.NONE, "Home")
-                .setIcon(R.drawable.ic_home);
+                .setIcon(R.drawable.ic_mtrl_home);
         menu.add(Menu.NONE, 2, Menu.NONE, "Chat")
-                .setIcon(R.drawable.ic_chat);
+                .setIcon(R.drawable.ic_mtrl_chat);
         menu.add(Menu.NONE, 3, Menu.NONE, "Profile")
-                .setIcon(R.drawable.ic_profile);
+                .setIcon(R.drawable.ic_mtrl_profile);
     }
 
     @Override
@@ -59,6 +59,7 @@ public class ItemBottomNavigationView extends BottomNavigationView implements sy
         return hasFixed;
     }
 
+    @Override
     public void setFixed(boolean z) {
         hasFixed = z;
     }
@@ -84,10 +85,10 @@ public class ItemBottomNavigationView extends BottomNavigationView implements sy
 
     @Override
     public void setPadding(int left, int top, int right, int bottom) {
-        super.setPadding((int) (left * paddingFactor),
-                (int) (top * paddingFactor),
-                (int) (right * paddingFactor),
-                (int) (bottom * paddingFactor));
+        super.setPadding((int) (left * dip),
+                (int) (top * dip),
+                (int) (right * dip),
+                (int) (bottom * dip));
     }
 
     @Override

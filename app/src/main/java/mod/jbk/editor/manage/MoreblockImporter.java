@@ -12,7 +12,7 @@ import com.besome.sketch.beans.BlockBean;
 import com.besome.sketch.beans.MoreBlockCollectionBean;
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.beans.ProjectResourceBean;
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,7 +24,6 @@ import a.a.a.Np;
 import a.a.a.Op;
 import a.a.a.Qp;
 import a.a.a.ZB;
-import a.a.a.aB;
 import a.a.a.bB;
 import a.a.a.eC;
 import a.a.a.jC;
@@ -33,9 +32,9 @@ import a.a.a.oB;
 import a.a.a.uq;
 import a.a.a.wB;
 import a.a.a.wq;
-import a.a.a.xB;
 import mod.hey.studios.moreblock.ReturnMoreblockManager;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class MoreblockImporter {
     private final Activity activity;
@@ -57,7 +56,7 @@ public class MoreblockImporter {
         this.activity = activity;
         this.sc_id = sc_id;
         this.projectActivity = projectActivity;
-        this.activityJavaName = projectActivity.getJavaName();
+        activityJavaName = projectActivity.getJavaName();
     }
 
     public void importMoreblock(MoreBlockCollectionBean moreblock, Callback callback) {
@@ -109,11 +108,11 @@ public class MoreblockImporter {
                 }
             }
             ArrayList<Gx> paramClassInfo = next.getParamClassInfo();
-            if (paramClassInfo.size() > 0) {
+            if (!paramClassInfo.isEmpty()) {
                 for (int i = 0; i < paramClassInfo.size(); i++) {
                     Gx gx = paramClassInfo.get(i);
                     String str = next.parameters.get(i);
-                    if (str.length() > 0 && str.charAt(0) != '@') {
+                    if (!str.isEmpty() && str.charAt(0) != '@') {
                         if (gx.b("boolean.SelectBoolean")) {
                             maybeAddVariable(0, str);
                         } else if (gx.b("double.SelectDouble")) {
@@ -141,7 +140,7 @@ public class MoreblockImporter {
                 }
             }
         }
-        if (toBeAddedVariables.size() == 0 && toBeAddedLists.size() == 0 && toBeAddedImages.size() == 0 && toBeAddedSounds.size() == 0 && toBeAddedFonts.size() == 0) {
+        if (toBeAddedVariables.isEmpty() && toBeAddedLists.isEmpty() && toBeAddedImages.isEmpty() && toBeAddedSounds.isEmpty() && toBeAddedFonts.isEmpty()) {
             createEvent(moreBlock);
         } else {
             showAutoAddDialog(moreBlock);
@@ -153,16 +152,16 @@ public class MoreblockImporter {
 
         jC.a(sc_id).a(activityJavaName, moreBlockName, moreBlock.spec);
         jC.a(sc_id).a(activityJavaName, moreBlockName + "_moreBlock", moreBlock.blocks);
-        bB.a(activity, xB.b().a(activity, R.string.common_message_complete_save), 0).show();
+        bB.a(activity, activity.getString(R.string.common_message_complete_save), 0).show();
         callback.onImportComplete();
     }
 
     private void showAutoAddDialog(MoreBlockCollectionBean moreBlock) {
-        aB aBVar = new aB(activity);
-        aBVar.b(xB.b().a(activity, R.string.logic_more_block_title_add_variable_resource));
-        aBVar.a(R.drawable.break_warning_96_red);
-        aBVar.a(xB.b().a(activity, R.string.logic_more_block_desc_add_variable_resource));
-        aBVar.b(xB.b().a(activity, R.string.common_word_continue), v -> {
+        MaterialAlertDialogBuilder aBVar = new MaterialAlertDialogBuilder(activity);
+        aBVar.setTitle(R.string.logic_more_block_title_add_variable_resource);
+        aBVar.setIcon(R.drawable.break_warning_96_red);
+        aBVar.setMessage(R.string.logic_more_block_desc_add_variable_resource);
+        aBVar.setPositiveButton(R.string.common_word_continue, (v, which) -> {
             for (Pair<Integer, String> pair : toBeAddedVariables) {
                 eC eC = jC.a(sc_id);
                 eC.c(activityJavaName, pair.first, pair.second);
@@ -181,19 +180,19 @@ public class MoreblockImporter {
                 copyFontFromCollectionsToProject(bean.resName);
             }
             createEvent(moreBlock);
-            aBVar.dismiss();
+            v.dismiss();
         });
-        aBVar.a(xB.b().a(activity, R.string.common_word_cancel), Helper.getDialogDismissListener(aBVar));
+        aBVar.setNegativeButton(R.string.common_word_cancel, null);
         aBVar.show();
     }
 
     private void showEditMoreBlockNameDialog(MoreBlockCollectionBean moreBlock) {
-        aB dialog = new aB(activity);
-        dialog.b(xB.b().a(activity, R.string.logic_more_block_title_change_block_name));
-        dialog.a(R.drawable.more_block_96dp);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
+        dialog.setTitle(R.string.logic_more_block_title_change_block_name);
+        dialog.setIcon(R.drawable.more_block_96dp);
 
         View customView = wB.a(activity, R.layout.property_popup_save_to_favorite);
-        ((TextView) customView.findViewById(R.id.tv_favorites_guide)).setText(xB.b().a(activity, R.string.logic_more_block_desc_change_block_name));
+        ((TextView) customView.findViewById(R.id.tv_favorites_guide)).setText(R.string.logic_more_block_desc_change_block_name);
         EditText newName = customView.findViewById(R.id.ed_input);
         newName.setPrivateImeOptions("defaultInputmode=english;");
         newName.setLines(1);
@@ -206,20 +205,20 @@ public class MoreblockImporter {
         }
 
         ZB validator = new ZB(activity, customView.findViewById(R.id.ti_input), uq.b, uq.a(), new ArrayList<>(moreBlockNamesWithoutReturnTypes));
-        dialog.a(customView);
-        dialog.b(xB.b().a(activity, R.string.common_word_save), v -> {
+        dialog.setView(customView);
+        dialog.setPositiveButton(R.string.common_word_save, (v, which) -> {
             if (validator.b()) {
                 String moreBlockName = ReturnMoreblockManager.getMbName(ReturnMoreblockManager.getMbNameWithTypeFromSpec(moreBlock.spec));
-                moreBlock.spec = newName.getText().toString() + moreBlock.spec.substring(moreBlockName.length());
+                moreBlock.spec = Helper.getText(newName) + moreBlock.spec.substring(moreBlockName.length());
 
                 handleVariables(moreBlock);
                 mB.a(activity, newName);
-                dialog.dismiss();
+                v.dismiss();
             }
         });
-        dialog.a(xB.b().a(activity, R.string.common_word_cancel), v -> {
+        dialog.setNegativeButton(R.string.common_word_cancel, (v, which) -> {
             mB.a(activity, newName);
-            dialog.dismiss();
+            v.dismiss();
         });
         dialog.show();
     }

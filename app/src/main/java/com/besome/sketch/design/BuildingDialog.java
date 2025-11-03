@@ -7,9 +7,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.besome.sketch.tools.QuizBoard;
-import com.sketchware.remod.R;
 
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class BuildingDialog extends Dialog {
 
@@ -19,17 +19,22 @@ public class BuildingDialog extends Dialog {
 
     public BuildingDialog(Context context) {
         super(context, R.style.progress);
+
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        setCancelable(true);
+        setCanceledOnTouchOutside(false);
+
         setContentView(R.layout.build_progress_msg_box);
 
         LinearLayout quizLayout = findViewById(R.id.layout_quiz);
         quizBoard = new QuizBoard(context);
-        quizLayout.addView(quizBoard);
+        quizLayout.addView(quizBoard, 0);
         setTitle(Helper.getResString(R.string.common_message_progress));
         tvProgress = findViewById(R.id.tv_progress);
         tvProgress.setText(Helper.getResString(R.string.common_message_loading));
-        super.setCanceledOnTouchOutside(false);
-        super.setCancelable(true);
+
+        getWindow().getAttributes().windowAnimations = R.style.Animation_Design_BottomSheetDialog;
     }
 
     public void setProgress(String text) {

@@ -1,76 +1,69 @@
 package com.besome.sketch.editor.view;
 
-import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.besome.sketch.beans.EventBean;
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 
 import a.a.a.Qs;
-import a.a.a.aB;
 import a.a.a.bB;
 import a.a.a.jC;
-import a.a.a.mB;
 import a.a.a.oq;
 import a.a.a.wB;
-import a.a.a.xB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
+import pro.sketchware.databinding.EventGridItemBinding;
 
 public class ViewEvents extends LinearLayout {
+    private final ArrayList<EventBean> events = new ArrayList<>();
+    private final EventAdapter eventAdapter = new EventAdapter();
+
     private String sc_id;
     private ProjectFileBean projectFileBean;
-    private ArrayList<EventBean> events;
-    private Qs eventClickListener;
-    private EventAdapter eventAdapter;
+    private Qs onEventClickListener;
 
     public ViewEvents(Context context) {
-        super(context);
-        initialize(context);
+        this(context, null);
     }
 
-    public ViewEvents(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
+    public ViewEvents(Context context, AttributeSet attrs) {
+        super(context, attrs);
         initialize(context);
     }
 
     private void initialize(Context context) {
         wB.a(context, this, R.layout.view_events);
-        events = new ArrayList<>();
         RecyclerView eventsList = findViewById(R.id.list_events);
         eventsList.setHasFixedSize(true);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-        linearLayoutManager.setOrientation(RecyclerView.HORIZONTAL);
-        eventsList.setLayoutManager(linearLayoutManager);
-        eventAdapter = new EventAdapter();
         eventsList.setAdapter(eventAdapter);
         eventsList.setItemAnimator(new DefaultItemAnimator());
     }
 
     public void setOnEventClickListener(Qs listener) {
-        eventClickListener = listener;
+        onEventClickListener = listener;
     }
 
     void setData(String sc_id, ProjectFileBean projectFileBean, ViewBean viewBean) {
         this.sc_id = sc_id;
         this.projectFileBean = projectFileBean;
-        String[] viewEvents = oq.c(viewBean.getClassInfo());
+
+        String[] viewEvents = oq.getEventsForClass(viewBean.getClassInfo());
         events.clear();
+
         ArrayList<EventBean> alreadyAddedEvents = jC.a(sc_id).g(projectFileBean.getJavaName());
         for (String event : viewEvents) {
             boolean eventAlreadyInActivity = false;
@@ -81,12 +74,13 @@ public class ViewEvents extends LinearLayout {
                 }
             }
 
-            if (!event.equals("onBindCustomView") || (!viewBean.customView.equals("") && !viewBean.customView.equals("none"))) {
+            if (!event.equals("onBindCustomView") || !viewBean.customView.isEmpty() && !viewBean.customView.equals("none")) {
                 EventBean eventBean = new EventBean(EventBean.EVENT_TYPE_VIEW, viewBean.type, viewBean.id, event);
                 eventBean.isSelected = eventAlreadyInActivity;
                 events.add(eventBean);
             }
         }
+
         eventAdapter.notifyDataSetChanged();
     }
 
@@ -96,71 +90,69 @@ public class ViewEvents extends LinearLayout {
             eventBean.isSelected = true;
             jC.a(sc_id).a(projectFileBean.getJavaName(), eventBean);
             eventAdapter.notifyItemChanged(eventPosition);
-            bB.a(getContext(), xB.b().a(getContext(), R.string.event_message_new_event), 0).show();
+            bB.a(getContext(), getContext().getString(R.string.event_message_new_event), 0).show();
         }
-        if (eventClickListener != null) {
-            eventClickListener.a(eventBean);
+        if (onEventClickListener != null) {
+            onEventClickListener.a(eventBean);
         }
     }
 
     private class EventAdapter extends RecyclerView.Adapter<EventAdapter.ViewHolder> {
-
-        private class ViewHolder extends RecyclerView.ViewHolder {
-            public final LinearLayout container;
-            public final ImageView icon;
-            public final ImageView addAvailableIcon;
-            public final TextView name;
-
-            public ViewHolder(View itemView) {
-                super(itemView);
-                container = itemView.findViewById(R.id.container);
-                icon = itemView.findViewById(R.id.img_icon);
-                addAvailableIcon = itemView.findViewById(R.id.img_used_event);
-                name = itemView.findViewById(R.id.tv_title);
-                container.setOnClickListener(v -> createEvent(getLayoutPosition()));
-            }
-        }
-
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             EventBean eventBean = events.get(position);
-            if (eventBean.isSelected) {
-                holder.addAvailableIcon.setVisibility(View.GONE);
-                mB.a(holder.icon, 1);
-                holder.container.setOnLongClickListener(v -> {
-                    aB dialog = new aB((Activity) getContext());
-                    dialog.a(R.drawable.delete_96);
-                    dialog.b("Confirm Delete");
-                    dialog.a("Click on Confirm to delete the selected Event.");
-
-                    dialog.b(Helper.getResString(R.string.common_word_delete), del -> {
-                        dialog.dismiss();
-                        EventBean.deleteEvent(sc_id, eventBean, projectFileBean);
-                        bB.a(getContext(), xB.b().a(getContext(), R.string.common_message_complete_delete), 0).show();
-                        eventBean.isSelected = false;
-                        eventAdapter.notifyItemChanged(position);
-                    });
-                    dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
-                    dialog.show();
-                    return true;
-                });
-            } else {
-                holder.addAvailableIcon.setVisibility(View.VISIBLE);
-                mB.a(holder.icon, 0);
-            }
-            holder.icon.setImageResource(oq.a(eventBean.eventName));
-            holder.name.setText(eventBean.eventName);
+            holder.bind(eventBean, position);
         }
 
         @Override
         @NonNull
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.event_grid_item, parent, false));
+            LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+            EventGridItemBinding binding = EventGridItemBinding.inflate(inflater, parent, false);
+            return new ViewHolder(binding);
         }
 
         @Override
         public int getItemCount() {
             return events.size();
+        }
+
+        private class ViewHolder extends RecyclerView.ViewHolder {
+            public final EventGridItemBinding binding;
+
+            public ViewHolder(EventGridItemBinding binding) {
+                super(binding.getRoot());
+                this.binding = binding;
+            }
+
+            public void bind(EventBean event, int position) {
+                binding.container.setOnClickListener(v -> createEvent(getLayoutPosition()));
+                binding.imgIcon.setImageResource(oq.getEventIconResource(event.eventName));
+                binding.tvTitle.setText(event.eventName);
+                binding.tvTitle.setTextColor(MaterialColors.getColor(binding.tvTitle, event.isSelected ? com.google.android.material.R.attr.colorOnSurface : com.google.android.material.R.attr.colorOutline));
+                binding.imgIcon.setColorFilter(MaterialColors.getColor(binding.tvTitle, event.isSelected ? com.google.android.material.R.attr.colorOnSurface : com.google.android.material.R.attr.colorOutline));
+                binding.imgUsedEvent.setVisibility(event.isSelected ? View.GONE : View.VISIBLE);
+
+                if (event.isSelected) {
+                    binding.container.setOnLongClickListener(v -> {
+                        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(itemView.getContext());
+                        dialog.setIcon(R.drawable.delete_96);
+                        dialog.setTitle("Confirm Delete");
+                        dialog.setMessage("Click on Confirm to delete the selected Event.");
+
+                        dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (view, which) -> {
+                            view.dismiss();
+                            EventBean.deleteEvent(sc_id, event, projectFileBean);
+                            bB.a(getContext(), getContext().getString(R.string.common_message_complete_delete), 0).show();
+                            event.isSelected = false;
+                            eventAdapter.notifyItemChanged(position);
+                        });
+                        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+                        dialog.show();
+                        return true;
+                    });
+                }
+            }
         }
     }
 }

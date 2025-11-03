@@ -1,9 +1,8 @@
 package com.besome.sketch.editor.view;
 
 import android.animation.ObjectAnimator;
-import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.text.InputType;
 import android.util.AttributeSet;
 import android.view.View;
@@ -23,7 +22,9 @@ import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.ctrls.ViewIdSpinnerItem;
 import com.besome.sketch.editor.property.ViewPropertyItems;
 import com.besome.sketch.lib.ui.CustomHorizontalScrollView;
-import com.sketchware.remod.R;
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.color.MaterialColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 
@@ -35,15 +36,17 @@ import a.a.a.NB;
 import a.a.a.Op;
 import a.a.a.Qs;
 import a.a.a.Rp;
-import a.a.a.aB;
 import a.a.a.bB;
 import a.a.a.jC;
 import a.a.a.mB;
 import a.a.a.wB;
+import mod.hey.studios.project.ProjectSettings;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class ViewProperty extends LinearLayout implements Kw {
 
+    private Context context;
     private final ArrayList<ViewBean> projectActivityViews = new ArrayList<>();
     private String sc_id;
     private ProjectFileBean projectFile;
@@ -57,9 +60,11 @@ public class ViewProperty extends LinearLayout implements Kw {
     private ViewEvents viewEvent;
     private Iw propertyListener = null;
     private Lw propertyValueChangedListener;
+    private onPropertyDeleted onPropertyDeletedListener;
     private LinearLayout layoutPropertyGroup;
     private int selectedGroupId;
     private ImageView imgSave;
+    private ImageView imgDelete;
     private ObjectAnimator showAllShower;
     private ObjectAnimator showAllHider;
     private boolean showAllVisible = true;
@@ -76,6 +81,14 @@ public class ViewProperty extends LinearLayout implements Kw {
 
     @Override
     public void a(String str, Object obj) {
+    }
+
+    public interface onPropertyDeleted {
+        void deleteProperty(ViewBean viewBean);
+    }
+
+    public void setOnPropertyDeleted(onPropertyDeleted onPropertyDeleted) {
+        onPropertyDeletedListener = onPropertyDeleted;
     }
 
     public void setOnEventClickListener(Qs onEventClickListener) {
@@ -115,7 +128,7 @@ public class ViewProperty extends LinearLayout implements Kw {
             showAllShower.setInterpolator(new DecelerateInterpolator());
         }
         if (showAllHider == null) {
-            showAllHider = ObjectAnimator.ofFloat(layoutPropertySeeAll, View.TRANSLATION_Y, wB.a(getContext(), 84.0f));
+            showAllHider = ObjectAnimator.ofFloat(layoutPropertySeeAll, View.TRANSLATION_Y, wB.a(getContext(), 100.0f));
             showAllHider.setDuration(200L);
             showAllHider.setInterpolator(new DecelerateInterpolator());
         }
@@ -133,12 +146,10 @@ public class ViewProperty extends LinearLayout implements Kw {
 
             if (selectedGroupId == (Integer) item.getTag()) {
                 item.setSelected(true);
-                item.title.setTextColor(Color.WHITE);
-                item.animate().scaleX(1).scaleY(1).alpha(1).start();
+                item.animate().scaleX(0.9f).scaleY(0.9f).start();
             } else {
                 item.setSelected(false);
-                item.title.setTextColor(0xff1d2129);
-                item.animate().scaleX(0.8f).scaleY(0.8f).alpha(0.6f).start();
+                item.animate().scaleX(0.8f).scaleY(0.8f).start();
             }
         }
         if (idsAdapter.getSelectedItemPosition() < projectActivityViews.size()) {
@@ -146,6 +157,7 @@ public class ViewProperty extends LinearLayout implements Kw {
             if (selectedGroupId == 0) {
                 propertyLayout.setVisibility(VISIBLE);
                 layoutPropertySeeAll.setVisibility(VISIBLE);
+                viewPropertyItems.setProjectFileBean(projectFile);
                 viewPropertyItems.a(sc_id, viewBean);
                 a(viewBean);
                 viewEvent.setVisibility(GONE);
@@ -162,9 +174,9 @@ public class ViewProperty extends LinearLayout implements Kw {
     }
 
     private void showSaveToCollectionDialog() {
-        aB dialog = new aB((Activity) getContext());
-        dialog.b(Helper.getResString(R.string.view_widget_favorites_save_title));
-        dialog.a(R.drawable.ic_bookmark_red_48dp);
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(getContext());
+        dialog.setTitle(Helper.getResString(R.string.view_widget_favorites_save_title));
+        dialog.setIcon(R.drawable.ic_bookmark_red_48dp);
         View view = wB.a(getContext(), R.layout.property_popup_save_to_favorite);
         ((TextView) view.findViewById(R.id.tv_favorites_guide)).setText(Helper.getResString(R.string.view_widget_favorites_save_guide_new));
         EditText editText = view.findViewById(R.id.ed_input);
@@ -174,10 +186,10 @@ public class ViewProperty extends LinearLayout implements Kw {
         editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
 
         NB validator = new NB(getContext(), view.findViewById(R.id.ti_input), Rp.h().g());
-        dialog.a(view);
-        dialog.b(Helper.getResString(R.string.common_word_save), v -> {
+        dialog.setView(view);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
             if (!mB.a() && validator.b()) {
-                String widgetName = editText.getText().toString();
+                String widgetName = Helper.getText(editText);
                 ArrayList<ViewBean> viewBeans = jC.a(sc_id).b(projectFile.getXmlName(), projectActivityViews.get(idsAdapter.getSelectedItemPosition()));
                 for (ViewBean viewBean : viewBeans) {
                     String backgroundResource = viewBean.layout.backgroundResource;
@@ -203,14 +215,28 @@ public class ViewProperty extends LinearLayout implements Kw {
                     propertyListener.a();
                 }
                 bB.a(getContext(), Helper.getResString(R.string.common_message_complete_save), bB.TOAST_NORMAL).show();
-                dialog.dismiss();
+                v.dismiss();
             }
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
+    private void showDeleteViewBeanWidget() {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(Helper.getResString(R.string.view_widget_delete_title))
+                .setMessage(Helper.getResString(R.string.view_widget_delete_description))
+                .setPositiveButton(Helper.getResString(R.string.common_word_delete), (d, w) -> {
+                    if (onPropertyDeletedListener != null) {
+                        onPropertyDeletedListener.deleteProperty(projectActivityViews.get(idsAdapter.getSelectedItemPosition()));
+                    }
+                })
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel), (d, w) -> d.dismiss())
+                .show();
+    }
+
     private void initialize(Context context) {
+        this.context = context;
         wB.a(context, this, R.layout.view_property);
         layoutPropertyGroup = findViewById(R.id.layout_property_group);
         CustomHorizontalScrollView hcvProperty = findViewById(R.id.hcv_property);
@@ -218,20 +244,38 @@ public class ViewProperty extends LinearLayout implements Kw {
         LinearLayout propertyContents = findViewById(R.id.property_contents);
         layoutPropertySeeAll = findViewById(R.id.layout_property_see_all);
         viewEvent = findViewById(R.id.view_event);
-        hcvProperty.setOnScrollChangedListener((l, t, oldl, oldt) -> {
-            if (Math.abs(l - oldt) <= 5) {
+        hcvProperty.setHorizontalScrollBarEnabled(false);
+        hcvProperty.setOnScrollChangedListener((scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if (Math.abs(scrollX - oldScrollY) <= 5) {
                 return;
             }
-            if (l > oldt) {
+            int maxScrollX = hcvProperty.getChildAt(0).getWidth() - hcvProperty.getWidth();
+            if (scrollX > 100 && scrollX < maxScrollX) {
+                if (scrollX > oldScrollX) {
+                    if (showAllVisible) {
+                        showAllVisible = false;
+                        cancelSeeAllAnimations();
+                        showAllHider.start();
+                    }
+                } else {
+                    if (!showAllVisible) {
+                        showAllVisible = true;
+                        cancelSeeAllAnimations();
+                        showAllShower.start();
+                    }
+                }
+            } else if (scrollX >= maxScrollX) {
                 if (showAllVisible) {
                     showAllVisible = false;
                     cancelSeeAllAnimations();
                     showAllHider.start();
                 }
-            } else if (!(showAllVisible)) {
-                showAllVisible = true;
-                cancelSeeAllAnimations();
-                showAllShower.start();
+            } else {
+                if (!showAllVisible) {
+                    showAllVisible = true;
+                    cancelSeeAllAnimations();
+                    showAllShower.start();
+                }
             }
         });
         imgSave = findViewById(R.id.img_save);
@@ -240,6 +284,8 @@ public class ViewProperty extends LinearLayout implements Kw {
                 showSaveToCollectionDialog();
             }
         });
+        imgDelete = findViewById(R.id.img_delete);
+        imgDelete.setOnClickListener(view -> showDeleteViewBeanWidget());
         spnWidget = findViewById(R.id.spn_widget);
         idsAdapter = new ViewIdsAdapter(context, projectActivityViews);
         spnWidget.setAdapter(idsAdapter);
@@ -268,8 +314,10 @@ public class ViewProperty extends LinearLayout implements Kw {
         }
         if ("_fab".equals(viewBean.id)) {
             imgSave.setVisibility(GONE);
+            imgDelete.setVisibility(GONE);
         } else {
             imgSave.setVisibility(VISIBLE);
+            imgDelete.setVisibility(VISIBLE);
         }
         viewPropertyItems.setProjectFileBean(projectFile);
         e();
@@ -278,6 +326,7 @@ public class ViewProperty extends LinearLayout implements Kw {
     public void a(String sc_id, ProjectFileBean projectFileBean) {
         this.sc_id = sc_id;
         projectFile = projectFileBean;
+        viewPropertyItems.setProjectSettings(new ProjectSettings(sc_id));
     }
 
     public void a(String str) {
@@ -415,7 +464,7 @@ public class ViewProperty extends LinearLayout implements Kw {
 
     private class SeeAllPropertiesFloatingItem extends LinearLayout implements View.OnClickListener {
 
-        private final View propertyMenuItem;
+        private final MaterialCardView propertyMenuItem;
         private final ImageView icon;
         private final TextView title;
         private ViewBean viewBean;
@@ -438,10 +487,12 @@ public class ViewProperty extends LinearLayout implements Kw {
 
         private void configure(int imageResId, int propertyNameResId) {
             propertyMenuItem.setVisibility(VISIBLE);
+            propertyMenuItem.setCardBackgroundColor(MaterialColors.getColor(this, R.attr.colorPrimaryContainer));
+            propertyMenuItem.setOnClickListener(this);
             icon.setImageResource(imageResId);
+            icon.setColorFilter(MaterialColors.getColor(this, R.attr.colorOnPrimaryContainer), PorterDuff.Mode.SRC_ATOP);
             title.setText(Helper.getResString(propertyNameResId));
-            title.setTextColor(0xffff951b);
-            setOnClickListener(this);
+            title.setTextColor(MaterialColors.getColor(this, R.attr.colorOnPrimaryContainer));
         }
 
         private void setView(ViewBean viewBean) {

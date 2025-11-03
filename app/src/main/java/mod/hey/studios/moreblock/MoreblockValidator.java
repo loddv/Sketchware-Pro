@@ -3,14 +3,13 @@ package mod.hey.studios.moreblock;
 import android.content.Context;
 
 import com.google.android.material.textfield.TextInputLayout;
-import com.sketchware.remod.R;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import a.a.a.MB;
-import a.a.a.xB;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class MoreblockValidator extends MB {
 
@@ -36,20 +35,17 @@ public class MoreblockValidator extends MB {
         String name = charSequence.toString();
         int trimmedLength = name.trim().length();
         if (trimmedLength < 1) {
-            b.setErrorEnabled(true);
-            b.setError(xB.b().a(a, R.string.invalid_value_min_lenth, 1));
+            b.setError(a.getString(R.string.invalid_value_min_lenth, 1));
             d = false;
         } else if (name.length() > 60) {
-            b.setErrorEnabled(true);
-            b.setError(xB.b().a(a, R.string.invalid_value_max_lenth, 60));
+            b.setError(a.getString(R.string.invalid_value_max_lenth, 60));
             d = false;
         } else {
-            if (i != null && i.length() > 0 && name.equals(i)) {
-                b.setErrorEnabled(false);
+            if (i != null && !i.isEmpty() && name.equals(i)) {
+                b.setError(null);
                 d = true;
             } else if (registeredVariables.contains(name)) {
-                b.setErrorEnabled(true);
-                b.setError(xB.b().a(a, R.string.common_message_name_unavailable, 0));
+                b.setError(a.getString(R.string.common_message_name_unavailable, 0));
                 d = false;
             } else {
                 boolean z = false;
@@ -60,7 +56,6 @@ public class MoreblockValidator extends MB {
                     }
                 }
                 if (z) {
-                    b.setErrorEnabled(true);
                     b.setError(Helper.getResString(R.string.common_message_name_unavailable));
                     d = false;
                     return;
@@ -74,25 +69,21 @@ public class MoreblockValidator extends MB {
                 }
 
                 if (isReservedKeyUsed) {
-                    b.setErrorEnabled(true);
                     b.setError(Helper.getResString(R.string.logic_editor_message_reserved_keywords));
                     d = false;
                 } else if (!Character.isLetter(charSequence.charAt(0))) {
-                    b.setErrorEnabled(true);
                     b.setError(Helper.getResString(R.string.logic_editor_message_variable_name_must_start_letter));
                     d = false;
                 } else {
                     if (j.matcher(name).matches()) {
-                        b.setErrorEnabled(false);
+                        b.setError(null);
                         d = true;
                     } else {
-                        b.setErrorEnabled(true);
                         b.setError(Helper.getResString(R.string.invalid_value_rule_3));
                         d = false;
                     }
-                    if (name.trim().length() < 1) {
-                        b.setErrorEnabled(true);
-                        b.setError(xB.b().a(a, R.string.invalid_value_min_lenth, 1));
+                    if (name.trim().isEmpty()) {
+                        b.setError(a.getString(R.string.invalid_value_min_lenth, 1));
                         d = false;
                     }
                 }

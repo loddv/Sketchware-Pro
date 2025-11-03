@@ -7,7 +7,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,19 +14,20 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.besome.sketch.beans.ProjectLibraryBean;
 import com.besome.sketch.lib.base.BaseAppCompatActivity;
-import com.sketchware.remod.R;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 import a.a.a.GB;
-import a.a.a.aB;
 import a.a.a.bB;
 import a.a.a.iC;
 import a.a.a.mB;
 import mod.hey.studios.util.Helper;
 import mod.jbk.editor.manage.library.LibrarySettingsImporter;
+import pro.sketchware.R;
 
 public class ManageGoogleMapActivity extends BaseAppCompatActivity implements View.OnClickListener {
     private String sc_id;
-    private Switch libSwitch;
+    private MaterialSwitch libSwitch;
     private EditText editApiKey;
     private ProjectLibraryBean googleMapLibraryBean;
 
@@ -52,19 +52,19 @@ public class ManageGoogleMapActivity extends BaseAppCompatActivity implements Vi
     }
 
     private void downloadChromeDialog() {
-        final aB dialog = new aB(this);
-        dialog.a(R.drawable.chrome_96);
-        dialog.b(Helper.getResString(R.string.title_compatible_chrome_browser));
-        dialog.a(Helper.getResString(R.string.message_compatible_chrome_brower));
-        dialog.b(Helper.getResString(R.string.common_word_ok), v -> {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setIcon(R.drawable.chrome_96);
+        dialog.setTitle(Helper.getResString(R.string.title_compatible_chrome_browser));
+        dialog.setMessage(Helper.getResString(R.string.message_compatible_chrome_brower));
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_ok), (v, which) -> {
             if (!mB.a()) {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
                 intent.setData(Uri.parse("market://details?id=com.android.chrome"));
                 startActivity(intent);
-                dialog.dismiss();
+                v.dismiss();
             }
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), Helper.getDialogDismissListener(dialog));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 
@@ -72,10 +72,10 @@ public class ManageGoogleMapActivity extends BaseAppCompatActivity implements Vi
     public void onBackPressed() {
         Intent intent = new Intent();
         googleMapLibraryBean.useYn = libSwitch.isChecked() ? "Y" : "N";
-        googleMapLibraryBean.data = editApiKey.getText().toString();
+        googleMapLibraryBean.data = Helper.getText(editApiKey);
         intent.putExtra("google_map", googleMapLibraryBean);
         setResult(RESULT_OK, intent);
-        if (editApiKey.getText().toString().isEmpty() && libSwitch.isChecked()) {
+        if (Helper.getText(editApiKey).isEmpty() && libSwitch.isChecked()) {
             bB.a(getApplicationContext(), "Api key can't be empty!", Toast.LENGTH_SHORT).show();
         } else {
             super.onBackPressed();
@@ -121,10 +121,10 @@ public class ManageGoogleMapActivity extends BaseAppCompatActivity implements Vi
         getSupportActionBar().setTitle("GoogleMap Settings");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowTitleEnabled(true);
-        toolbar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
         LinearLayout switchLayout = findViewById(R.id.layout_switch);
         switchLayout.setOnClickListener(this);
-        libSwitch = findViewById(R.id.switch_lib);
+        libSwitch = findViewById(R.id.lib_switch);
         editApiKey = findViewById(R.id.ed_api_key);
         ((TextView) findViewById(R.id.tv_api_key)).setText(Helper.getResString(R.string.design_library_google_map_title_api_key));
         ((TextView) findViewById(R.id.tv_desc)).setText(Helper.getResString(R.string.design_library_google_maps_description_operate_normally));
@@ -146,18 +146,18 @@ public class ManageGoogleMapActivity extends BaseAppCompatActivity implements Vi
     }
 
     private void configureLibrary() {
-        aB dialog = new aB(this);
-        dialog.b(Helper.getResString(R.string.common_word_warning));
-        dialog.a(R.drawable.delete_96);
-        dialog.a(Helper.getResString(R.string.design_library_message_confirm_uncheck_google_map));
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+        dialog.setTitle(Helper.getResString(R.string.common_word_warning));
+        dialog.setIcon(R.drawable.delete_96);
+        dialog.setMessage(Helper.getResString(R.string.design_library_message_confirm_uncheck_google_map));
         dialog.setCancelable(false);
-        dialog.b(Helper.getResString(R.string.common_word_delete), v -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (v, which) -> {
             libSwitch.setChecked(false);
-            dialog.dismiss();
+            v.dismiss();
         });
-        dialog.a(Helper.getResString(R.string.common_word_cancel), v -> {
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v, which) -> {
             libSwitch.setChecked(true);
-            dialog.dismiss();
+            v.dismiss();
         });
         dialog.show();
     }

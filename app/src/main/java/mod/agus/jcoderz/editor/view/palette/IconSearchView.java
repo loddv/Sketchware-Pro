@@ -6,15 +6,15 @@ import android.view.ViewGroup;
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.view.palette.IconBase;
-import com.sketchware.remod.R;
 
 import mod.agus.jcoderz.beans.ViewBeans;
+import pro.sketchware.R;
 
 public class IconSearchView extends IconBase {
 
     public IconSearchView(Context context) {
         super(context);
-        setWidgetImage(R.drawable.ic_search_color_96dp);
+        setWidgetImage(R.drawable.ic_mtrl_search);
         setWidgetName("SearchView");
     }
 

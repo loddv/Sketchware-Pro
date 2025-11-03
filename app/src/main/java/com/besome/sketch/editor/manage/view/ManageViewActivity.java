@@ -1,6 +1,7 @@
 package com.besome.sketch.editor.manage.view;
 
-import android.content.Context;
+import static pro.sketchware.utility.SketchwareUtil.dpToPx;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,10 +11,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
@@ -23,10 +22,12 @@ import com.besome.sketch.beans.EventBean;
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.lib.base.BaseAppCompatActivity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
-import com.sketchware.remod.R;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -38,23 +39,22 @@ import a.a.a.eC;
 import a.a.a.jC;
 import a.a.a.mB;
 import a.a.a.wq;
-import a.a.a.xB;
 import a.a.a.xw;
+import pro.sketchware.R;
 
 public class ManageViewActivity extends BaseAppCompatActivity implements OnClickListener, ViewPager.OnPageChangeListener {
     private static final int TAB_COUNT = 2;
     private static final int REQUEST_CODE_ADD_ACTIVITY = 264;
     private static final int REQUEST_CODE_ADD_CUSTOM_VIEW = 266;
-
-    private LinearLayout actionButtonsContainer;
-    private boolean selecting = false;
-    private String isAppCompatEnabled = "N";
+    private final int[] x = new int[19];
     // signature mustn't be changed: used in La/a/a/Bw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V, La/a/a/tw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V
     public FloatingActionButton s;
+    private MaterialCardView actionButtonsContainer;
+    private boolean selecting = false;
+    private String isAppCompatEnabled = "N";
     private Fw activitiesFragment;
     private xw customViewsFragment;
     private ViewPager viewPager;
-    private final int[] x = new int[19];
     private String sc_id;
 
     public final String a(int var1, String var2) {
@@ -106,6 +106,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
 
     @Override
     public void onPageScrolled(int var1, float var2, int var3) {
+        a(false);
     }
 
     public final void a(ProjectFileBean var1, ArrayList<ViewBean> var2) {
@@ -123,10 +124,16 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
     public void a(boolean var1) {
         selecting = var1;
         invalidateOptionsMenu();
+
         if (selecting) {
             actionButtonsContainer.setVisibility(View.VISIBLE);
+            actionButtonsContainer.post(() -> {
+                float offset = dpToPx(actionButtonsContainer.getHeight());
+                s.animate().translationY(offset).setDuration(200L).start();
+            });
         } else {
             actionButtonsContainer.setVisibility(View.GONE);
+            s.animate().translationY(0.0F).setDuration(200L).start();
         }
 
         activitiesFragment.a(selecting);
@@ -213,7 +220,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
             k();
 
             try {
-                new Handler().postDelayed(() -> (new a(getApplicationContext())).execute(), 500L);
+                new Handler().postDelayed(() -> new a(this).execute(), 500L);
             } catch (Exception e) {
                 e.printStackTrace();
                 h();
@@ -236,7 +243,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
                     a(false);
                     activitiesFragment.g();
                     customViewsFragment.g();
-                    bB.a(getApplicationContext(), getTranslatedString(R.string.common_message_complete_delete), bB.TOAST_WARNING).show();
+                    bB.a(getApplicationContext(), getString(R.string.common_message_complete_delete), bB.TOAST_WARNING).show();
                     s.show();
                 }
             } else if (viewId == R.id.fab) {
@@ -256,26 +263,19 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!super.j()) {
+        if (!super.isStoragePermissionGranted()) {
             finish();
         }
 
         setContentView(R.layout.manage_view);
-        Toolbar m = findViewById(R.id.toolbar);
-        setSupportActionBar(m);
-        findViewById(R.id.layout_main_logo).setVisibility(View.GONE);
-        getSupportActionBar().setTitle(getTranslatedString(R.string.design_actionbar_title_manager_view));
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowTitleEnabled(true);
-        m.setNavigationOnClickListener(view -> {
-            if (!mB.a()) onBackPressed();
-        });
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        topAppBar.setNavigationOnClickListener(v -> onBackPressed());
 
         actionButtonsContainer = findViewById(R.id.layout_btn_group);
         Button delete = findViewById(R.id.btn_delete);
         Button cancel = findViewById(R.id.btn_cancel);
-        delete.setText(getTranslatedString(R.string.common_word_delete));
-        cancel.setText(getTranslatedString(R.string.common_word_cancel));
+        delete.setText(R.string.common_word_delete);
+        cancel.setText(R.string.common_word_cancel);
         delete.setOnClickListener(this);
         cancel.setOnClickListener(this);
 
@@ -305,7 +305,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem menuItem) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
         if (menuItem.getItemId() == R.id.menu_screen_delete) {
             a(!selecting);
         }
@@ -315,7 +315,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
     @Override
     public void onResume() {
         super.onResume();
-        if (!super.j()) {
+        if (!super.isStoragePermissionGranted()) {
             finish();
         }
     }
@@ -327,36 +327,37 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         super.onSaveInstanceState(newState);
     }
 
-    public class a extends MA {
-        public a(Context var2) {
-            super(var2);
-            addTask(this);
+    private static class a extends MA {
+        private final WeakReference<ManageViewActivity> activity;
+
+        public a(ManageViewActivity activity) {
+            super(activity.getApplicationContext());
+            this.activity = new WeakReference<>(activity);
+            activity.addTask(this);
         }
 
         @Override
         public void a() {
-            h();
-            setResult(RESULT_OK);
-            finish();
+            var activity = this.activity.get();
+            activity.h();
+            activity.setResult(RESULT_OK);
+            activity.finish();
         }
 
         @Override
         public void a(String var1) {
-            h();
+            activity.get().h();
         }
 
         @Override
-        public void b() {
+        public void b() throws By {
+            var activity = this.activity.get();
             try {
-                publishProgress(getTranslatedString(R.string.common_message_progress));
-                m();
+                publishProgress(activity.getString(R.string.common_message_progress));
+                activity.m();
             } catch (Exception e) {
                 e.printStackTrace();
-                try {
-                    throw new By(getTranslatedString(R.string.common_error_unknown));
-                } catch (By ex) {
-                    ex.printStackTrace();
-                }
+                throw new By(activity.getString(R.string.common_error_unknown));
             }
         }
 
@@ -367,7 +368,7 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
 
         public b(FragmentManager fragmentManager) {
             super(fragmentManager);
-            f = new String[]{getTranslatedString(R.string.common_word_view).toUpperCase(), getTranslatedString(R.string.common_word_custom_view).toUpperCase()};
+            f = new String[]{getString(R.string.common_word_view), getString(R.string.common_word_custom_view)};
         }
 
         @Override

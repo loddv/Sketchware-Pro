@@ -4,19 +4,21 @@ import android.content.Context;
 
 import com.besome.sketch.beans.LayoutBean;
 import com.besome.sketch.beans.ViewBean;
-import com.sketchware.remod.R;
+
+import pro.sketchware.R;
 
 public class IconEditText extends IconBase {
     public IconEditText(Context context) {
         super(context);
+        initialize();
     }
 
-    public void a(Context context) {
-        super.a(context);
-        setWidgetImage(R.drawable.widget_edit_text);
+    private void initialize() {
+        setWidgetImage(R.drawable.ic_mtrl_edittext);
         setWidgetName("EditText");
     }
 
+    @Override
     public ViewBean getBean() {
         ViewBean viewBean = new ViewBean();
         viewBean.type = 5;

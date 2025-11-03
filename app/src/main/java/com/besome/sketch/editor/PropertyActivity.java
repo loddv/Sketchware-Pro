@@ -16,7 +16,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewPropertyAnimatorCompat;
@@ -28,34 +27,34 @@ import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.beans.ProjectResourceBean;
 import com.besome.sketch.beans.ViewBean;
 import com.besome.sketch.editor.manage.image.ManageImageActivity;
+import com.besome.sketch.editor.property.PropertyResourceItem;
 import com.besome.sketch.editor.property.ViewPropertyItems;
 import com.besome.sketch.lib.base.BaseAppCompatActivity;
-import com.sketchware.remod.R;
+import com.besome.sketch.lib.ui.CustomScrollView;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Objects;
 
 import a.a.a.Kw;
 import a.a.a.cC;
 import a.a.a.jC;
 import a.a.a.mB;
 import a.a.a.ro;
-import a.a.a.tx;
+import mod.hey.studios.project.ProjectSettings;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 
 public class PropertyActivity extends BaseAppCompatActivity implements Kw {
 
     private final ArrayList<Integer> propertyGroups = new ArrayList<>();
-    private LinearLayout content;
     private ProjectFileBean projectFileBean;
     private ViewBean viewBean;
+    private ViewPropertyItems propertyItems;
     private boolean p;
     private String sc_id;
-    private LinearLayout r;
-    private ViewPropertyItems propertyItems;
     private int layoutPosition;
 
+    private LinearLayout content;
 
     @Override
     public void a(String var1, Object var2) {
@@ -69,7 +68,7 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
 
     private void m() {
         ArrayList<String> var1 = jC.d(sc_id).m();
-        tx resourceProperty;
+        PropertyResourceItem resourceProperty;
         if (!var1.contains(viewBean.layout.backgroundResource)) {
             viewBean.layout.backgroundResource = null;
             resourceProperty = content.findViewWithTag("property_background_resource");
@@ -115,10 +114,6 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
         }
     }
 
-    public void n() {
-        r.setVisibility(View.GONE);
-    }
-
     public void o() {
         ViewBean viewBean;
         if (this.viewBean.id.equals("_fab")) {
@@ -161,27 +156,33 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.property);
+
+        content = findViewById(R.id.content);
+        CustomScrollView scrollView = findViewById(R.id.scroll_view);
+        RecyclerView propertyGroupList = findViewById(R.id.property_group_list);
+
         if (!j()) {
             finish();
         }
 
         ro w = new ro(getApplicationContext());
+
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         findViewById(R.id.layout_main_logo).setVisibility(View.GONE);
-        Objects.requireNonNull(getSupportActionBar()).setDisplayShowTitleEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        toolbar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
-        toolbar.setPopupTheme(R.style.ThemeOverlay_ToolbarMenu);
+        getSupportActionBar().setTitle(Helper.getResString(R.string.edit_view_properties_title));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowTitleEnabled(true);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
         propertyGroups.add(1);
         propertyGroups.add(2);
         propertyGroups.add(3);
         propertyGroups.add(4);
-        RecyclerView propertyGroupList = findViewById(R.id.property_group_list);
-        propertyGroupList.setHasFixedSize(true);
+
         propertyGroupList.setLayoutManager(new LinearLayoutManager(getApplicationContext(), RecyclerView.VERTICAL, false));
         propertyGroupList.setAdapter(new ItemAdapter());
-        content = findViewById(R.id.content);
+
         if (savedInstanceState != null) {
             sc_id = savedInstanceState.getString("sc_id");
             projectFileBean = savedInstanceState.getParcelable("project_file");
@@ -192,7 +193,6 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
             viewBean = getIntent().getParcelableExtra("bean");
         }
 
-        ActionBar actionBar = getSupportActionBar();
         String viewId;
         if (viewBean.id.charAt(0) == '_') {
             viewId = viewBean.id.substring(1);
@@ -200,9 +200,7 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
             viewId = viewBean.id;
         }
 
-        actionBar.setTitle(viewId);
-        r = findViewById(R.id.layout_ads);
-        findViewById(R.id.layout_ads).setVisibility(View.GONE);
+        toolbar.setSubtitle(viewId);
     }
 
     @Override
@@ -212,11 +210,10 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem menuItem) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
         if (menuItem.getItemId() == R.id.menu_add_image_res) {
             p();
         }
-
         return super.onOptionsItemSelected(menuItem);
     }
 
@@ -224,6 +221,7 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
     public void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         propertyItems = new ViewPropertyItems(this);
+        propertyItems.setProjectSettings(new ProjectSettings(sc_id));
         propertyItems.setOrientation(LinearLayout.VERTICAL);
         l();
     }
@@ -234,7 +232,6 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
         if (!j()) {
             finish();
         }
-        n();
     }
 
     @Override
@@ -259,6 +256,7 @@ public class PropertyActivity extends BaseAppCompatActivity implements Kw {
             return propertyGroups.size();
         }
 
+        @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             ViewPropertyAnimatorCompat propertyAnimator;
             ColorMatrix colorMatrix;

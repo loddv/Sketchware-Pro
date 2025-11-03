@@ -5,7 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.sketchware.remod.R;
+import pro.sketchware.R;
 
 @SuppressLint("StaticFieldLeak")
 public abstract class MA extends AsyncTask<Void, String, String> {
@@ -26,7 +26,11 @@ public abstract class MA extends AsyncTask<Void, String, String> {
             return "";
         } catch (Exception e) {
             Log.e("MA", e.getMessage(), e);
-            return xB.b().a(a, R.string.common_error_an_error_occurred) + "[" + e.getMessage() + "]";
+            // the bytecode's lying
+            if (e instanceof By) {
+                return e.getMessage();
+            }
+            return a.getString(R.string.common_error_an_error_occurred) + "[" + e.getMessage() + "]";
         }
     }
 
@@ -34,7 +38,7 @@ public abstract class MA extends AsyncTask<Void, String, String> {
 
     public abstract void a(String var1);
 
-    public abstract void b();
+    public abstract void b() throws By;
 
     @Override
     protected void onPostExecute(String result) {

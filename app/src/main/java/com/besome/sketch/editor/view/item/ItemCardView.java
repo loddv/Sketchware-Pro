@@ -4,26 +4,24 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.view.View;
 
 import androidx.annotation.NonNull;
 
 import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
+import com.besome.sketch.editor.view.ScrollContainer;
 import com.google.android.material.card.MaterialCardView;
 
-import a.a.a.sy;
-import a.a.a.ty;
 import a.a.a.wB;
 
-public class ItemCardView extends MaterialCardView implements sy, ty {
+public class ItemCardView extends MaterialCardView implements ItemView, ScrollContainer {
 
+    private final Rect rect = new Rect();
     private ViewBean viewBean;
     private boolean isSelected;
     private boolean isFixed;
     private Paint paint;
-    private Drawable mBackground;
-    private final Rect rect = new Rect();
 
     public ItemCardView(Context context) {
         super(context);
@@ -31,12 +29,12 @@ public class ItemCardView extends MaterialCardView implements sy, ty {
     }
 
     @Override
-    public void a() {
+    public void reindexChildren() {
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            if (child instanceof sy) {
-                ((sy) child).getBean().index = i;
+            if (child instanceof ItemView) {
+                ((ItemView) child).getBean().index = i;
             }
         }
     }
@@ -46,7 +44,6 @@ public class ItemCardView extends MaterialCardView implements sy, ty {
         setMinimumWidth((int) wB.a(context, 32.0f));
         setMinimumHeight((int) wB.a(context, 32.0f));
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mBackground = getBackground();
     }
 
     @Override
@@ -69,12 +66,28 @@ public class ItemCardView extends MaterialCardView implements sy, ty {
     }
 
     @Override
+    public void setBean(ViewBean viewBean) {
+        this.viewBean = viewBean;
+    }
+
+    @Override
     public boolean getFixed() {
         return isFixed;
     }
 
+    @Override
+    public void setFixed(boolean fixed) {
+        isFixed = fixed;
+    }
+
     public boolean getSelection() {
         return isSelected;
+    }
+
+    @Override
+    public void setSelection(boolean selected) {
+        isSelected = selected;
+        invalidate();
     }
 
     @Override
@@ -87,32 +100,24 @@ public class ItemCardView extends MaterialCardView implements sy, ty {
         super.onDraw(canvas);
     }
 
+    @Override
     public void setBackgroundColor(int color) {
-        if (color == 0x00FFFFFF) {
-            setBackground(mBackground);
-        } else {
-            super.setBackgroundColor(color);
-        }
+        super.setCardBackgroundColor(color == 0x00FFFFFF ? 0xFFFFFFFF : color);
     }
 
     @Override
-    public void setBean(ViewBean viewBean) {
-        this.viewBean = viewBean;
-    }
-
-    @Override
-    public void setChildScrollEnabled(boolean childScrollEnabled) {
+    public void setChildScrollEnabled(boolean scrollEnabled) {
         int count = getChildCount();
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
-            if (child instanceof ty) {
-                ((ty) child).setChildScrollEnabled(childScrollEnabled);
+            if (child instanceof ScrollContainer) {
+                ((ScrollContainer) child).setChildScrollEnabled(scrollEnabled);
             }
             if (child instanceof ItemHorizontalScrollView) {
-                ((ItemHorizontalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemHorizontalScrollView) child).setScrollEnabled(scrollEnabled);
             }
             if (child instanceof ItemVerticalScrollView) {
-                ((ItemVerticalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemVerticalScrollView) child).setScrollEnabled(scrollEnabled);
             }
         }
     }
@@ -123,15 +128,5 @@ public class ItemCardView extends MaterialCardView implements sy, ty {
                 (int) wB.a(getContext(), (float) top),
                 (int) wB.a(getContext(), (float) right),
                 (int) wB.a(getContext(), (float) bottom));
-    }
-
-    public void setFixed(boolean fixed) {
-        isFixed = fixed;
-    }
-
-    @Override
-    public void setSelection(boolean selected) {
-        isSelected = selected;
-        invalidate();
     }
 }

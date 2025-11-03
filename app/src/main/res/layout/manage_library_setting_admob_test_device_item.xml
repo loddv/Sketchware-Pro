@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/layout_item"
@@ -11,7 +10,7 @@
     <ImageView
         android:layout_width="16dp"
         android:layout_height="16dp"
-        android:src="@drawable/ic_devices_gray_32dp" />
+        android:src="@drawable/ic_mtrl_devices" />
 
     <TextView
         android:id="@+id/tv_device_id"
@@ -20,7 +19,7 @@
         android:layout_marginLeft="4dp"
         android:layout_weight="1"
         android:gravity="center_vertical"
-        android:textColor="#555555"
+        android:textColor="?colorControlNormal"
         android:textSize="11sp"
         tools:text="&lt;Device ID&gt;" />
 
@@ -28,5 +27,5 @@
         android:id="@+id/img_delete"
         android:layout_width="18dp"
         android:layout_height="18dp"
-        android:src="@drawable/icon_delete" />
+        android:src="@drawable/ic_mtrl_delete" />
 </LinearLayout>

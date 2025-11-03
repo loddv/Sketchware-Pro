@@ -9,22 +9,24 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.besome.sketch.beans.ViewBean;
+import androidx.annotation.NonNull;
 
-import a.a.a.sy;
-import a.a.a.ty;
+import com.besome.sketch.beans.ViewBean;
+import com.besome.sketch.editor.view.ItemView;
+import com.besome.sketch.editor.view.ScrollContainer;
+
 import a.a.a.wB;
 
-public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
+public class ItemVerticalScrollView extends FrameLayout implements ItemView, ScrollContainer {
 
+    private final Rect g = new Rect();
+    private final Rect rect = new Rect();
     private ViewBean viewBean;
     private boolean isSelected = false;
     private boolean isFixed = false;
     private Paint paint;
     private float e = -1.0F;
     private boolean f = true;
-    private final Rect g = new Rect();
-    private final Rect rect = new Rect();
 
     public ItemVerticalScrollView(Context context) {
         super(context);
@@ -78,15 +80,16 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         }
     }
 
-    public void a() {
+    @Override
+    public void reindexChildren() {
         int var1 = 0;
 
         int var4;
         for (int var2 = 0; var1 < getChildCount(); var2 = var4) {
             View var3 = getChildAt(var1);
             var4 = var2;
-            if (var3 instanceof sy) {
-                ((sy) var3).getBean().index = var2;
+            if (var3 instanceof ItemView) {
+                ((ItemView) var3).getBean().index = var2;
                 var4 = var2 + 1;
             }
 
@@ -105,7 +108,7 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         setDrawingCacheEnabled(true);
         setMinimumWidth((int) wB.a(var1, 32.0F));
         setMinimumHeight((int) wB.a(var1, 32.0F));
-        paint = new Paint(1);
+        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStrokeWidth(wB.a(getContext(), 2.0F));
     }
 
@@ -115,6 +118,7 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         return g.bottom + var2 >= getScrollY() && g.top - var2 <= getScrollY() + var3;
     }
 
+    @Override
     public void addView(View view, int index) {
         int childCount = getChildCount();
         if (index > childCount) {
@@ -146,24 +150,44 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         }
     }
 
+    @Override
     public ViewBean getBean() {
         return viewBean;
     }
 
+    @Override
+    public void setBean(ViewBean viewBean) {
+        this.viewBean = viewBean;
+    }
+
+    @Override
     public boolean getFixed() {
         return isFixed;
+    }
+
+    @Override
+    public void setFixed(boolean isFixed) {
+        this.isFixed = isFixed;
     }
 
     public boolean getSelection() {
         return isSelected;
     }
 
+    @Override
+    public void setSelection(boolean hasSelection) {
+        isSelected = hasSelection;
+        invalidate();
+    }
+
+    @Override
     public void measureChild(View view, int parentWidthMeasureSpec, int parentHeightMeasureSpec) {
         ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
         parentWidthMeasureSpec = FrameLayout.getChildMeasureSpec(parentWidthMeasureSpec, getPaddingLeft() + getPaddingRight(), layoutParams.width);
         view.measure(parentWidthMeasureSpec, MeasureSpec.makeMeasureSpec(Math.max(0, MeasureSpec.getSize(parentHeightMeasureSpec) - (getPaddingTop() + getPaddingBottom())), MeasureSpec.UNSPECIFIED));
     }
 
+    @Override
     public void measureChildWithMargins(View view, int parentWidthMeasureSpec, int widthUsed, int parentHeightMeasureSpec, int heightUsed) {
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
         int childMeasureSpec = FrameLayout.getChildMeasureSpec(parentWidthMeasureSpec, getPaddingLeft() + getPaddingRight() + layoutParams.leftMargin + layoutParams.rightMargin + widthUsed, layoutParams.width);
@@ -172,7 +196,8 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         view.measure(childMeasureSpec, MeasureSpec.makeMeasureSpec(Math.max(0, MeasureSpec.getSize(parentHeightMeasureSpec) - (parentWidthMeasureSpec + widthUsed + layoutParams.topMargin + layoutParams.bottomMargin + heightUsed)), MeasureSpec.UNSPECIFIED));
     }
 
-    public void onDraw(Canvas canvas) {
+    @Override
+    public void onDraw(@NonNull Canvas canvas) {
         if (!isFixed) {
             int scrollX = getScrollX();
             int measuredWidthX = getScrollX() + getMeasuredWidth();
@@ -192,6 +217,7 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         super.onDraw(canvas);
     }
 
+    @Override
     public boolean onInterceptTouchEvent(MotionEvent motionEvent) {
         if (!f) {
             return false;
@@ -240,6 +266,7 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         }
     }
 
+    @Override
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         if (MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.UNSPECIFIED) {
@@ -255,6 +282,7 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         }
     }
 
+    @Override
     public void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
         super.onSizeChanged(width, height, oldWidth, oldHeight);
         View focusedView = findFocus();
@@ -265,46 +293,36 @@ public class ItemVerticalScrollView extends FrameLayout implements sy, ty {
         }
     }
 
+    @Override
     public void removeView(View view) {
         super.removeView(view);
         setScrollY(0);
     }
 
-    public void setBean(ViewBean viewBean) {
-        this.viewBean = viewBean;
-    }
-
-    public void setChildScrollEnabled(boolean childScrollEnabled) {
+    @Override
+    public void setChildScrollEnabled(boolean scrollEnabled) {
         for (int i = 0; i < getChildCount(); ++i) {
             View child = getChildAt(i);
-            if (child instanceof ty) {
-                ((ty) child).setChildScrollEnabled(childScrollEnabled);
+            if (child instanceof ScrollContainer) {
+                ((ScrollContainer) child).setChildScrollEnabled(scrollEnabled);
             }
 
             if (child instanceof ItemHorizontalScrollView) {
-                ((ItemHorizontalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemHorizontalScrollView) child).setScrollEnabled(scrollEnabled);
             }
 
             if (child instanceof ItemVerticalScrollView) {
-                ((ItemVerticalScrollView) child).setScrollEnabled(childScrollEnabled);
+                ((ItemVerticalScrollView) child).setScrollEnabled(scrollEnabled);
             }
         }
     }
 
-    public void setFixed(boolean isFixed) {
-        this.isFixed = isFixed;
-    }
-
+    @Override
     public void setPadding(int left, int top, int right, int bottom) {
         super.setPadding((int) wB.a(getContext(), (float) left), (int) wB.a(getContext(), (float) top), (int) wB.a(getContext(), (float) right), (int) wB.a(getContext(), (float) bottom));
     }
 
     public void setScrollEnabled(boolean isScrollEnabled) {
         f = isScrollEnabled;
-    }
-
-    public void setSelection(boolean hasSelection) {
-        isSelected = hasSelection;
-        invalidate();
     }
 }

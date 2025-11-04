@@ -49,15 +49,19 @@ public class ResourceCompiler {
         progressReceiver = receiver;
         this.builder = builder;
     }
-
     public void compile() throws IOException, zy, MissingFileException {
         Compiler resourceCompiler = new Aapt2Compiler(builder, aaptFile, willBuildAppBundle);
-        resourceCompiler.setProgressListener((newProgress, step) -> {
-            if (progressReceiver != null) progressReceiver.onProgress(newProgress, step);
+        resourceCompiler.setProgressListener(new Compiler.ProgressListener() {
+            @Override
+            void onProgressUpdate(String newProgress, int step) {
+                if (progressReceiver != null) {
+                    progressReceiver.onProgress(newProgress, step);
+                }
+            }
         });
         resourceCompiler.compile();
     }
-
+    
     interface Compiler {
         void compile() throws zy, MissingFileException;
         void setProgressListener(ProgressListener listener);
@@ -172,9 +176,9 @@ public class ResourceCompiler {
                     LogUtil.d(TAG + ":cLLR", "Completed " + completed + "/" + totalTasks + " library compilations.");
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new zy("Compilation interrupted", e);
+                    throw new zy("Compilation interrupted: " + e.getMessage());
                 } catch (Exception e) {
-                    throw new zy("Error during parallel compilation: " + e.getMessage(), e);
+                    throw new zy("Error during parallel compilation: " + e.getMessage());
                 }
             }
 

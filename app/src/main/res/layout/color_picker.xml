@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:paddingHorizontal="4dp"
     android:clipToPadding="false"
-    android:background="?attr/colorSurface"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:focusable="true"
     android:focusableInTouchMode="true">
 

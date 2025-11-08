@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?attr/colorSurfaceContainerLowest"
@@ -13,61 +13,49 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
         android:layout_marginStart="20dp"
-        android:text="Download a dependency"
-        android:textAppearance="?attr/textAppearanceTitleLarge" />
+        android:layout_marginEnd="20dp"
+        android:text="Rename library"
+        android:textAppearance="?attr/textAppearanceTitleLargeEmphasized" />
+
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/dependency_input_layout"
+        android:id="@+id/text_input_layout_library"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="16dp"
-        android:hint="Enter a dependency"
-        android:importantForAutofill="noExcludeDescendants"
-        app:placeholderText="@string/local_library_manager_dependency_example">
+        android:layout_marginTop="16dp">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/dependency_input"
+            android:id="@+id/textInputEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:hint="@string/text_title_menu_local_library"
             android:imeOptions="actionDone"
+            android:importantForAutofill="noExcludeDescendants"
             android:singleLine="true" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
-        android:id="@+id/dependency_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="16dp"
-        android:maxLines="2"
-        android:text="@string/local_library_manager_dependency_info"
-        android:textColor="?attr/colorOnSurface"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-    <CheckBox
-        android:id="@+id/cb_skip_subdependencies"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:paddingStart="8dp"
-        android:checked="true"
-        android:text="@string/local_library_manager_skip_downloading_dependencies" />
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:maxLines="6"
+        android:text="Enter the new name for the selected library. This will update the entry in your build configuration file."
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurface" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="12dp"
+        android:layout_marginBottom="16dp"
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btn_cancel"
+            android:id="@+id/button_cancel"
             style="@style/Widget.Material3Expressive.Button.TonalButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -78,12 +66,12 @@
         <!-- Somehow `?attr/materialButtonStyle` doesn't work, I mean it works, but
              it's shows TextButton style somehow, currently using style directly, until we fix it -->
         <Button
-            android:id="@+id/btn_download"
+            android:id="@+id/button_rename"
             style="@style/Widget.Material3Expressive.Button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/common_word_download" />
+            android:text="@string/assets_manager_rename" />
 
     </LinearLayout>
 

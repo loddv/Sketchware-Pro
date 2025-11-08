@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:orientation="vertical">
 
     <com.google.android.material.bottomsheet.BottomSheetDragHandleView
@@ -22,7 +23,7 @@
         android:id="@+id/divider_top"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:dividerColor="?attr/colorSurfaceContainerHighest" />
+        app:dividerColor="?attr/colorSurfaceContainerLowest" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/component_list"
@@ -41,6 +42,6 @@
         android:id="@+id/divider_bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:dividerColor="?attr/colorSurfaceContainerHighest" />
+        app:dividerColor="?attr/colorSurfaceContainerLowest" />
 
 </LinearLayout>

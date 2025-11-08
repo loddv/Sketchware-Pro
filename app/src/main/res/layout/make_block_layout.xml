@@ -2,6 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
     android:orientation="vertical">
 
     <HorizontalScrollView
@@ -246,7 +247,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/add_variable"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/project_button_height"
                     android:layout_height="wrap_content"
                     android:text=""
                     app:cornerRadius="14dp"
@@ -284,7 +285,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/add_label"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/project_button_height"
                     android:layout_height="wrap_content"
                     app:cornerRadius="14dp"
                     app:icon="@drawable/ic_add_white_24dp"
@@ -318,10 +319,10 @@
                     android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:hint="Parameter"
-                    app:placeholderText="m.name (without % sign)"
                     app:counterEnabled="true"
                     app:counterMaxLength="100"
-                    app:endIconMode="clear_text">
+                    app:endIconMode="clear_text"
+                    app:placeholderText="m.name (without % sign)">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/parameter"
@@ -356,10 +357,11 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/add"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/project_button_height"
                     android:layout_height="wrap_content"
                     app:cornerRadius="14dp"
-                    app:icon="@drawable/ic_add_white_24dp" />
+                    app:icon="@drawable/ic_add_white_24dp"
+                    app:iconGravity="textEnd" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

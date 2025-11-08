@@ -4,6 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingHorizontal="20dp"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:paddingTop="10dp">
 
     <com.google.android.material.textfield.TextInputLayout

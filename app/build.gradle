@@ -1,5 +1,6 @@
 def secrets = System.getenv("GOOGLE_SERVICES_JSON")
-def analyticsEnabled = secrets != null
+//def analyticsEnabled = secrets != null
+def analyticsEnabled = true
 
 apply plugin: "com.android.application"
 apply plugin: "kotlin-android"
@@ -22,7 +23,7 @@ android {
         targetSdk = 28
         minSdk = 26
         versionCode = 150
-        versionName = "v7.0.0"
+        versionName = "v7.0.0-beta1"
 
         buildConfigField("String", "GIT_HASH", "\"${gitCommitHash}\"")
 
@@ -91,13 +92,18 @@ dependencies {
     implementation "androidx.viewpager:viewpager:1.1.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "com.google.android.material:material:1.14.0-alpha05"
-    implementation "com.airbnb.android:lottie:6.6.7"
+    implementation "com.airbnb.android:lottie:6.7.1"
     implementation "com.google.android.flexbox:flexbox:3.0.0"
 
-    implementation "com.github.bumptech.glide:glide:5.0.4"
+    implementation "com.github.bumptech.glide:glide:5.0.5"
 
     implementation 'androidx.exifinterface:exifinterface:1.4.1'
     implementation "androidx.preference:preference:1.2.1"
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.9.4'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4'
+    implementation 'androidx.navigation:navigation-fragment:2.6.0'
+    implementation 'androidx.navigation:navigation-ui:2.6.0'
 
     def editorGroupId = "io.github.Rosemoe.sora-editor"
     implementation platform("$editorGroupId:bom:0.23.5")
@@ -107,13 +113,13 @@ dependencies {
 
     implementation "de.hdodenhof:circleimageview:3.1.0"
 
-    implementation 'io.coil-kt:coil:2.0.0'
-    implementation 'io.coil-kt:coil-svg:2.0.0'
+    implementation 'io.coil-kt:coil:2.7.0'
+    implementation 'io.coil-kt:coil-svg:2.7.0'
 
     implementation "com.android.tools.build:bundletool:1.18.2"
 
     //noinspection GradleDependency copied from above dependency for not just runtime access
-    implementation "com.google.protobuf:protobuf-java:3.19.2"
+    implementation "com.google.protobuf:protobuf-java:4.33.0"
     //noinspection GradleDependency
     implementation("com.android.tools:sdklib:25.3.0") {
         exclude group: "com.intellij", module: "annotations"
@@ -122,15 +128,15 @@ dependencies {
     implementation "com.android.tools:r8:8.11.18"
     implementation "com.github.Iyxan23:zipalign-java:1.2.2"
 
-    implementation "com.google.code.gson:gson:2.13.1"
-    implementation "com.madgag:scpkix-jdk15on:1.47.0.2"
+    implementation "com.google.code.gson:gson:2.13.2"
+    implementation "com.madgag:scpkix-jdk15on:1.47.0.3"
 
     implementation 'io.noties.markwon:core:4.6.2'
 
-    implementation "com.squareup.okhttp3:okhttp:4.12.0"
-    implementation "com.squareup.okio:okio:3.16.0"
+    implementation "com.squareup.okhttp3:okhttp:5.3.0"
+    implementation "com.squareup.okio:okio:3.16.2"
 
-    implementation "org.eclipse.jdt:ecj:3.26.0"
+    implementation "org.eclipse.jdt:ecj:3.33.0"
     implementation 'javax.xml.stream:stax-api:1.0-2'
 
     implementation "com.github.waelchateur:kotlinc-for-sketchware:2.1.21_rc3"
@@ -146,15 +152,17 @@ dependencies {
     implementation "com.github.topjohnwu.libsu:core:5.0.4"
     implementation "dev.chrisbanes.insetter:insetter:0.6.1"
 
-    implementation("com.github.javaparser:javaparser-symbol-solver-core:3.25.3") {
+    implementation("com.github.javaparser:javaparser-symbol-solver-core:3.27.1") {
         exclude group: "com.google.guava", module: "guava"
     }
 
     // Analytics and Crashlytics
-    if (analyticsEnabled) {
-        new File("$projectDir/google-services.json").text = secrets
-    }
-    implementation platform("com.google.firebase:firebase-bom:34.3.0")
+    //if (analyticsEnabled) {
+    //    new File("$projectDir/google-services.json").text = secrets
+    //}
+
+    implementation "commons-io:commons-io:2.20.0"
+    implementation platform("com.google.firebase:firebase-bom:34.5.0")
     implementation "com.google.firebase:firebase-crashlytics"
     implementation "com.google.firebase:firebase-analytics"
     implementation "com.google.firebase:firebase-messaging"

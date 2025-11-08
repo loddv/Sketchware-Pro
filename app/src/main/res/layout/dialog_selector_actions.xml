@@ -5,6 +5,7 @@
     android:gravity="center"
     android:orientation="vertical"
     android:paddingHorizontal="20dp"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:paddingTop="10dp"
     android:paddingBottom="10dp">
 

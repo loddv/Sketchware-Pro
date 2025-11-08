@@ -11,7 +11,7 @@
     -->
 
     <style name="Widget.SketchwarePro.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
-        <item name="android:background">?attr/colorSurfaceContainer</item>
+        <item name="android:background">?attr/colorSurfaceContainerLowest</item>
         <item name="elevation">0dp</item>
     </style>
 
@@ -77,11 +77,11 @@
 
     <style name="Widget.SketchwarePro.BottomSheet.Modal" parent="Widget.Material3.BottomSheet">
         <item name="android:elevation">0dp</item>
-        <item name="backgroundTint">?attr/colorSurface</item>
+        <item name="backgroundTint">?attr/colorSurfaceContainerLowest</item>
     </style>
 
     <style name="ThemeOverlay.SketchwarePro.AlertDialog" parent="ThemeOverlay.Material3Expressive.MaterialAlertDialog.Centered">
-        <item name="android:colorBackground">?attr/colorSurfaceContainer</item>
+        <item name="android:colorBackground">?attr/colorSurfaceContainerLowest</item>
         <item name="android:windowAnimationStyle">@style/MaterialAlertDialog.Material3.Animation
         </item>
         <item name="android:windowSoftInputMode">adjustResize</item>
@@ -108,7 +108,7 @@
 
     <style name="Widget.SketchwarePro.CardView" parent="Widget.Material3.CardView.Filled">
         <item name="cardCornerRadius">18dp</item>
-        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainerLowest</item>
     </style>
 
     <style name="Widget.SketchwarePro.Chip" parent="Widget.Material3.Chip.Input.Icon.Elevated">

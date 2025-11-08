@@ -1,0 +1,248 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!--    <PreferenceCategory-->
+    <!--        app:iconSpaceReserved="false"-->
+    <!--        app:singleLineTitle="false"-->
+    <!--        app:title="Configurações do build.gradle">-->
+
+
+    <!--        <PreferenceCategory-->
+    <!--            app:iconSpaceReserved="false"-->
+    <!--            app:title="Propriedades do Android Studio">-->
+    <!--            <CheckBoxPreference-->
+    <!--                app:defaultValue="false"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="enable_parallel_build"-->
+    <!--                app:summary="android.enableParallelBuild=true"-->
+    <!--                app:title="Ativar paralelismo de compilação" />-->
+    <!--            <CheckBoxPreference-->
+    <!--                app:defaultValue="false"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="enable_incremental_build"-->
+    <!--                app:summary="android.enableIncrementalBuild=true"-->
+    <!--                app:title="Ativar incrementalização de compilação" />-->
+    <!--        </PreferenceCategory>-->
+
+
+    <!--        <PreferenceCategory-->
+    <!--            app:iconSpaceReserved="false"-->
+    <!--            app:title="Configurações do Gradle">-->
+
+    <!--            <EditTextPreference-->
+    <!--                app:defaultValue="8.12.0"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="gradle_version"-->
+    <!--                app:summary="Versão do plugin Gradle a ser usada. Padrão: 8.12.0"-->
+    <!--                app:title="Versão do Gradle" />-->
+
+    <!--            <EditTextPreference-->
+    <!--                app:defaultValue="4.4.3"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="gradle_agp_version"-->
+    <!--                app:summary="Versão do Plugin Android para Gradle (AGP). Padrão: 4.4.3"-->
+    <!--                app:title="Versão AGP" />-->
+
+    <!--            <SwitchPreferenceCompat-->
+    <!--                app:defaultValue="false"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="enable_viewbinding"-->
+    <!--                app:summary="Ativar o View Binding no arquivo build.gradle do módulo 'app'"-->
+    <!--                app:title="Ativar ViewBinding" />-->
+
+    <!--            <SwitchPreferenceCompat-->
+    <!--                app:defaultValue="false"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="no_http_legacy"-->
+    <!--                app:summary="Não usar a biblioteca 'org.apache.http.legacy'"-->
+    <!--                app:title="Não usar Http Legacy" />-->
+
+    <!--        </PreferenceCategory>-->
+
+    <!--        <PreferenceCategory-->
+    <!--            app:iconSpaceReserved="false"-->
+    <!--            app:singleLineTitle="false"-->
+    <!--            app:title="Versões das dependências">-->
+
+    <!--            <EditTextPreference-->
+    <!--                app:defaultValue="1.7.1"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="androidx_appcompat_version"-->
+    <!--                app:singleLineTitle="false"-->
+    <!--                app:summary="Versão da biblioteca androidx.appcompat:appcompat. Padrão: 1.7.1"-->
+    <!--                app:title="Versão do AppCompat" />-->
+
+    <!--            <EditTextPreference-->
+    <!--                app:defaultValue="1.12.0"-->
+    <!--                app:iconSpaceReserved="false"-->
+    <!--                app:key="google_material_version"-->
+    <!--                app:singleLineTitle="false"-->
+    <!--                app:summary="Versão da biblioteca com.google.android.material:material. Padrão: 1.12.0"-->
+    <!--                app:title="Versão do Material Design" />-->
+
+
+    <!--        </PreferenceCategory>-->
+
+    <!--    </PreferenceCategory>-->
+
+    <!--    <PreferenceCategory-->
+    <!--        app:iconSpaceReserved="false"-->
+    <!--        app:title="Propriedades do Gradle (gradle.properties)">-->
+
+    <!--    <CheckBoxPreference-->
+    <!--        app:defaultValue="true"-->
+    <!--        app:iconSpaceReserved="false"-->
+    <!--        app:key="use_androidx"-->
+    <!--        app:summary="android.useAndroidX=true"-->
+    <!--        app:title="Usar AndroidX" />-->
+
+    <!--    <CheckBoxPreference-->
+    <!--        app:defaultValue="true"-->
+    <!--        app:iconSpaceReserved="false"-->
+    <!--        app:key="enable_jetifier"-->
+    <!--        app:summary="android.enableJetifier=true"-->
+    <!--        app:title="Ativar Jetifier" />-->
+
+    <!--    <CheckBoxPreference-->
+    <!--        app:defaultValue="false"-->
+    <!--        app:iconSpaceReserved="false"-->
+    <!--        app:key="enable_r8_full_mode"-->
+    <!--        app:summary="android.enableR8.fullMode=true"-->
+    <!--        app:title="Ativar modo completo do R8" />-->
+    <!--    </PreferenceCategory>-->
+    <!--new-->
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:key="android_settings_category"
+        app:singleLineTitle="true"
+        app:title="⚙️ Configurações do Projeto Android">
+
+        <ListPreference
+            app:defaultValue="34"
+            app:dialogTitle="Selecione a versão do Compile SDK"
+            app:entries="@array/sdk_versions_names"
+            app:entryValues="@array/sdk_versions_values"
+            app:key="pref_compile_sdk_version"
+            app:summary="Versão do SDK para compilação."
+            app:title="Compile SDK Version" />
+        <ListPreference
+            app:defaultValue="21"
+            app:dialogTitle="Selecione a versão do Min SDK"
+            app:entries="@array/sdk_versions_names"
+            app:entryValues="@array/sdk_versions_values"
+            app:key="pref_min_sdk_version"
+            app:summary="Versão mínima do SDK suportada (mínimo: 21)."
+            app:title="Min SDK Version" />
+
+        <ListPreference
+            app:defaultValue="34"
+            app:dialogTitle="Selecione a versão do Target SDK"
+            app:entries="@array/sdk_versions_names"
+            app:entryValues="@array/sdk_versions_values"
+            app:key="pref_target_sdk_version"
+            app:summary="Versão do SDK para qual o aplicativo foi testado."
+            app:title="Target SDK Version" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="pref_enable_view_binding"
+            app:summaryOff="View Binding está desabilitado."
+            app:summaryOn="View Binding está habilitado no build.gradle."
+            app:title="Habilitar View Binding" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="pref_use_http_legacy"
+            app:summary="Inclui 'useLibrary org.apache.http.legacy'."
+            app:title="Usar Biblioteca HTTP Legacy" />
+
+    </PreferenceCategory>
+
+    ---
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:key="libraries_category"
+        app:singleLineTitle="true"
+        app:title="📚 Bibliotecas e Dependências">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="pref_use_appcompat_material"
+            app:summary="Inclui 'androidx.appcompat:appcompat' e 'com.google.android.material:material'."
+            app:title="Usar AppCompat e Material Design" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="pref_enable_firebase_bom"
+            app:summary="Necessário para todas as dependências do Firebase."
+            app:title="Habilitar Plataforma Firebase (BOM)" />
+
+        <PreferenceCategory
+            app:dependency="pref_enable_firebase_bom"
+            app:iconSpaceReserved="false"
+            app:key="firebase_services_category"
+            app:singleLineTitle="true"
+            app:title="Firebase Services">
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_firebase_auth"
+                app:title="Firebase Authentication" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_firebase_database"
+                app:title="Firebase Realtime Database" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_firebase_storage"
+                app:title="Firebase Storage" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_firebase_messaging"
+                app:title="Firebase Cloud Messaging (FCM)" />
+        </PreferenceCategory>
+
+        <PreferenceCategory
+            app:iconSpaceReserved="false"
+            app:key="additional_libraries_category"
+            app:singleLineTitle="true"
+            app:title="Bibliotecas Adicionais">
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_admob"
+                app:title="Google AdMob (Play Services Ads)" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_maps"
+                app:title="Google Maps (Play Services Maps)" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_glide"
+                app:title="Glide (Carregamento de Imagens)" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_gson"
+                app:title="Gson (JSON Parser)" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="false"
+                app:key="pref_use_okhttp"
+                app:title="OkHttp3" />
+
+            <Preference
+                app:key="pref_manage_local_libraries"
+                app:summary="Adicionar ou remover dependências customizadas do arquivo local_library."
+                app:title="Gerenciar Dependências Locais" />
+        </PreferenceCategory>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

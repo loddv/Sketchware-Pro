@@ -3,9 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:background="?attr/colorSurfaceContainerLowest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -132,7 +134,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="14dp"
                 android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -187,7 +189,7 @@
 
                         <com.google.android.material.card.MaterialCardView
                             android:id="@+id/color_preview_card"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="5dp"
                             app:layout_constraintEnd_toEndOf="parent"
@@ -196,7 +198,7 @@
 
                             <TextView
                                 android:id="@+id/color_preview"
-                                android:layout_width="45dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="45dp"
                                 android:layout_gravity="center_vertical"
                                 tools:background="#4177FF" />
@@ -222,13 +224,14 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="5dp"
                                 android:layout_marginRight="5dp"
+                                android:layout_weight="1"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintTop_toTopOf="@+id/color_value_input_layout"
                                 app:strokeWidth="1dp">
 
                                 <TextView
                                     android:id="@+id/grad_color_preview"
-                                    android:layout_width="45dp"
+                                    android:layout_width="match_parent"
                                     android:layout_height="45dp"
                                     android:layout_gravity="center_vertical"
                                     tools:background="#4177FF" />
@@ -240,6 +243,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="5dp"
+                                android:layout_weight="1"
                                 app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintTop_toTopOf="@+id/color_value_input_layout"
                                 app:strokeWidth="1dp">
@@ -247,7 +251,7 @@
 
                                 <TextView
                                     android:id="@+id/grad_color_preview2"
-                                    android:layout_width="45dp"
+                                    android:layout_width="match_parent"
                                     android:layout_height="45dp"
                                     android:layout_gravity="center_vertical"
                                     tools:background="#4177FF" />
@@ -272,6 +276,7 @@
                             app:checkedChip="@+id/chip_top"
                             app:chipSpacingHorizontal="5dp"
                             app:selectionRequired="true"
+                            android:layout_gravity="center_horizontal"
                             app:singleSelection="true">
 
                             <com.google.android.material.chip.Chip
@@ -336,8 +341,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="14dp"
-                android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -434,7 +438,7 @@
 
                         <com.google.android.material.card.MaterialCardView
                             android:id="@+id/pattern_color_preview_card"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="5dp"
                             app:layout_constraintEnd_toEndOf="parent"
@@ -443,7 +447,7 @@
 
                             <TextView
                                 android:id="@+id/pattern_color_preview"
-                                android:layout_width="45dp"
+                                android:layout_width="match_parent"
                                 android:layout_height="45dp"
                                 android:layout_gravity="center_vertical"
                                 tools:background="#4177FF" />
@@ -570,8 +574,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="14dp"
-                android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -624,8 +627,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="14dp"
-                android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -653,7 +655,7 @@
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/img_color_preview_card"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -663,7 +665,7 @@
 
                         <TextView
                             android:id="@+id/img_color_preview"
-                            android:layout_width="45dp"
+                            android:layout_width="match_parent"
                             android:layout_height="45dp"
                             android:layout_gravity="center_vertical"
                             tools:background="#4177FF" />
@@ -790,8 +792,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="14dp"
-                android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -968,8 +969,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:layout_marginBottom="30dp"
-                android:orientation="vertical"
-                app:cardBackgroundColor="?attr/colorSurfaceContainer">
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1042,7 +1042,7 @@
 
                     <com.google.android.material.card.MaterialCardView
                         android:id="@+id/badge_bg_color_preview_card"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -1051,7 +1051,7 @@
 
                         <TextView
                             android:id="@+id/badge_bg_color_preview"
-                            android:layout_width="55dp"
+                            android:layout_width="match_parent"
                             android:layout_height="55dp"
                             android:layout_gravity="center_vertical"
                             tools:background="#4177FF" />

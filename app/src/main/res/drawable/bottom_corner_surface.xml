@@ -4,6 +4,6 @@
         android:bottomLeftRadius="16dp"
         android:bottomRightRadius="16dp" />
 
-    <solid android:color="?attr/colorSurface" />
+    <solid android:color="?attr/colorSurfaceContainerLowest" />
 
 </shape>

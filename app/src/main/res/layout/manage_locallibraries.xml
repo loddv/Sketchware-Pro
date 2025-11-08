@@ -2,6 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:layout_height="match_parent">
 
     <androidx.recyclerview.widget.RecyclerView
@@ -21,8 +22,9 @@
         android:fitsSystemWindows="true"
         app:elevation="0dp"
         app:liftOnScroll="false"
+        android:background="?attr/colorSurfaceContainerLowest"
         app:liftOnScrollColor="@android:color/transparent"
-        app:statusBarForeground="?attr/colorSurface">
+        app:statusBarForeground="?attr/colorSurfaceContainerLowest">
 
         <com.google.android.material.search.SearchBar
             android:id="@+id/search_bar"
@@ -32,6 +34,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp"
+            android:background="?attr/colorSurfaceContainerLowest"
             android:hint="Search for libraries"
             app:defaultMarginsEnabled="false"
             app:navigationIcon="?attr/homeAsUpIndicator" />
@@ -78,7 +81,7 @@
         android:id="@+id/no_content_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?attr/colorSurface"
+        android:background="?attr/colorSurfaceContainerLowest"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingHorizontal="24dp"

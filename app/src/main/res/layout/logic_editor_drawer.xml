@@ -4,7 +4,7 @@
     android:layout_width="150dp"
     android:layout_height="match_parent"
     android:layout_marginTop="56dp"
-    android:background="?attr/colorSurfaceContainer"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:orientation="vertical">
 
     <com.google.android.material.card.MaterialCardView

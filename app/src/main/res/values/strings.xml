@@ -1590,7 +1590,7 @@ But, components should be added manually for working correctly."</string>
     <string name="myprojects_settings_version_control_title">Version Control</string>
     <string name="myprojects_settings_version_control_title_code">Code</string>
     <string name="myprojects_settings_version_control_title_name">Name</string>
-    
+
     <string name="theme_section_title">Theme Presets </string>
     <string name="theme_section_description">Choose from predefined themes or generate a random one</string>
     <string name="theme_generate_random">Generate Random</string>
@@ -2286,6 +2286,26 @@ Please try again later"</string>
     <string name="save_to_collection">Save to collection</string>
     <string name="unknown_attr">Unknown Attribute</string>
     <string name="attr_already_exist">This attribute already exists</string>
+    <string name="title_activity_gradle_settings">GradleSettingsActivity</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="title_activity_library_dependecy_view">library_dependecy_view</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 
 
 </resources>

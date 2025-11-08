@@ -69,4 +69,46 @@
         <item>com.google.android.material.progressindicator.CircularProgressIndicator</item>
         <item>com.google.android.material.progressindicator.LinearProgressIndicator</item>
     </string-array>
+    <!-- Reply Preference -->
+    <string-array name="reply_entries">
+        <item>Reply</item>
+        <item>Reply to all</item>
+    </string-array>
+
+    <string-array name="reply_values">
+        <item>reply</item>
+        <item>reply_all</item>
+    </string-array>
+    <string-array name="sdk_versions_names">
+        <item>Android 14 (API 34)</item>
+        <item>Android 13 (API 33)</item>
+        <item>Android 12L (API 32)</item>
+        <item>Android 12 (API 31)</item>
+        <item>Android 11 (API 30)</item>
+        <item>Android 10 (API 29)</item>
+        <item>Android 9 (API 28)</item>
+        <item>Android 8.1 (API 27)</item>
+        <item>Android 8.0 (API 26)</item>
+        <item>Android 7.1 (API 25)</item>
+        <item>Android 7.0 (API 24)</item>
+        <item>Android 6.0 (API 23)</item>
+        <item>Android 5.1 (API 22)</item>
+        <item>Android 5.0 (API 21)</item>
+    </string-array>
+    <string-array name="sdk_versions_values">
+        <item>34</item>
+        <item>33</item>
+        <item>32</item>
+        <item>31</item>
+        <item>30</item>
+        <item>29</item>
+        <item>28</item>
+        <item>27</item>
+        <item>26</item>
+        <item>25</item>
+        <item>24</item>
+        <item>23</item>
+        <item>22</item>
+        <item>21</item>
+    </string-array>
 </resources>

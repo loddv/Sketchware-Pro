@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:orientation="vertical">
 
     <com.google.android.material.bottomsheet.BottomSheetDragHandleView
@@ -71,12 +72,17 @@
         android:text="Java version"
         android:textAppearance="?attr/textAppearanceBodyLargeEmphasized" />
 
-    <RadioGroup
-        android:id="@+id/rg_java_version"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:orientation="horizontal" />
+        android:layout_height="wrap_content">
+
+        <RadioGroup
+            android:id="@+id/rg_java_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:orientation="horizontal" />
+    </ScrollView>
 
     <LinearLayout
         android:id="@+id/no_warnings"

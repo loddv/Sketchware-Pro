@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
     android:orientation="vertical">
 
     <androidx.core.widget.NestedScrollView
@@ -11,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fadingEdgeLength="144dp"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
         android:requiresFadingEdge="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -23,6 +25,7 @@
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                 android:layout_marginTop="?attr/actionBarSize">
 
                 <com.google.android.material.imageview.ShapeableImageView
@@ -32,7 +35,7 @@
                     android:layout_marginStart="24dp"
                     android:layout_marginTop="8dp"
                     android:adjustViewBounds="true"
-                    android:background="?attr/colorSurfaceContainer"
+                    android:background="?attr/colorSurfaceContainerLowest"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:shapeAppearance="?attr/shapeAppearanceCornerLarge"

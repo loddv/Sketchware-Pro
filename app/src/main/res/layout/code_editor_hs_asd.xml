@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:orientation="vertical"
     android:theme="@style/Theme.SketchwarePro">
 
@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainer"
+        android:background="?attr/colorSurfaceContainerLowest"
         app:menu="@menu/menu_code_editor_hs"
         app:subtitle="UTF-8"
         app:title="Code Editor" />
@@ -18,7 +18,7 @@
     <com.google.android.material.divider.MaterialDivider
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:dividerColor="?attr/colorSurfaceContainerHighest" />
+        app:dividerColor="?attr/colorSurfaceContainerLowest" />
 
     <io.github.rosemoe.sora.widget.CodeEditor
         android:id="@+id/editor"
@@ -29,12 +29,12 @@
     <com.google.android.material.divider.MaterialDivider
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:dividerColor="?attr/colorSurfaceContainerHighest" />
+        app:dividerColor="?attr/colorSurfaceContainerLowest" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainer"
+        android:background="?attr/colorSurfaceContainerLowest"
         android:orientation="horizontal"
         android:paddingVertical="4dp">
 
@@ -48,7 +48,7 @@
             android:layout_weight="1"
             android:text="@string/common_word_cancel"
             android:textColor="?attr/colorOnSurface"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest" />
+            app:backgroundTint="?attr/colorSurfaceContainerLow" />
 
         <Button
             android:id="@+id/btn_save"
@@ -60,7 +60,7 @@
             android:layout_weight="1"
             android:text="@string/common_word_save"
             android:textColor="?attr/colorOnSurface"
-            app:backgroundTint="?attr/colorSurfaceContainerHighest" />
+            app:backgroundTint="?attr/colorSurfaceContainerLow" />
 
     </LinearLayout>
 

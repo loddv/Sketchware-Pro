@@ -1,18 +1,21 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLowest"
         app:liftOnScrollTargetViewId="@id/scroll_view">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainerLowest"
             app:navigationIcon="?attr/homeAsUpIndicator"
             app:title="Edit block" />
     </com.google.android.material.appbar.AppBarLayout>
@@ -134,18 +137,17 @@
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textStyle="bold" />
 
-                    <LinearLayout
+                    <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:layout_marginTop="10dp">
+
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/colour_layout"
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1">
+                            android:layout_centerVertical="true">
 
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/colour"
@@ -160,6 +162,9 @@
                             android:id="@+id/openColorPalette"
                             android:layout_width="40dp"
                             android:layout_height="50dp"
+                            android:layout_alignWithParentIfMissing="true"
+                            android:layout_centerVertical="true"
+                            android:layout_toStartOf="@+id/reset"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:padding="8dp"
                             android:scaleType="fitCenter"
@@ -169,11 +174,13 @@
                             android:id="@+id/reset"
                             android:layout_width="40dp"
                             android:layout_height="50dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:padding="8dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/history_24px" />
-                    </LinearLayout>
+                    </RelativeLayout>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -194,6 +201,7 @@
                             android:id="@+id/parameterScrollView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:background="?attr/colorSurfaceContainerLow"
                             android:paddingVertical="6dp"
                             android:scrollbars="none">
 

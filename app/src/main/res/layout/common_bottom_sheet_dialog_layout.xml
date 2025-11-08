@@ -13,8 +13,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minWidth="280dp"
-        app:cardBackgroundColor="?colorSurfaceContainerHigh"
         app:cardElevation="10dp"
+        android:background="?attr/colorSurfaceContainerLowest"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:shapeAppearanceOverlay="@style/BottomSheetCardStyle"
         app:strokeWidth="0dp">
@@ -33,7 +33,6 @@
                 android:id="@+id/common_dialog_title_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?colorSurfaceContainerHigh"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="16dp"
@@ -70,7 +69,6 @@
                 android:id="@+id/common_dialog_button_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?colorSurfaceContainerHigh"
                 android:paddingHorizontal="4dp"
                 android:paddingVertical="10dp">
 

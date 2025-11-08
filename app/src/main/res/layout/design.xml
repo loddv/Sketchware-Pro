@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest">
 
     <RelativeLayout
         android:id="@+id/container"
@@ -19,6 +20,7 @@
             <com.google.android.material.appbar.AppBarLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="?attr/colorSurfaceContainerLowest"
                 android:fitsSystemWindows="true">
 
                 <androidx.appcompat.widget.Toolbar
@@ -64,7 +66,6 @@
                 android:id="@+id/progress_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/colorSurfaceContainer"
                 android:orientation="vertical"
                 android:visibility="gone"
                 tools:visibility="visible">
@@ -95,7 +96,6 @@
                 android:id="@+id/bottom_bar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/colorSurfaceContainer"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingVertical="4dp">
@@ -108,7 +108,7 @@
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:clickable="true"
-                    app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
                     app:contentPadding="8dp">
 
                     <LinearLayout
@@ -146,30 +146,37 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <com.google.android.material.button.MaterialSplitButton
+                <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:paddingTop="0dp"
-                    android:paddingBottom="0dp">
+                    android:layout_height="wrap_content">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_run"
-                        style="?attr/materialSplitButtonLeadingFilledStyle"
-                        android:layout_width="wrap_content"
+                    <com.google.android.material.button.MaterialSplitButton
+                        android:layout_width="68pt"
                         android:layout_height="wrap_content"
-                        android:text="Run"
-                        app:icon="@drawable/ic_mtrl_run" />
+                        android:layout_marginEnd="8dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_options"
-                        style="?attr/materialSplitButtonIconFilledStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:icon="@drawable/m3_split_button_chevron_avd"
-                        app:iconSize="24dp" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_run"
+                            style="?attr/materialSplitButtonLeadingFilledStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:height="@dimen/text_size_button_material"
+                            android:text="Run"
+                            app:icon="@drawable/ic_mtrl_run"
+                            app:iconGravity="textStart" />
 
-                </com.google.android.material.button.MaterialSplitButton>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_options"
+                            style="?attr/materialSplitButtonIconFilledStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:icon="@drawable/m3_split_button_chevron_avd"
+                            app:iconSize="24dp" />
+
+                    </com.google.android.material.button.MaterialSplitButton>
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 

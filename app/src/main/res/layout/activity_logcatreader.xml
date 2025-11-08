@@ -3,12 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest"
     tools:ignore="ContentDescription">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLowest"
         android:fitsSystemWindows="true">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -17,6 +19,7 @@
             android:layout_height="wrap_content"
             app:menu="@menu/menu_logcat"
             app:navigationIcon="?attr/homeAsUpIndicator"
+            android:background="?attr/colorSurfaceContainerLowest"
             app:title="Logcat Reader" />
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -66,7 +69,7 @@
         android:id="@+id/noContentLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?attr/colorSurface"
+        android:background="?attr/colorSurfaceContainerLowest"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingHorizontal="24dp"

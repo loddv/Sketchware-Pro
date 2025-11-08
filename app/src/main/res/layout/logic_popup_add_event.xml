@@ -7,10 +7,10 @@
     android:focusableInTouchMode="true"
     android:gravity="center"
     android:orientation="vertical"
-    android:paddingLeft="32dp"
-    android:paddingTop="56dp"
-    android:paddingRight="32dp"
-    android:paddingBottom="80dp"
+    android:paddingLeft="5dp"
+    android:paddingTop="40dp"
+    android:paddingRight="5dp"
+    android:paddingBottom="40dp"
     tools:background="#80000000">
 
     <androidx.recyclerview.widget.RecyclerView

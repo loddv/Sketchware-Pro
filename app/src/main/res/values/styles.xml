@@ -14,6 +14,7 @@
 
     <style name="CustomCollapsingCollapsed">
         <item name="android:textColor">@color/tool_bar_text_color</item>
+        <item name="android:background">?attr/colorSurfaceContainerLowest</item>
     </style>
 
     <style name="CustomCollapsingExpanded">
@@ -75,6 +76,7 @@
         <item name="cornerSizeTopRight">20dp</item>
         <item name="cornerSizeBottomLeft">0dp</item>
         <item name="cornerSizeBottomRight">0dp</item>
+        <item name="android:background">?attr/colorSurfaceContainerLowest</item>
     </style>
 
     <style name="ChipStyle.SWPro.Chip.Rounded" parent="">
@@ -106,7 +108,7 @@
 
     <style name="RoundedCornersDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="dialogCornerRadius">16dp</item>
-        <item name="android:background">?attr/colorSurfaceContainer</item>
+        <item name="android:background">?attr/colorSurfaceContainerLowest</item>
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.Corner.Medium</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>

@@ -1,5 +1,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:focusable="true"
@@ -17,13 +18,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="4dp">
 
             <com.google.android.material.card.MaterialCardView
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:layout_margin="4dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:contentPadding="14dp"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium">
@@ -36,7 +37,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="14dp"
+                        android:layout_marginBottom="16dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -50,11 +51,10 @@
                             android:id="@+id/sign_apk_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="@string/myprojects_export_project_button_sign_apk"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            tools:ignore="RtlSymmetry" />
                     </LinearLayout>
 
                     <Button
@@ -62,8 +62,7 @@
                         style="@style/Widget.Material3Expressive.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/myprojects_export_project_button_sign_apk"
-                        android:textSize="14sp" />
+                        android:text="@string/myprojects_export_project_button_sign_apk" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -76,28 +75,35 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
+                            <!-- Replaced complex layout with a simple TextInputLayout for consistency -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
+                                android:layout_marginTop="16dp"
+                                android:background="?attr/colorSurfaceContainerHighest"
                                 android:gravity="center_vertical"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:padding="12dp">
 
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
-                                    android:src="@drawable/ic_folder_48dp" />
+                                    android:src="@drawable/ic_folder_48dp"
+                                    app:tint="?attr/colorOnSurfaceVariant" />
 
                                 <TextView
-                                    android:layout_width="match_parent"
+                                    android:id="@+id/sign_apk_output_path"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginLeft="8dp"
-                                    android:text="@string/myprojects_export_project_title_local_path"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:ellipsize="start"
+                                    android:singleLine="true"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    tools:text="/storage/emulated/0/Sketchware/signed_apk/my_app.apk" />
                             </LinearLayout>
 
-                            <LinearLayout
+                            <!-- This entire section for path was replaced by the layout above
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_round_light_grey"
@@ -116,7 +122,7 @@
                                         android:padding="8dp"
                                         android:textSize="13sp" />
                                 </HorizontalScrollView>
-                            </LinearLayout>
+                            </LinearLayout> -->
                         </LinearLayout>
 
                         <com.airbnb.lottie.LottieAnimationView
@@ -134,7 +140,7 @@
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:layout_margin="4dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:contentPadding="14dp"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium">
@@ -147,7 +153,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="14dp"
+                        android:layout_marginBottom="16dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -161,11 +167,10 @@
                             android:id="@+id/export_source_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="@string/myprojects_export_project_title_export_src"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            tools:ignore="RtlSymmetry" />
                     </LinearLayout>
 
                     <Button
@@ -173,8 +178,7 @@
                         style="@style/Widget.Material3Expressive.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/myprojects_export_project_button_export_src"
-                        android:textSize="14sp" />
+                        android:text="@string/myprojects_export_project_button_export_src" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -187,28 +191,35 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
+                            <!-- Replaced complex layout with a simple TextInputLayout for consistency -->
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
+                                android:layout_marginTop="16dp"
+                                android:background="?attr/colorSurfaceContainerHighest"
                                 android:gravity="center_vertical"
-                                android:orientation="horizontal">
+                                android:orientation="horizontal"
+                                android:padding="12dp">
 
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
-                                    android:src="@drawable/ic_folder_48dp" />
+                                    android:src="@drawable/ic_folder_48dp"
+                                    app:tint="?attr/colorOnSurfaceVariant" />
 
                                 <TextView
-                                    android:layout_width="match_parent"
+                                    android:id="@+id/export_source_output_path"
+                                    android:layout_width="0dp"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginLeft="8dp"
-                                    android:text="@string/myprojects_export_project_title_local_path"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:ellipsize="start"
+                                    android:singleLine="true"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    tools:text="/storage/emulated/0/Sketchware/exported/123.zip" />
                             </LinearLayout>
 
-                            <LinearLayout
+                            <!-- This entire section for path was replaced by the layout above
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_round_light_grey"
@@ -227,19 +238,37 @@
                                         android:padding="8dp"
                                         android:textSize="13sp" />
                                 </HorizontalScrollView>
-                            </LinearLayout>
+                            </LinearLayout> -->
 
-                            <Button
-                                android:id="@+id/export_source_send_button"
-                                style="@style/Widget.Material3Expressive.Button"
-                                android:layout_width="wrap_content"
+                            <!-- Using a ButtonBarLayout for better alignment of actions -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_gravity="right"
-                                android:layout_marginTop="14dp"
-                                android:text="@string/myprojects_export_project_button_send_src_zip"
-                                android:textSize="12sp" />
+                                android:gravity="center"
+                                android:orientation="horizontal"
+                                android:paddingVertical="10dp">
+
+                                <Button
+                                    android:id="@+id/export_source_open_folder_button"
+                                    style="@style/Widget.Material3Expressive.Button.TonalButton"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="8dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/design_drawer_menu_title_source_code" />
+
+                                <Button
+                                    android:id="@+id/export_source_send_button"
+                                    style="@style/Widget.Material3Expressive.Button"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/myprojects_export_project_button_send_src_zip" />
+                            </LinearLayout>
                         </LinearLayout>
 
+                        <!-- The loading animation remains unchanged -->
                         <com.airbnb.lottie.LottieAnimationView
                             android:id="@+id/export_source_loading_anim"
                             android:layout_width="match_parent"
@@ -255,7 +284,7 @@
                 style="?attr/materialCardViewFilledStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="8dp"
+                android:layout_margin="4dp"
                 app:cardBackgroundColor="?attr/colorSurfaceContainer"
                 app:contentPadding="14dp"
                 app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium">
@@ -268,7 +297,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="14dp"
+                        android:layout_marginBottom="16dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
@@ -282,20 +311,18 @@
                             android:id="@+id/export_aab_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="Export AAB (Android App Bundle)"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            tools:ignore="RtlSymmetry" />
                     </LinearLayout>
 
                     <Button
                         android:id="@+id/export_aab_button"
-                        style="@style/Widget.Material3Expressive.Button"
+                        style="?attr/materialButtonStyle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Export AAB"
-                        android:textSize="14sp" />
+                        android:text="Export AAB" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>

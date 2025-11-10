@@ -28,15 +28,20 @@
             android:textColor="?attr/colorOnSurface"
             android:textSize="16sp" />
 
-        <TextView
-            android:id="@+id/tv_value"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/tv_name"
-            android:layout_marginStart="40dp"
-            android:layout_marginRight="16dp"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:textSize="14sp" />
+            android:layout_height="match_parent"
+            android:layout_below="@+id/tv_name">
+
+            <TextView
+                android:id="@+id/tv_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="40dp"
+                android:layout_marginRight="16dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="14sp" />
+        </androidx.core.widget.NestedScrollView>
     </RelativeLayout>
 
     <include layout="@layout/property_grid_item" />

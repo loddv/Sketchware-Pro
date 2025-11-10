@@ -6,6 +6,8 @@ import com.android.tools.r8.D8
 import com.android.tools.r8.D8Command
 import com.android.tools.r8.OutputMode
 import com.google.gson.Gson
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mod.hey.studios.build.BuildSettings
 import mod.hey.studios.util.Helper
@@ -21,6 +23,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
 import kotlin.io.path.readText
@@ -161,6 +164,8 @@ class DependencyResolver(
             )
             Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}", "config")
                 .writeText(packageName)
+            Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}", "info")
+                .writeText(dependency.groupId + "." + dependency.artifactId + ":" + dependency.version)
         }
 
         val jar = Paths.get(
@@ -213,6 +218,8 @@ class DependencyResolver(
                 val packageName =
                     findPackageName(path.parent.toAbsolutePath().toString(), dep.groupId)
                 path.parent.resolve("config").writeText(packageName)
+                path.parent.resolve("info")
+                    .writeText(dep.groupId + "." + dep.artifactId + ":" + dep.version)
             }
 
             val jar = if (dep.extension == "jar") path else Paths.get(
@@ -226,18 +233,29 @@ class DependencyResolver(
             dependencyClasspath.add(jar)
         }
 
-        dependency.getAllDependencies().forEach { dep ->
-            val jar = Paths.get(downloadPath, "${dep.artifactId}-v${dep.version}", "classes.jar")
+        // Use a fixed-size thread pool for dexing to avoid overwhelming the system
+        val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+        runBlocking(executor.asCoroutineDispatcher()) {
+            dependency.getAllDependencies().forEach { dep ->
+                launch {
+                    val jar = Paths.get(
+                        downloadPath,
+                        "${dep.artifactId}-v${dep.version}",
+                        "classes.jar"
+                    )
 
-            callback.dexing(dep)
-            try {
-                compileJar(
-                    jar, dependencyClasspath.toMutableList().apply { remove(jar) }, libraryJars
-                )
-                callback.onResolutionComplete(dep)
-            } catch (e: Exception) {
-                callback.dexingFailed(dep, e)
-                return@forEach
+                    callback.dexing(dep)
+                    try {
+                        compileJar(
+                            jar,
+                            dependencyClasspath.toMutableList().apply { remove(jar) },
+                            libraryJars
+                        )
+                        callback.onResolutionComplete(dep)
+                    } catch (e: Exception) {
+                        callback.dexingFailed(dep, e)
+                    }
+                }
             }
         }
 

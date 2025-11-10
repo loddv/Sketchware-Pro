@@ -16,9 +16,12 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import a.a.a.MA;
 import a.a.a.mB;
@@ -172,21 +176,21 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 				long selectedCount = getSelectedLocalLibrariesCount();
 				boolean selectAll = selectedCount != adapter.getItemCount();
 				setLocalLibrariesSelected(selectAll);
-				SketchwareUtil.toast(selectAll ? "All items selected" : "All items deselected");
+				/*SketchwareUtil.toast(selectAll ? "All items selected" : "All items deselected");*/
 				binding.contextualToolbar.setTitle(String.valueOf(getSelectedLocalLibrariesCount()));
 				return true;
 			} else if (id == R.id.action_invert_selection) {
 				setLocalLibrariesInvertSelected();
 				binding.contextualToolbar.setTitle(String.valueOf(getSelectedLocalLibrariesCount()));
-				SketchwareUtil.toast("Selection inverted");
+				/*SketchwareUtil.toast("Selection inverted");*/
 				return true;
 			} else if (id == R.id.action_rename_selected_local_libraries) {
-				String oldName = adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).findAny().map(LocalLibrary::getName).orElse("");
-
-				if (adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).count() > 1) {
-					SketchwareUtil.toast("Please select only one item");
+				/*if (adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).count() == 0) {*/
+				if (! hasSelectedLibrarys()) {
+					SketchwareUtil.toast("Please select at least one item");
 					return true;
 				}
+				String oldName = adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).findAny().map(LocalLibrary::getName).orElse("");
 
 				if (adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).count() > 1) {
 					SketchwareUtil.toast("Please select only one item");
@@ -203,9 +207,11 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 				textInputLayout.setHint(oldName);
 
 				bottomSheetView.findViewById(R.id.button_cancel).setOnClickListener(v -> {
+					hideContextualToolbarAndClearSelection();
 					bottomSheetDialog.dismiss();
 					resetSelectionAndReload(null);
 				});
+				bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
 
 				bottomSheetView.findViewById(R.id.button_rename).setOnClickListener(v -> {
 					String newName = Objects.requireNonNull(editText.getText()).toString();
@@ -217,46 +223,81 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 						k();
 						Executors.newSingleThreadExecutor().execute(() -> {
 							renameSelectedLocalLibraryPath(scId, newName, oldName, adapter.getLocalLibraries(), projectUsedLibs);
-							runOnUiThread(() -> resetSelectionAndReload("Renamed successfully"));
+							runOnUiThread(() -> {
+								resetSelectionAndReload("Renamed successfully");
+								h();
+							});
 						});
-						h();
 						bottomSheetDialog.dismiss();
 					}
 				});
 				bottomSheetDialog.show();
 				return true;
 			} else if (id == R.id.action_delete_selected_local_libraries) {
-				String NameLibrary = adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).findAny().map(LocalLibrary::getName).orElse("");
 				long selectedCount = getSelectedLocalLibrariesCount();
-
-				String message;
-				if (selectedCount > 1) {
-					message = "Are you sure you want to delete these " + selectedCount + " libraries?";
-				} else {
-					message = "Are you sure you want to delete this library " + NameLibrary + "?";
+				if (selectedCount == 0) {
+					SketchwareUtil.toast("Please select at least one item");
+					return true;
 				}
 
-				k();
-				MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
-				dialog.setIcon(R.drawable.icon_delete);
-				dialog.setTitle("Delete Library!");
-				dialog.setMessage(message);
-				dialog.setPositiveButton(Helper.getResString(R.string.common_word_delete), (v1, which) -> {
+				String selectedNames = adapter.getLocalLibraries().stream()
+						                       .filter(LocalLibrary::isSelected)
+						                       .map(LocalLibrary::getName)
+						                       .collect(Collectors.joining(",\n"));
+
+				String message;
+				String editTextContent;
+				if (selectedCount > 1) {
+					message = "Are you sure you want to delete these " + selectedCount + " libraries?\n" + selectedNames;
+					editTextContent = selectedNames;
+				} else {
+					editTextContent = adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).findAny().map(LocalLibrary::getName).orElse("");
+					message = "Are you sure you want to delete this library " + editTextContent + "?";
+				}
+
+				BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+				View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_rename, null);
+				bottomSheetDialog.setContentView(bottomSheetView);
+
+				final TextView title = bottomSheetView.findViewById(R.id.title);
+				title.setText("Delete Library!");
+
+				final TextView description = bottomSheetView.findViewById(R.id.description);
+				final TextInputLayout textInputLayout = bottomSheetView.findViewById(R.id.text_input_layout_library);
+				final TextInputEditText editText = bottomSheetView.findViewById(R.id.textInputEditText);
+				final Button deleteAccountButton = bottomSheetView.findViewById(R.id.button_rename);
+
+				editText.setText(editTextContent);
+				editText.setEnabled(false);
+				textInputLayout.setHint("Selected libraries");
+				description.setText(message);
+				deleteAccountButton.setText(R.string.common_word_delete);
+				deleteAccountButton.setTextColor(ContextCompat.getColor(this, R.color.black));
+				deleteAccountButton.setBackgroundColor(
+						ContextCompat.getColor(this, R.color.scolor_red_02)
+				);
+
+				bottomSheetView.findViewById(R.id.button_cancel).setOnClickListener(v -> {
+					hideContextualToolbarAndClearSelection();
+					bottomSheetDialog.dismiss();
+					resetSelectionAndReload(null);
+				});
+				bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
+
+				bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
+
+				bottomSheetView.findViewById(R.id.button_rename).setOnClickListener(v -> {
+					k();
 					Executors.newSingleThreadExecutor().execute(() -> {
 						deleteSelectedLocalLibraries(scId, adapter.getLocalLibraries(), projectUsedLibs);
 						runOnUiThread(() -> {
-							h();
 							resetSelectionAndReload("Deleted successfully");
+							h();
 						});
 					});
-					v1.dismiss();
+					bottomSheetDialog.dismiss();
 				});
-				dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v1, which) -> {
-					h();
-					v1.dismiss();
-				});
-				dialog.show();
-				return true;
+				bottomSheetDialog.show();
 			}
 			return false;
 		});
@@ -324,6 +365,10 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 			library.setSelected(! library.isSelected());
 		}
 		adapter.notifyDataSetChanged();
+	}
+
+	public boolean hasSelectedLibrarys() {
+		return getAdapterLocalLibraries().stream().anyMatch(LocalLibrary::isSelected);
 	}
 
 	private void expandContextualToolbar() {

@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.widget.SearchView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -59,607 +60,727 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class BlocksManager extends BaseAppCompatActivity {
 
-    boolean isDialogShowing;
-    View draggedView;
-    private ArrayList<HashMap<String, Object>> all_blocks_list = new ArrayList<>();
-    private String blocks_dir;
-    private String pallet_dir;
-    private int oldPos;
-    private int newPos;
-    private Activity activity;
-    private ArrayList<HashMap<String, Object>> pallet_listmap = new ArrayList<>();
-    private ItemTouchHelper itemTouchHelper;
-    private ActivityBlocksManagerBinding binding;
-    private DialogPaletteBinding dialogBinding;
-    private Vibrator vibrator;
-
-    @Override
-    public void onCreate(Bundle _savedInstanceState) {
-        super.onCreate(_savedInstanceState);
-        binding = ActivityBlocksManagerBinding.inflate(getLayoutInflater());
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-
-        setContentView(binding.getRoot());
-
-        ViewCompat.setOnApplyWindowInsetsListener(binding.background, (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), systemBars.bottom);
-            return insets;
-        });
-
-        initialize();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        BlockLoader.refresh();
-    }
-
-    private void initialize() {
-        activity = this;
-
-        setSupportActionBar(binding.toolbar);
-
-        Objects.requireNonNull(getSupportActionBar()).setDisplayShowTitleEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        binding.toolbar.setNavigationOnClickListener(view -> getOnBackPressedDispatcher().onBackPressed());
-        binding.paletteRecycler.setLayoutManager(new LinearLayoutManager(this));
-        binding.paletteRecycler.setAdapter(new PaletteAdapter(pallet_listmap));
-        binding.fab.setOnClickListener(v -> showPaletteDialog(false, null, null, "#ffffff", null));
-
-        readSettings();
-        refreshList();
-        recycleBin(binding.recycleBinCard);
-
-        itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                oldPos = viewHolder.getBindingAdapterPosition();
-                newPos = target.getBindingAdapterPosition();
-
-                Collections.swap(pallet_listmap, oldPos, newPos);
-
-                Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemMoved(oldPos, newPos);
-                swapRelatedBlocks(oldPos + 9, newPos + 9);
-
-                return true;
-            }
-
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-
-            }
-
-            @Override
-            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int action) {
-                if (action == ItemTouchHelper.ACTION_STATE_DRAG) {
-                    viewHolder.itemView.setAlpha(0.7f);
-                    draggedView = viewHolder.itemView;
-                }
-                super.onSelectedChanged(viewHolder, action);
-            }
-
-            @Override
-            public boolean isLongPressDragEnabled() {
-                return false;
-            }
-
-            @Override
-            public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                viewHolder.itemView.setAlpha(1f);
-                FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
-                FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-            }
-
-            @Override
-            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
-                if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
-                    binding.background.setClipChildren(!isItNearTrash(draggedView, binding.recycleBin));
-                    if (isItInTrash(draggedView, binding.recycleBin)) {
-                        int pos = viewHolder.getBindingAdapterPosition();
-                        binding.recycleBinCard.setAlpha(0.5f);
-                        if (!isCurrentlyActive && pos != RecyclerView.NO_POSITION && pos < pallet_listmap.size() && !isDialogShowing) {
-                            vibrator.vibrate(40L);
-                            showMoveToBinDialog(pos);
-                            isDialogShowing = true;
-                        }
-                        return;
-                    }
-                }
-                binding.recycleBinCard.setAlpha(1f);
-                isDialogShowing = false;
-            }
-
-        });
-
-        itemTouchHelper.attachToRecyclerView(binding.paletteRecycler);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Settings").setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_settings)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
-        String title = Objects.requireNonNull(menuItem.getTitle()).toString();
-        if (title.equals("Settings")) {
-            showBlockConfigurationDialog();
-        } else {
-            return false;
-        }
-        return super.onOptionsItemSelected(menuItem);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        readSettings();
-        refreshList();
-        refreshCount();
-    }
-
-    private void showBlockConfigurationDialog() {
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
-        dialog.setIcon(R.drawable.ic_folder_48dp);
-        dialog.setTitle("Block configuration");
-
-        DialogBlockConfigurationBinding dialogBinding = DialogBlockConfigurationBinding.inflate(getLayoutInflater());
-
-        dialogBinding.palettesPath.setText(pallet_dir.replace(FileUtil.getExternalStorageDir(), ""));
-        dialogBinding.blocksPath.setText(blocks_dir.replace(FileUtil.getExternalStorageDir(), ""));
-
-        dialog.setView(dialogBinding.getRoot());
-
-        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (view, which) -> {
-            ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH, Objects.requireNonNull(dialogBinding.palettesPath.getText()).toString());
-            ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH, Objects.requireNonNull(dialogBinding.blocksPath.getText()).toString());
-
-            readSettings();
-            refreshList();
-            view.dismiss();
-        });
-
-        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
-
-        dialog.setNeutralButton("Defaults", (view, which) -> {
-            ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH, ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH));
-            ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH, ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH));
-
-            readSettings();
-            refreshList();
-            view.dismiss();
-        });
-
-        dialog.show();
-    }
-
-    private void showMoveToBinDialog(int position) {
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
-        dialog.setIcon(R.drawable.ic_mtrl_delete);
-        dialog.setTitle(R.string.block_move_to_bin);
-        dialog.setMessage(R.string.common_message_confirm);
-        dialog.setPositiveButton(R.string.common_word_yes, (v, which) -> {
-            pallet_listmap.remove(position);
-            Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemRemoved(position);
-            Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemChanged(position);
-            draggedView = null;
-            moveRelatedBlocksToRecycleBin(position + 9);
-            removeRelatedBlocks(position + 9);
-            FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
-            FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-            refreshCount();
-            v.dismiss();
-        });
-        dialog.setNegativeButton(R.string.common_word_cancel, null);
-        dialog.show();
-    }
-
-    private void readSettings() {
-        pallet_dir = FileUtil.getExternalStorageDir() + ConfigActivity.getStringSettingValueOrSetAndGet(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH,
-                (String) ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH));
-        blocks_dir = FileUtil.getExternalStorageDir() + ConfigActivity.getStringSettingValueOrSetAndGet(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH,
-                (String) ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH));
-
-        if (FileUtil.isExistFile(blocks_dir) && isValidJson(FileUtil.readFile(blocks_dir))) {
-            try {
-                all_blocks_list = getGson().fromJson(FileUtil.readFile(blocks_dir), Helper.TYPE_MAP_LIST);
-
-                if (all_blocks_list != null) {
-                    return;
-                }
-                // fall-through to shared handler
-            } catch (JsonParseException e) {
-                // fall-through to shared handler
-            }
-
-            SketchwareUtil.showFailedToParseJsonDialog(this, new File(blocks_dir), "Custom Blocks", v -> readSettings());
-        }
-    }
-
-    private Boolean isValidJson(String json) {
-        try {
-            JsonElement element = JsonParser.parseString(json);
-            return element.isJsonObject() || element.isJsonArray();
-        } catch (JsonSyntaxException e) {
-            return false;
-        }
-    }
-
-    private void refreshList() {
-        parsePaletteJson:
-        {
-            String paletteJsonContent;
-            if (FileUtil.isExistFile(pallet_dir) && !(paletteJsonContent = FileUtil.readFile(pallet_dir)).isEmpty()) {
-                try {
-                    pallet_listmap = getGson().fromJson(paletteJsonContent, Helper.TYPE_MAP_LIST);
-
-                    if (pallet_listmap != null) {
-                        break parsePaletteJson;
-                    }
-                    // fall-through to shared handler
-                } catch (JsonParseException e) {
-                    // fall-through to shared handler
-                }
-
-                SketchwareUtil.showFailedToParseJsonDialog(this, new File(pallet_dir), "Custom Block Palettes", v -> refreshList());
-            }
-            pallet_listmap = new ArrayList<>();
-        }
-
-        binding.paletteRecycler.setAdapter(new PaletteAdapter(pallet_listmap));
-        binding.recycleSub.setText("Blocks: " + (long) getN(-1));
-        refreshCount();
-    }
-
-    private double getN(double _p) {
-        int n = 0;
-        if (all_blocks_list == null) return 0;
-
-        for (int i = 0; i < all_blocks_list.size(); i++) {
-            if (Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString().equals(String.valueOf((long) _p))) {
-                n++;
-            }
-        }
-        return n;
-    }
-
-    private void refreshCount() {
-        if (pallet_listmap.isEmpty()) {
-            binding.paletteCount.setText("No palettes");
-        } else {
-            binding.paletteCount.setText(pallet_listmap.size() + " Palettes");
-        }
-    }
-
-    private void recycleBin(View view) {
-        view.setOnClickListener(v -> {
-            Intent intent = new Intent(getApplicationContext(), BlocksManagerDetailsActivity.class);
-            intent.putExtra("position", "-1");
-            intent.putExtra("dirB", blocks_dir);
-            intent.putExtra("dirP", pallet_dir);
-            startActivity(intent);
-        });
-        view.setOnLongClickListener(v -> {
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle("Recycle bin")
-                    .setMessage("Are you sure you want to empty the recycle bin? " +
-                            "Blocks inside will be deleted PERMANENTLY, you CANNOT recover them!")
-                    .setPositiveButton("Empty", (dialog, which) -> emptyRecyclebin())
-                    .setNegativeButton(R.string.common_word_cancel, null)
-                    .show();
-            return true;
-        });
-    }
-
-    private void removeRelatedBlocks(double _p) {
-        List<Map<String, Object>> newBlocks = new LinkedList<>();
-        for (int i = 0; i < all_blocks_list.size(); i++) {
-            if (!(Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p)) {
-                if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) > _p) {
-                    HashMap<String, Object> m = all_blocks_list.get(i);
-                    m.put("palette", String.valueOf((long) (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) - 1)));
-                    newBlocks.add(m);
-                } else {
-                    newBlocks.add(all_blocks_list.get(i));
-                }
-            }
-        }
-        FileUtil.writeFile(blocks_dir, getGson().toJson(newBlocks));
-        readSettings();
-    }
-
-    private void swapRelatedBlocks(double f, double s) {
-        final String TEMP_PALETTE = "TEMP_SWAP";
-        for (Map<String, Object> block : all_blocks_list) {
-            Object paletteObj = block.get("palette");
-
-            if (paletteObj == null) continue;
-            double paletteValue;
-            try {
-                paletteValue = Double.parseDouble(paletteObj.toString());
-            } catch (NumberFormatException e) {
-                continue;
-            }
-
-            if (paletteValue == f) {
-                block.put("palette", TEMP_PALETTE);
-            } else if (paletteValue == s) {
-                block.put("palette", String.valueOf((long) f));
-            }
-        }
-        for (Map<String, Object> block : all_blocks_list) {
-            if (TEMP_PALETTE.equals(block.get("palette"))) {
-                block.put("palette", String.valueOf((long) s));
-            }
-        }
-    }
-
-    private void insertBlocksAt(double _p) {
-        for (int i = 0; i < all_blocks_list.size(); i++) {
-            if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) > _p || Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p) {
-                all_blocks_list.get(i).put("palette", String.valueOf((long) (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) + 1)));
-            }
-        }
-        FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
-        readSettings();
-        refreshList();
-    }
-
-    private void moveRelatedBlocksToRecycleBin(double _p) {
-        for (int i = 0; i < all_blocks_list.size(); i++) {
-            if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p) {
-                all_blocks_list.get(i).put("palette", "-1");
-            }
-        }
-        FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
-        readSettings();
-    }
-
-    private void emptyRecyclebin() {
-        List<Map<String, Object>> newBlocks = new LinkedList<>();
-        for (int i = 0; i < all_blocks_list.size(); i++) {
-            if (!(Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == -1)) {
-                newBlocks.add(all_blocks_list.get(i));
-            }
-        }
-        FileUtil.writeFile(blocks_dir, getGson().toJson(newBlocks));
-        readSettings();
-        refreshList();
-    }
-
-    private void showPaletteDialog(boolean isEditing, Integer oldPosition, String oldName, String oldColor, Integer insertAtPosition) {
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
-        dialog.setIcon(R.drawable.icon_style_white_96);
-        dialog.setTitle(!isEditing ? "Create a new palette" : "Edit palette");
-
-        dialogBinding = DialogPaletteBinding.inflate(getLayoutInflater());
-
-        if (isEditing) {
-            dialogBinding.nameEditText.setText(oldName);
-            dialogBinding.colorEditText.setText(oldColor.replace("#", ""));
-        }
-
-        dialogBinding.openColorPalette.setOnClickListener(v1 -> {
-            ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0xFFFFFFFF, false, false);
-            colorPickerDialog.a(new ColorPickerDialog.b() {
-                @Override
-                public void a(int colorInt) {
-                    dialogBinding.colorEditText.setText(String.format("%06X", colorInt & 0x00FFFFFF));
-                }
-
-                @Override
-                public void a(String var1, int var2) {
-
-                }
-            });
-            colorPickerDialog.showAtLocation(dialogBinding.openColorPalette, Gravity.CENTER, 0, 0);
-        });
-
-        dialog.setView(dialogBinding.getRoot());
-
-        dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
-            String nameInput = Objects.requireNonNull(dialogBinding.nameEditText.getText()).toString();
-            String colorInput = Objects.requireNonNull(dialogBinding.colorEditText.getText()).toString();
-
-            if (nameInput.isEmpty()) {
-                SketchwareUtil.toast("Name cannot be empty", Toast.LENGTH_SHORT);
-                return;
-            }
-            // add hash for the color 
-            colorInput = "#" + colorInput;
-
-            if (!PropertiesUtil.isHexColor(colorInput)) {
-                SketchwareUtil.toast("Please enter a valid HEX color", Toast.LENGTH_SHORT);
-                return;
-            }
-
-            if (PropertiesUtil.isHexColor(colorInput)) {
-                Color.parseColor(colorInput);
-                if (!isEditing) {
-                    HashMap<String, Object> map = new HashMap<>();
-                    map.put("name", nameInput);
-                    map.put("color", colorInput);
-
-                    if (insertAtPosition == null) {
-                        pallet_listmap.add(map);
-                        FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-                        Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemInserted(pallet_listmap.size() - 1);
-                        readSettings();
-                    } else {
-                        pallet_listmap.add(insertAtPosition, map);
-                        FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-                        readSettings();
-                        Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemInserted(insertAtPosition);
-                        insertBlocksAt(insertAtPosition + 9);
-                    }
-                } else {
-                    pallet_listmap.get(oldPosition).put("name", nameInput);
-                    pallet_listmap.get(oldPosition).put("color", colorInput);
-                    FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-                    readSettings();
-                    refreshList();
-                }
-                refreshCount();
-                v.dismiss();
-            }
-        });
-
-        dialog.setNegativeButton(Helper.getResString(R.string.cancel), null);
-        dialog.show();
-    }
-
-
-    private boolean isItInTrash(View draggedView, View trash) {
-        if (draggedView == null) return false;
-
-        int[] trashLocation = new int[2];
-        trash.getLocationOnScreen(trashLocation);
-
-        int[] draggedLocation = new int[2];
-        draggedView.getLocationOnScreen(draggedLocation);
-
-        int draggedY = draggedLocation[1];
-
-        return draggedY <= trashLocation[1] + draggedView.getMeasuredHeight() / 2 && draggedY >= trashLocation[1] - draggedView.getMeasuredHeight() / 2;
-    }
-
-    private boolean isItNearTrash(View draggedView, View trash) {
-        if (draggedView == null) return false;
-
-        int[] trashLocation = new int[2];
-        trash.getLocationOnScreen(trashLocation);
-
-        int[] draggedLocation = new int[2];
-        draggedView.getLocationOnScreen(draggedLocation);
-
-        int draggedY = draggedLocation[1];
-
-        return draggedY <= trashLocation[1] + draggedView.getMeasuredHeight() * 2 / 2 && draggedY >= trashLocation[1] - draggedView.getMeasuredHeight() * 2 / 2;
-    }
-
-
-    public class PaletteAdapter extends RecyclerView.Adapter<PaletteAdapter.ViewHolder> {
-
-        private final ArrayList<HashMap<String, Object>> palettes;
-
-        public PaletteAdapter(ArrayList<HashMap<String, Object>> palettes) {
-            this.palettes = palettes;
-
-        }
-
-        @NonNull
-        @Override
-        public PaletteAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            PalletCustomviewBinding itemBinding = PalletCustomviewBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-            return new PaletteAdapter.ViewHolder(itemBinding);
-        }
-
-        @SuppressLint("ClickableViewAccessibility")
-        @Override
-        public void onBindViewHolder(@NonNull PaletteAdapter.ViewHolder holder, int position) {
-            String paletteColorValue = (String) palettes.get(position).get("color");
-            assert paletteColorValue != null;
-            int backgroundColor = PropertiesUtil.parseColor(paletteColorValue);
-
-            holder.itemView.setVisibility(View.VISIBLE);
-            holder.itemBinding.title.setText(Objects.requireNonNull(pallet_listmap.get(position).get("name")).toString());
-            holder.itemBinding.sub.setText("Blocks: " + (long) getN(position + 9));
-            holder.itemBinding.color.setBackgroundColor(backgroundColor);
-            holder.itemBinding.dragHandler.setVisibility(View.VISIBLE);
-            binding.recycleSub.setText("Blocks: " + (long) getN(-1));
-
-            holder.itemBinding.backgroundCard.setOnLongClickListener(v -> {
-                final String edit = "Edit";
-                final String delete = "Delete";
-                final String insert = "Insert";
-
-                PopupMenu popup = new PopupMenu(BlocksManager.this, holder.itemBinding.color);
-                Menu menu = popup.getMenu();
-                menu.add(edit);
-                menu.add(delete);
-                menu.add(insert);
-                popup.setOnMenuItemClickListener(item -> {
-                    int pos = holder.getAbsoluteAdapterPosition();
-                    switch (Objects.requireNonNull(item.getTitle()).toString()) {
-                        case edit:
-                            showPaletteDialog(true, pos,
-                                    Objects.requireNonNull(pallet_listmap.get(pos).get("name")).toString(),
-                                    Objects.requireNonNull(pallet_listmap.get(pos).get("color")).toString(), null);
-                            break;
-
-                        case delete:
-                            new MaterialAlertDialogBuilder(BlocksManager.this)
-                                    .setTitle(Objects.requireNonNull(pallet_listmap.get(pos).get("name")).toString())
-                                    .setMessage("Remove all blocks related to this palette?")
-                                    .setPositiveButton("Remove permanently", (dialog, which) -> {
-                                        palettes.remove(pos);
-                                        notifyItemRemoved(pos);
-                                        FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-                                        removeRelatedBlocks(pos + 9);
-                                        readSettings();
-                                        refreshCount();
-                                    })
-                                    .setNegativeButton(R.string.common_word_cancel, null)
-                                    .setNeutralButton(R.string.block_move_to_bin, (dialog, which) -> {
-                                        moveRelatedBlocksToRecycleBin(position + 9);
-                                        palettes.remove(pos);
-                                        notifyItemRemoved(pos);
-                                        FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
-                                        removeRelatedBlocks(pos + 9);
-                                        readSettings();
-                                        refreshCount();
-                                    }).show();
-                            break;
-
-                        case insert:
-                            showPaletteDialog(false, null, null, null, position);
-                            break;
-
-                        default:
-                    }
-                    return true;
-                });
-                popup.show();
-
-                return true;
-            });
-
-            holder.itemBinding.dragHandler.setOnTouchListener((v, event) -> {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    itemTouchHelper.startDrag(holder);
-                }
-
-                return false;
-            });
-
-            holder.itemBinding.backgroundCard.setOnClickListener(v -> {
-                Intent intent = new Intent(getApplicationContext(), BlocksManagerDetailsActivity.class);
-                intent.putExtra("position", String.valueOf((long) (holder.getAbsoluteAdapterPosition() + 9)));
-                intent.putExtra("dirB", blocks_dir);
-                intent.putExtra("dirP", pallet_dir);
-                startActivity(intent);
-            });
-
-        }
-
-        @Override
-        public int getItemCount() {
-            return palettes.size();
-        }
-
-        public static class ViewHolder extends RecyclerView.ViewHolder {
-            public PalletCustomviewBinding itemBinding;
-
-            public ViewHolder(PalletCustomviewBinding itemBinding) {
-                super(itemBinding.getRoot());
-                this.itemBinding = itemBinding;
-            }
-        }
-    }
+	boolean isDialogShowing;
+	View draggedView;
+	private ArrayList<HashMap<String, Object>> all_blocks_list = new ArrayList<>();
+	private String blocks_dir;
+	private String pallet_dir;
+	private int oldPos;
+	private int newPos;
+	private Activity activity;
+	private ArrayList<HashMap<String, Object>> pallet_listmap = new ArrayList<>();
+	private ItemTouchHelper itemTouchHelper;
+	private ActivityBlocksManagerBinding binding;
+	private ArrayList<HashMap<String, Object>> pallet_listmap_backup = new ArrayList<>();
+	private DialogPaletteBinding dialogBinding;
+	private Vibrator vibrator;
+	private boolean isSearchActive = true; // Estado da busca
+
+	@Override
+	public void onCreate(Bundle _savedInstanceState) {
+		super.onCreate(_savedInstanceState);
+		binding = ActivityBlocksManagerBinding.inflate(getLayoutInflater());
+		vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+		setContentView(binding.getRoot());
+
+		ViewCompat.setOnApplyWindowInsetsListener(binding.background, (v, insets) -> {
+			Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+			v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), systemBars.bottom);
+			return insets;
+		});
+
+		initialize();
+	}
+
+	@Override
+	public void onStop() {
+		super.onStop();
+		BlockLoader.refresh();
+	}
+
+	private void initialize() {
+		activity = this;
+
+		setSupportActionBar(binding.toolbar);
+
+		Objects.requireNonNull(getSupportActionBar()).setDisplayShowTitleEnabled(true);
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+		binding.toolbar.setNavigationOnClickListener(view -> getOnBackPressedDispatcher().onBackPressed());
+		binding.paletteRecycler.setLayoutManager(new LinearLayoutManager(this));
+		binding.paletteRecycler.setAdapter(new PaletteAdapter(pallet_listmap));
+		binding.fab.setOnClickListener(v -> showPaletteDialog(false, null, null, "#ffffff", null));
+
+		readSettings();
+		refreshList();
+		recycleBin(binding.recycleBinCard);
+
+		itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+			@Override
+			public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+				oldPos = viewHolder.getBindingAdapterPosition();
+				newPos = target.getBindingAdapterPosition();
+
+				Collections.swap(pallet_listmap, oldPos, newPos);
+
+				Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemMoved(oldPos, newPos);
+				swapRelatedBlocks(oldPos + 9, newPos + 9);
+
+				return true;
+			}
+
+			@Override
+			public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+
+			}
+
+			@Override
+			public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int action) {
+				if (action == ItemTouchHelper.ACTION_STATE_DRAG) {
+					viewHolder.itemView.setAlpha(0.7f);
+					draggedView = viewHolder.itemView;
+				}
+				super.onSelectedChanged(viewHolder, action);
+			}
+
+			@Override
+			public boolean isLongPressDragEnabled() {
+				return ! isSearchActive; // Desativa drag durante busca
+			}
+
+			@Override
+			public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+				viewHolder.itemView.setAlpha(1f);
+				FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
+				FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+				// Garante que o drag seja reativado ao finalizar
+				if (! isSearchActive) {
+					itemTouchHelper.attachToRecyclerView(binding.paletteRecycler);
+				}
+			}
+
+			@Override
+			public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
+				super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+				if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+					binding.background.setClipChildren(! isItNearTrash(draggedView, binding.recycleBin));
+					if (isItInTrash(draggedView, binding.recycleBin)) {
+						int pos = viewHolder.getBindingAdapterPosition();
+						binding.recycleBinCard.setAlpha(0.5f);
+						if (! isCurrentlyActive && pos != RecyclerView.NO_POSITION && pos < pallet_listmap.size() && ! isDialogShowing) {
+							vibrator.vibrate(40L);
+							showMoveToBinDialog(pos);
+							isDialogShowing = true;
+						}
+						return;
+					}
+				}
+				binding.recycleBinCard.setAlpha(1f);
+				isDialogShowing = false;
+			}
+
+		});
+
+		itemTouchHelper.attachToRecyclerView(binding.paletteRecycler);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		menu.add(Menu.NONE, 1, Menu.NONE, "Search")
+				.setIcon(R.drawable.ic_search_white_24dp)
+				.setActionView(new SearchView(this))
+				.setShowAsAction(MenuItem.SHOW_AS_ACTION_COLLAPSE_ACTION_VIEW | MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+		final MenuItem searchMenuItem = menu.findItem(1);
+		SearchView searchView = (SearchView) searchMenuItem.getActionView();
+		assert searchView != null;
+
+		// Listener para o texto
+		searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+			@Override
+			public boolean onQueryTextSubmit(String query) {
+				searchMenuItem.collapseActionView();
+				return true;
+			}
+
+			@Override
+			public boolean onQueryTextChange(String newText) {
+				/*isSearchActive = ! newText.isEmpty();
+				updateDragAvailability();*/
+				filter(newText);
+				return true;
+			}
+		});
+
+		// Controla abertura/fechamento da busca
+		searchMenuItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+			@Override
+			public boolean onMenuItemActionExpand(MenuItem item) {
+				isSearchActive = true;
+				updateDragAvailability();
+				return true;
+			}
+
+			@Override
+			public boolean onMenuItemActionCollapse(MenuItem item) {
+				/*isSearchActive = false;
+				updateDragAvailability();*/
+				filter(""); // Restaura lista completa
+				return true;
+			}
+		});
+
+		searchView.setOnSearchClickListener((view) -> {
+			searchMenuItem.collapseActionView();
+		});
+		searchView.setOnSystemUiVisibilityChangeListener(visibility -> searchMenuItem.collapseActionView());
+
+		// Listener para o ícone de limpar (X)
+		searchView.setOnQueryTextFocusChangeListener((v, hasFocus) -> {
+			if (! hasFocus) {
+				searchMenuItem.collapseActionView();
+			}
+		});
+
+		// Detectar clique no ícone de limpar
+		searchView.findViewById(androidx.appcompat.R.id.search_close_btn).setOnClickListener(v -> {
+			searchView.setQuery("", false);         // Limpa sem submeter
+			filter("");                                    // Atualiza a lista
+			// O adapter irá restaurar a visibilidade no onBindViewHolder
+			searchMenuItem.collapseActionView();                  // Fecha a barra
+		});
+
+		// Listener de fechamento (seta ou back)
+		searchView.setOnCloseListener(() -> false);
+
+		searchView.setQueryHint("Search palettes");
+		menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Swap")
+				.setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_swap_vertical))
+				.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+		menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Settings")
+				.setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_settings))
+				.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
+		String title = Objects.requireNonNull(menuItem.getTitle()).toString();
+		if (title.equals("Settings")) {
+			showBlockConfigurationDialog();
+		} else if (title.equals("Swap")) {
+			isSearchActive = ! isSearchActive;
+			updateDragAvailability();
+		} else {
+			return false;
+		}
+		return super.onOptionsItemSelected(menuItem);
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		readSettings();
+		refreshList();
+		refreshCount();
+	}
+
+	private void showBlockConfigurationDialog() {
+		MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+		dialog.setIcon(R.drawable.ic_folder_48dp);
+		dialog.setTitle("Block configuration");
+
+		DialogBlockConfigurationBinding dialogBinding = DialogBlockConfigurationBinding.inflate(getLayoutInflater());
+
+		dialogBinding.palettesPath.setText(pallet_dir.replace(FileUtil.getExternalStorageDir(), ""));
+		dialogBinding.blocksPath.setText(blocks_dir.replace(FileUtil.getExternalStorageDir(), ""));
+
+		dialog.setView(dialogBinding.getRoot());
+
+		dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (view, which) -> {
+			ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH, Objects.requireNonNull(dialogBinding.palettesPath.getText()).toString());
+			ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH, Objects.requireNonNull(dialogBinding.blocksPath.getText()).toString());
+
+			readSettings();
+			refreshList();
+			view.dismiss();
+		});
+
+		dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+
+		dialog.setNeutralButton("Defaults", (view, which) -> {
+			ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH, ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH));
+			ConfigActivity.setSetting(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH, ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH));
+
+			readSettings();
+			refreshList();
+			view.dismiss();
+		});
+
+		dialog.show();
+	}
+
+	private void showMoveToBinDialog(int position) {
+		MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
+		dialog.setIcon(R.drawable.ic_mtrl_delete);
+		dialog.setTitle(R.string.block_move_to_bin);
+		dialog.setMessage(R.string.common_message_confirm);
+		dialog.setPositiveButton(R.string.common_word_yes, (v, which) -> {
+			pallet_listmap.remove(position);
+			Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemRemoved(position);
+			Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemChanged(position);
+			draggedView = null;
+			moveRelatedBlocksToRecycleBin(position + 9);
+			removeRelatedBlocks(position + 9);
+			FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
+			FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+			refreshCount();
+			v.dismiss();
+		});
+		dialog.setNegativeButton(R.string.common_word_cancel, null);
+		dialog.show();
+	}
+
+	private void readSettings() {
+		pallet_dir = FileUtil.getExternalStorageDir() + ConfigActivity.getStringSettingValueOrSetAndGet(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH,
+				(String) ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_PALETTE_FILE_PATH));
+		blocks_dir = FileUtil.getExternalStorageDir() + ConfigActivity.getStringSettingValueOrSetAndGet(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH,
+				(String) ConfigActivity.getDefaultValue(ConfigActivity.SETTING_BLOCKMANAGER_DIRECTORY_BLOCK_FILE_PATH));
+
+		if (FileUtil.isExistFile(blocks_dir) && isValidJson(FileUtil.readFile(blocks_dir))) {
+			try {
+				all_blocks_list = getGson().fromJson(FileUtil.readFile(blocks_dir), Helper.TYPE_MAP_LIST);
+
+				if (all_blocks_list != null) {
+					return;
+				}
+				// fall-through to shared handler
+			} catch (JsonParseException e) {
+				// fall-through to shared handler
+			}
+
+			SketchwareUtil.showFailedToParseJsonDialog(this, new File(blocks_dir), "Custom Blocks", v -> readSettings());
+		}
+	}
+
+	private Boolean isValidJson(String json) {
+		try {
+			JsonElement element = JsonParser.parseString(json);
+			return element.isJsonObject() || element.isJsonArray();
+		} catch (JsonSyntaxException e) {
+			return false;
+		}
+	}
+
+	private void refreshList() {
+		parsePaletteJson:
+		{
+			String paletteJsonContent;
+			if (FileUtil.isExistFile(pallet_dir) && ! (paletteJsonContent = FileUtil.readFile(pallet_dir)).isEmpty()) {
+				try {
+					pallet_listmap = getGson().fromJson(paletteJsonContent, Helper.TYPE_MAP_LIST);
+
+					if (pallet_listmap != null) {
+						break parsePaletteJson;
+					}
+					// fall-through to shared handler
+				} catch (JsonParseException e) {
+					// fall-through to shared handler
+				}
+
+				SketchwareUtil.showFailedToParseJsonDialog(this, new File(pallet_dir), "Custom Block Palettes", v -> refreshList());
+			}
+			pallet_listmap = new ArrayList<>();
+		}
+
+		binding.paletteRecycler.setAdapter(new PaletteAdapter(pallet_listmap));
+		binding.recycleSub.setText("Blocks: " + (long) getN(- 1));
+		refreshCount();
+	}
+
+	private void filter(String query) {
+		if (pallet_listmap_backup.isEmpty()) {
+			pallet_listmap_backup.addAll(pallet_listmap);
+		}
+		pallet_listmap.clear();
+		if (query.isEmpty()) {
+			pallet_listmap.addAll(pallet_listmap_backup);
+			pallet_listmap_backup.clear();
+		} else {
+			for (HashMap<String, Object> item : pallet_listmap_backup) {
+				if (Objects.requireNonNull(item.get("name")).toString().toLowerCase().contains(query.toLowerCase())) {
+					pallet_listmap.add(item);
+				}
+			}
+		}
+		Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyDataSetChanged();
+		refreshCount();
+	}
+
+	/**
+	 * Atualiza a disponibilidade do drag com base no estado da busca
+	 */
+	private void updateDragAvailability() {
+		if (isSearchActive) {
+			// Desativa o drag
+			itemTouchHelper.attachToRecyclerView(null);
+		} else {
+			// Reativa o drag
+			itemTouchHelper.attachToRecyclerView(binding.paletteRecycler);
+		}
+		Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyDataSetChanged();
+		refreshCount();
+	}
+
+	private double getN(double _p) {
+		int n = 0;
+		if (all_blocks_list == null) return 0;
+
+		for (int i = 0; i < all_blocks_list.size(); i++) {
+			if (Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString().equals(String.valueOf((long) _p))) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	private void refreshCount() {
+		if (pallet_listmap.isEmpty()) {
+			binding.paletteCount.setText("No palettes");
+		} else {
+			binding.paletteCount.setText(pallet_listmap.size() + " Palettes");
+		}
+	}
+
+	private void recycleBin(View view) {
+		view.setOnClickListener(v -> {
+			Intent intent = new Intent(getApplicationContext(), BlocksManagerDetailsActivity.class);
+			intent.putExtra("position", "-1");
+			intent.putExtra("dirB", blocks_dir);
+			intent.putExtra("dirP", pallet_dir);
+			startActivity(intent);
+		});
+		view.setOnLongClickListener(v -> {
+			new MaterialAlertDialogBuilder(this)
+					.setTitle("Recycle bin")
+					.setMessage("Are you sure you want to empty the recycle bin? " +
+							            "Blocks inside will be deleted PERMANENTLY, you CANNOT recover them!")
+					.setPositiveButton("Empty", (dialog, which) -> emptyRecyclebin())
+					.setNegativeButton(R.string.common_word_cancel, null)
+					.show();
+			return true;
+		});
+	}
+
+	private void removeRelatedBlocks(double _p) {
+		List<Map<String, Object>> newBlocks = new LinkedList<>();
+		for (int i = 0; i < all_blocks_list.size(); i++) {
+			if (! (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p)) {
+				if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) > _p) {
+					HashMap<String, Object> m = all_blocks_list.get(i);
+					m.put("palette", String.valueOf((long) (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) - 1)));
+					newBlocks.add(m);
+				} else {
+					newBlocks.add(all_blocks_list.get(i));
+				}
+			}
+		}
+		FileUtil.writeFile(blocks_dir, getGson().toJson(newBlocks));
+		readSettings();
+	}
+
+	private void swapRelatedBlocks(double f, double s) {
+		final String TEMP_PALETTE = "TEMP_SWAP";
+		for (Map<String, Object> block : all_blocks_list) {
+			Object paletteObj = block.get("palette");
+
+			if (paletteObj == null) continue;
+			double paletteValue;
+			try {
+				paletteValue = Double.parseDouble(paletteObj.toString());
+			} catch (NumberFormatException e) {
+				continue;
+			}
+
+			if (paletteValue == f) {
+				block.put("palette", TEMP_PALETTE);
+			} else if (paletteValue == s) {
+				block.put("palette", String.valueOf((long) f));
+			}
+		}
+		for (Map<String, Object> block : all_blocks_list) {
+			if (TEMP_PALETTE.equals(block.get("palette"))) {
+				block.put("palette", String.valueOf((long) s));
+			}
+		}
+	}
+
+	private void insertBlocksAt(double _p) {
+		for (int i = 0; i < all_blocks_list.size(); i++) {
+			if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) > _p || Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p) {
+				all_blocks_list.get(i).put("palette", String.valueOf((long) (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) + 1)));
+			}
+		}
+		FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
+		readSettings();
+		refreshList();
+	}
+
+	private void moveRelatedBlocksToRecycleBin(double _p) {
+		for (int i = 0; i < all_blocks_list.size(); i++) {
+			if (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == _p) {
+				all_blocks_list.get(i).put("palette", "-1");
+			}
+		}
+		FileUtil.writeFile(blocks_dir, getGson().toJson(all_blocks_list));
+		readSettings();
+	}
+
+	private void emptyRecyclebin() {
+		List<Map<String, Object>> newBlocks = new LinkedList<>();
+		for (int i = 0; i < all_blocks_list.size(); i++) {
+			if (! (Double.parseDouble(Objects.requireNonNull(all_blocks_list.get(i).get("palette")).toString()) == - 1)) {
+				newBlocks.add(all_blocks_list.get(i));
+			}
+		}
+		FileUtil.writeFile(blocks_dir, getGson().toJson(newBlocks));
+		readSettings();
+		refreshList();
+	}
+
+	private void showPaletteDialog(boolean isEditing, Integer oldPosition, String oldName, String oldColor, Integer insertAtPosition) {
+		MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
+		dialog.setIcon(R.drawable.icon_style_white_96);
+		dialog.setTitle(! isEditing ? "Create a new palette" : "Edit palette");
+
+		dialogBinding = DialogPaletteBinding.inflate(getLayoutInflater());
+
+		if (isEditing) {
+			dialogBinding.nameEditText.setText(oldName);
+			dialogBinding.colorEditText.setText(oldColor.replace("#", ""));
+		}
+
+		dialogBinding.openColorPalette.setOnClickListener(v1 -> {
+			ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0xFFFFFFFF, false, false);
+			colorPickerDialog.a(new ColorPickerDialog.b() {
+				@Override
+				public void a(int colorInt) {
+					dialogBinding.colorEditText.setText(String.format("%06X", colorInt & 0x00FFFFFF));
+				}
+
+				@Override
+				public void a(String var1, int var2) {
+
+				}
+			});
+			colorPickerDialog.showAtLocation(dialogBinding.openColorPalette, Gravity.CENTER, 0, 0);
+		});
+
+		dialog.setView(dialogBinding.getRoot());
+
+		dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (v, which) -> {
+			String nameInput = Objects.requireNonNull(dialogBinding.nameEditText.getText()).toString();
+			String colorInput = Objects.requireNonNull(dialogBinding.colorEditText.getText()).toString();
+
+			if (nameInput.isEmpty()) {
+				SketchwareUtil.toast("Name cannot be empty", Toast.LENGTH_SHORT);
+				return;
+			}
+			// add hash for the color
+			colorInput = "#" + colorInput;
+
+			if (! PropertiesUtil.isHexColor(colorInput)) {
+				SketchwareUtil.toast("Please enter a valid HEX color", Toast.LENGTH_SHORT);
+				return;
+			}
+
+			if (PropertiesUtil.isHexColor(colorInput)) {
+				Color.parseColor(colorInput);
+				if (! isEditing) {
+					HashMap<String, Object> map = new HashMap<>();
+					map.put("name", nameInput);
+					map.put("color", colorInput);
+
+					if (insertAtPosition == null) {
+						pallet_listmap.add(map);
+						FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+						Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemInserted(pallet_listmap.size() - 1);
+						readSettings();
+					} else {
+						pallet_listmap.add(insertAtPosition, map);
+						FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+						readSettings();
+						Objects.requireNonNull(binding.paletteRecycler.getAdapter()).notifyItemInserted(insertAtPosition);
+						insertBlocksAt(insertAtPosition + 9);
+					}
+				} else {
+					pallet_listmap.get(oldPosition).put("name", nameInput);
+					pallet_listmap.get(oldPosition).put("color", colorInput);
+					FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+					readSettings();
+					refreshList();
+				}
+				refreshCount();
+				v.dismiss();
+			}
+		});
+
+		dialog.setNegativeButton(Helper.getResString(R.string.cancel), null);
+		dialog.show();
+	}
+
+
+	private boolean isItInTrash(View draggedView, View trash) {
+		if (draggedView == null) return false;
+
+		int[] trashLocation = new int[2];
+		trash.getLocationOnScreen(trashLocation);
+
+		int[] draggedLocation = new int[2];
+		draggedView.getLocationOnScreen(draggedLocation);
+
+		int draggedY = draggedLocation[1];
+
+		return draggedY <= trashLocation[1] + draggedView.getMeasuredHeight() / 2 && draggedY >= trashLocation[1] - draggedView.getMeasuredHeight() / 2;
+	}
+
+	private boolean isItNearTrash(View draggedView, View trash) {
+		if (draggedView == null) return false;
+
+		int[] trashLocation = new int[2];
+		trash.getLocationOnScreen(trashLocation);
+
+		int[] draggedLocation = new int[2];
+		draggedView.getLocationOnScreen(draggedLocation);
+
+		int draggedY = draggedLocation[1];
+
+		return draggedY <= trashLocation[1] + draggedView.getMeasuredHeight() * 2 / 2 && draggedY >= trashLocation[1] - draggedView.getMeasuredHeight() * 2 / 2;
+	}
+
+
+	public class PaletteAdapter extends RecyclerView.Adapter<PaletteAdapter.ViewHolder> {
+
+		private final ArrayList<HashMap<String, Object>> palettes;
+
+		public PaletteAdapter(ArrayList<HashMap<String, Object>> palettes) {
+			this.palettes = palettes;
+
+		}
+
+		@NonNull
+		@Override
+		public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+			PalletCustomviewBinding itemBinding = PalletCustomviewBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+			return new ViewHolder(itemBinding);
+		}
+
+		@SuppressLint("ClickableViewAccessibility")
+		@Override
+		public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+			String paletteColorValue = (String) palettes.get(position).get("color");
+			assert paletteColorValue != null;
+			int backgroundColor = PropertiesUtil.parseColor(paletteColorValue);
+
+			holder.itemView.setVisibility(View.VISIBLE);
+			holder.itemBinding.title.setText(Objects.requireNonNull(pallet_listmap.get(position).get("name")).toString());
+			holder.itemBinding.sub.setText("Blocks: " + (long) getN(position + 9));
+			holder.itemBinding.color.setBackgroundColor(backgroundColor);
+			holder.itemBinding.dragHandler.setVisibility(View.VISIBLE);
+			binding.recycleSub.setText("Blocks: " + (long) getN(- 1));
+
+			// Esconde o handler de drag durante busca
+			holder.itemBinding.dragHandler.setVisibility(isSearchActive ? View.INVISIBLE : View.VISIBLE);
+			holder.itemBinding.dragHandler.setEnabled(isSearchActive ? false : true);
+
+			holder.itemBinding.backgroundCard.setOnLongClickListener(v -> {
+				final String edit = "Edit";
+				final String delete = "Delete";
+				final String insert = "Insert";
+
+				PopupMenu popup = new PopupMenu(BlocksManager.this, holder.itemBinding.color);
+				Menu menu = popup.getMenu();
+				menu.add(edit);
+				menu.add(delete);
+				menu.add(insert);
+				popup.setOnMenuItemClickListener(item -> {
+					int pos = holder.getAbsoluteAdapterPosition();
+					switch (Objects.requireNonNull(item.getTitle()).toString()) {
+						case edit:
+							showPaletteDialog(true, pos,
+									Objects.requireNonNull(pallet_listmap.get(pos).get("name")).toString(),
+									Objects.requireNonNull(pallet_listmap.get(pos).get("color")).toString(), null);
+							break;
+
+						case delete:
+							new MaterialAlertDialogBuilder(BlocksManager.this)
+									.setTitle(Objects.requireNonNull(pallet_listmap.get(pos).get("name")).toString())
+									.setMessage("Remove all blocks related to this palette?")
+									.setPositiveButton("Remove permanently", (dialog, which) -> {
+										palettes.remove(pos);
+										notifyItemRemoved(pos);
+										FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+										removeRelatedBlocks(pos + 9);
+										readSettings();
+										refreshCount();
+									})
+									.setNegativeButton(R.string.common_word_cancel, null)
+									.setNeutralButton(R.string.block_move_to_bin, (dialog, which) -> {
+										moveRelatedBlocksToRecycleBin(position + 9);
+										palettes.remove(pos);
+										notifyItemRemoved(pos);
+										FileUtil.writeFile(pallet_dir, getGson().toJson(pallet_listmap));
+										removeRelatedBlocks(pos + 9);
+										readSettings();
+										refreshCount();
+									}).show();
+							break;
+
+						case insert:
+							showPaletteDialog(false, null, null, null, position);
+							break;
+
+						default:
+					}
+					return true;
+				});
+				popup.show();
+
+				return true;
+			});
+
+			holder.itemBinding.dragHandler.setOnTouchListener((v, event) -> {
+				if (event.getAction() == MotionEvent.ACTION_DOWN) {
+					itemTouchHelper.startDrag(holder);
+				}
+
+				return false;
+			});
+
+			holder.itemBinding.backgroundCard.setOnClickListener(v -> {
+				Intent intent = new Intent(getApplicationContext(), BlocksManagerDetailsActivity.class);
+				intent.putExtra("position", String.valueOf((long) (holder.getAbsoluteAdapterPosition() + 9)));
+				intent.putExtra("dirB", blocks_dir);
+				intent.putExtra("dirP", pallet_dir);
+				startActivity(intent);
+			});
+
+		}
+
+		@Override
+		public int getItemCount() {
+			return palettes.size();
+		}
+
+		public static class ViewHolder extends RecyclerView.ViewHolder {
+			public PalletCustomviewBinding itemBinding;
+
+			public ViewHolder(PalletCustomviewBinding itemBinding) {
+				super(itemBinding.getRoot());
+				this.itemBinding = itemBinding;
+			}
+		}
+	}
 }
-

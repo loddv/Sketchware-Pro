@@ -14,7 +14,9 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
@@ -53,6 +55,7 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 
 	private static final Pattern PARAM_PATTERN = Pattern.compile("%m(?!\\.[\\w]+)");
 	private final ArrayList<String> id_detector = new ArrayList<>();
+	private final List<Param> paramList = new ArrayList<>(); // Nova lista com pares
 	private ActivityBlocksManagerCreatorBinding binding;
 	private ArrayList<HashMap<String, Object>> blocksList = new ArrayList<>();
 	/**
@@ -63,8 +66,10 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 	 * Position of current editing/adding/inserting block in palette
 	 */
 	private int blockPosition = 0;
+	private ArrayList<String> autoCompleteList = new ArrayList<>(); // Não será mais usado diretamente
 	private String palletColour = "";
 	private String path = "";
+	private MultiAutoCompleteTextView specAutoComplete;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -136,10 +141,11 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 			);
 			AtomicInteger choice = new AtomicInteger();
 			new MaterialAlertDialogBuilder(this).setTitle("Block type")
-					.setSingleChoiceItems(choices.toArray(new String[0]),
+					.setSingleChoiceItems(choices.toArray(new CharSequence[0]),
 							types.indexOf(Helper.getText(binding.type)), (dialog, which) -> choice.set(which))
 					.setPositiveButton(R.string.common_word_save, (dialog, which) -> binding.type.setText(types.get(choice.get())))
 					.setNegativeButton(R.string.common_word_cancel, null)
+					.setBackground(new android.graphics.drawable.ColorDrawable(MaterialColors.getColor(this, R.attr.colorSurfaceContainerLowest, Color.WHITE)))
 					.create().show();
 		});
 
@@ -161,7 +167,8 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 			}
 		});
 
-		binding.spec.addTextChangedListener(new BaseTextWatcher() {
+		MultiAutoCompleteTextView specAutoComplete = (MultiAutoCompleteTextView) binding.spec;
+		specAutoComplete.addTextChangedListener(new BaseTextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence s, int start, int before, int count) {
 				updateBlockSpec(Helper.getText(binding.type), Helper.getText(binding.colour));
@@ -232,8 +239,11 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 	private void initializeLogic() {
 		inputProperties();
 		addParameters();
+		addSugestions();
 		receiveIntents();
-		new SimpleHighlighter(binding.code);
+		setupAutoComplete();    // Configura o AutoComplete com nomes amigáveis
+		new SimpleHighlighter(binding.code); // This does nothing on EditTexts without a custom TextPaint
+		new SimpleHighlighter(binding.spec);
 
 		{
 			View view = binding.content;
@@ -269,25 +279,53 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		textView.setLayoutParams(new LinearLayout.LayoutParams(
 				ViewGroup.LayoutParams.WRAP_CONTENT,
 				ViewGroup.LayoutParams.MATCH_PARENT));
-		textView.setPadding(
-				(int) SketchwareUtil.getDip(8),
-				0,
-				(int) SketchwareUtil.getDip(8),
-				0
-		);
+		int padding = (int) SketchwareUtil.getDip(8);
+		textView.setPadding(padding, 0, padding, 0);
 		textView.setTextColor(MaterialColors.getColor(textView, R.attr.colorPrimary));
 		textView.setText(name);
 		textView.setTextSize(14.0f);
 		textView.setTypeface(Typeface.DEFAULT_BOLD);
+
+		textView.setOnClickListener(v -> {
+			String currentText = Helper.getText(binding.spec);
+			int selectionStart = binding.spec.getSelectionStart();
+			if (selectionStart == - 1) selectionStart = currentText.length();
+
+			StringBuilder sb = new StringBuilder(currentText);
+			sb.insert(selectionStart, menu);
+			binding.spec.setText(sb.toString());
+			binding.spec.setSelection(selectionStart + menu.length());
+		});
+
+		return textView;
+	}
+	/*private View addBlockMenu(String menu, String name) {
+		TextView textView = new TextView(this);
+		textView.setLayoutParams(new LinearLayout.LayoutParams(
+				ViewGroup.LayoutParams.WRAP_CONTENT,
+				ViewGroup.LayoutParams.MATCH_PARENT));
+		int padding = (int) SketchwareUtil.getDip(8);
+		textView.setPadding(padding, 0, padding, 0);
+		textView.setTextColor(MaterialColors.getColor(textView, R.attr.colorPrimary));
+		textView.setText(name);
+		textView.setTextSize(14.0f);
+		textView.setTypeface(Typeface.DEFAULT_BOLD);
+		binding.spec.setOnItemClickListener((parent, view, position, id) -> {
+			Param param = (Param) parent.getItemAtPosition(position);
+			String menuToInsert = param.getPlaceholder(); // ex: "%m.webview "
+			textView.performClick();
+		});
 		textView.setOnClickListener(v -> {
 			StringBuilder sb = new StringBuilder(Helper.getText(binding.spec));
 			int selectionStart = binding.spec.getSelectionStart();
 			sb.insert(selectionStart, menu);
+			Log.d("TAG", "terminateToken4: " + menu);
 			binding.spec.setText(sb);
+			Log.d("TAG", "terminateToken5: " + sb);
 			binding.spec.setSelection(selectionStart + menu.length());
 		});
 		return textView;
-	}
+	}*/
 
 	private void inputProperties() {
 		binding.name.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
@@ -296,7 +334,7 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		binding.type.setMaxLines(1);
 		binding.typename.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		binding.typename.setMaxLines(1);
-		binding.spec.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+		/*binding.spec.setInputType(InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_CONVERSION_SUGGESTIONS);*/
 		binding.spec.setMaxLines(1);
 		binding.colour.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
 		binding.colour.setMaxLines(1);
@@ -381,6 +419,126 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		binding.parametersHolder.addView(addBlockMenu("%m.view", "View"));
 		binding.parametersHolder.addView(addBlockMenu("%m.viewpager", "ViewPager"));
 		binding.parametersHolder.addView(addBlockMenu("%m.webview", "WebView"));
+	}
+
+	private void addSugestions() {
+		// Lista de parâmetros: {placeholder, displayName}
+		String[][] rawParams = {
+				{"%s.inputOnly", "InputOnly"},
+				{"%s", "String"},
+				{"%b", "Boolean"},
+				{"%d", "Number"},
+				{"%m.activity", "Activity"},
+				{"%m.anim", "Anim"},
+				{"%m.color", "Color"},
+				{"%m.customViews", "Custom Views"},
+				{"%m.drawable", "Drawable"},
+				{"%m.edittext", "EditText"},
+				{"%m.imageview", "ImageView"},
+				{"%m.intent", "Intent"},
+				{"%m.layout", "Layout"},
+				{"%m.list", "List"},
+				{"%m.listInt", "ListNumber"},
+				{"%m.listMap", "ListMap"},
+				{"%m.listStr", "ListString"},
+				{"%m.listview", "ListView"},
+				{"%m.resource", "Resource"},
+				{"%m.ResString", "ResStrings"},
+				{"%m.textview", "TextView"},
+				{"%m.varMap", "Map"},
+				{"%m.view", "View"},
+				{"%m.actv", "AutoComplete"},
+				{"%m.badgeview", "BadgeView"},
+				{"%m.bottomnavigation", "BottomNavigation"},
+				{"%m.calendarview", "CalendarView"},
+				{"%m.cardview", "CardView"},
+				{"%m.checkbox", "CheckBox"},
+				{"%m.class", "Class"},
+				{"%m.codeview", "CodeView"},
+				{"%m.cv_language", "CV_Language"},
+				{"%m.cv_theme", "CV_Theme"},
+				{"%m.fabsize", "FabSize"},
+				{"%m.fabvisible", "FabVisible"},
+				{"%m.fragmentAdapter", "FragmentAdapter"},
+				{"%m.gravity_h", "Gravity_Horizontal"},
+				{"%m.gravity_v", "Gravity_Vertical"},
+				{"%m.gridview", "GridView"},
+				{"%m.image", "Image"},
+				{"%m.import", "Import"},
+				{"%m.inputstream", "InputStream"},
+				{"%m.listscrollparam", "ListScrollParam"},
+				{"%m.lottie", "Lottie"},
+				{"%m.mactv", "MultiAutoComplete"},
+				{"%m.menuaction", "MenuAction"},
+				{"%m.pagerscrollparam", "PagerScrollParam"},
+				{"%m.patternview", "PatternView"},
+				{"%m.porterduff", "PorterDuff"},
+				{"%m.progressbar", "ProgressBar"},
+				{"%m.radiobutton", "RadioButton"},
+				{"%m.ratingbar", "RatingBar"},
+				{"%m.recyclerscrollparam", "RecyclerScrollParam"},
+				{"%m.recyclerview", "RecyclerView"},
+				{"%m.resource_bg", "Resource_BG"},
+				{"%m.searchview", "SearchView"},
+				{"%m.seekbar", "SeekBar"},
+				{"%m.sidebar", "SideBar"},
+				{"%m.spinner", "Spinner"},
+				{"%m.submenu", "SubMenuA"},
+				{"%m.swiperefreshlayout", "SwipeRefreshLayout"},
+				{"%m.switch", "Switch"},
+				{"%m.tablayout", "TabLayout"},
+				{"%m.textinputlayout", "TextInputLayout"},
+				{"%m.timepicker", "TimePicker"},
+				{"%m.transcriptmode", "TranscriptMode"},
+				{"%m.varInt", "Int"},
+				{"%m.videoview", "VideoView"},
+				{"%m.viewpager", "ViewPager"},
+				{"%m.webview", "WebView"}
+		};
+
+		// Evita duplicatas no displayName
+		java.util.LinkedHashMap<String, Param> uniqueParams = new java.util.LinkedHashMap<>();
+
+		for (String[] p : rawParams) {
+			String placeholder = p[0];
+			String displayName = p[1];
+
+			// Adiciona ao mapa (evita duplicatas por displayName)
+			if (! uniqueParams.containsKey(displayName)) {
+				uniqueParams.put(displayName, new Param(placeholder, displayName));
+			}
+		}
+
+		// Converte para lista ordenada
+		paramList.addAll(uniqueParams.values());
+	}
+
+	private void setupAutoComplete() {
+		ArrayAdapter<Param> adapter = new ArrayAdapter<>(
+				this,
+				android.R.layout.simple_dropdown_item_1line,
+				paramList
+		);
+
+		specAutoComplete = binding.spec;
+		specAutoComplete.setAdapter(adapter);
+		specAutoComplete.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+
+		// Configura o clique no item do dropdown
+		specAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
+			Param selectedParam = (Param) parent.getItemAtPosition(position);
+			String placeholder = selectedParam.getPlaceholder(); // já inclui espaço no final
+
+			String currentText = Helper.getText(binding.spec);
+			int selectionStart = binding.spec.getSelectionStart();
+			if (selectionStart == - 1) selectionStart = currentText.length();
+
+			StringBuilder sb = new StringBuilder(currentText);
+			sb.insert(selectionStart, placeholder);
+
+			binding.spec.setText(sb.toString());
+			binding.spec.setSelection(selectionStart + placeholder.length());
+		});
 	}
 
 	private void receiveIntents() {
@@ -516,6 +674,7 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		try {
 			var block = new Rs(this, - 1, Helper.getText(binding.spec), blockType, Helper.getText(binding.name));
 			block.e = PropertiesUtil.isHexColor(color) ? PropertiesUtil.parseColor(color) : Color.parseColor("#F0F0F0");
+			block.setDrawingCacheBackgroundColor(0x00000000);
 			binding.blockArea.addView(block);
 		} catch (Exception e) {
 			var block = new TextView(this);
@@ -604,5 +763,24 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		FileUtil.writeFile(path, getGson().toJson(blocksList));
 		SketchwareUtil.toast("Saved");
 		finish();
+	}
+
+	private static class Param {
+		String placeholder;
+		String displayName;
+
+		Param(String placeholder, String displayName) {
+			this.placeholder = placeholder.endsWith(" ") ? placeholder : placeholder + " ";
+			this.displayName = displayName;
+		}
+
+		@Override
+		public String toString() {
+			return displayName;
+		}
+
+		public String getPlaceholder() {
+			return placeholder;
+		}
 	}
 }

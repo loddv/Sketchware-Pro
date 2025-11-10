@@ -27,12 +27,12 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -45,6 +45,7 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
@@ -62,6 +63,7 @@ import com.besome.sketch.editor.manage.view.ManageViewActivity;
 import com.besome.sketch.lib.base.BaseAppCompatActivity;
 import com.besome.sketch.lib.ui.CustomViewPager;
 import com.besome.sketch.tools.CompileLogActivity;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
@@ -74,6 +76,7 @@ import com.topjohnwu.superuser.Shell;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,6 +123,7 @@ import mod.jbk.diagnostic.CompileErrorSaver;
 import mod.jbk.diagnostic.MissingFileException;
 import mod.jbk.util.LogUtil;
 import mod.khaled.logcat.LogReaderActivity;
+import mod.loddv.dev.designer.GridOptionAdapter;
 import pro.sketchware.R;
 import pro.sketchware.activities.appcompat.ManageAppCompatActivity;
 import pro.sketchware.activities.editor.command.ManageXMLCommandActivity;
@@ -146,8 +150,9 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 	private DB r;
 	private DB t;
 	private Menu bottomMenu;
-	private PopupMenu bottomPopupMenu;
 	private MaterialButton btnRun;
+	private BottomSheetDialog bottomSheetDialog;
+	private RecyclerView recyclerView;
 	private MaterialButton btnOptions;
 	private ProjectFileBean projectFile;
 	private TextView fileName;
@@ -485,47 +490,71 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 		});
 
 		btnOptions = findViewById(R.id.btn_options);
-		btnOptions.setOnClickListener(v -> bottomPopupMenu.show());
 
-		bottomPopupMenu = new PopupMenu(this, btnOptions);
-		bottomMenu = bottomPopupMenu.getMenu();
-		bottomMenu.add(Menu.NONE, 1, Menu.NONE, "Build Settings").setOnMenuItemClickListener(item -> {
+		bottomSheetDialog = new BottomSheetDialog(this);
+		View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_options, null);
+		bottomSheetDialog.setContentView(bottomSheetView);
+
+		recyclerView = bottomSheetView.findViewById(R.id.options_grid);
+		recyclerView.setLayoutManager(new GridLayoutManager(this, 1, LinearLayoutManager.HORIZONTAL, false));
+
+		List<GridOptionAdapter.Option> options = new ArrayList<>();
+
+		options.add(new GridOptionAdapter.Option("Build Settings", R.drawable.ic_mtrl_circle_play, v -> {
 			BuildSettingsBottomSheet sheet = BuildSettingsBottomSheet.newInstance(sc_id);
 			sheet.show(getSupportFragmentManager(), BuildSettingsBottomSheet.TAG);
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 2, Menu.NONE, "Clean temporary files").setVisible(false).setOnMenuItemClickListener(item -> {
+			bottomSheetDialog.dismiss();
+		}));
+
+		options.add(new GridOptionAdapter.Option("Clean temp files", R.drawable.ic_mtrl_delete, v -> {
 			new Thread(() -> {
 				FileUtil.deleteFile(q.projectMyscPath);
 				updateBottomMenu();
-				runOnUiThread(() -> SketchwareUtil.toast("Done cleaning temporary files!"));
+				runOnUiThread(() -> SketchwareUtil.toast("Done cleaning temp files!"));
 			}).start();
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 3, Menu.NONE, "Show last compile error").setOnMenuItemClickListener(item -> {
+			bottomSheetDialog.dismiss();
+		}).setId(R.id.action_clean_temp_files)); // OK
+
+		options.add(new GridOptionAdapter.Option("Last compile err", R.drawable.ic_mtrl_warning, v -> {
 			new CompileErrorSaver(sc_id).showLastErrors(this);
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 5, Menu.NONE, "Show source code").setOnMenuItemClickListener(item -> {
+			bottomSheetDialog.dismiss();
+		}));
+
+		options.add(new GridOptionAdapter.Option("Source code", R.drawable.ic_mtrl_code, v -> {
 			showCurrentActivitySrcCode();
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 4, Menu.NONE, "Install last built APK").setVisible(false).setOnMenuItemClickListener(item -> {
+			bottomSheetDialog.dismiss();
+		}));
+
+		options.add(new GridOptionAdapter.Option("Install last APK", R.drawable.ic_mtrl_android, v -> {
 			if (FileUtil.isExistFile(q.finalToInstallApkPath)) {
 				installBuiltApk();
-			} else SketchwareUtil.toast("APK doesn't exist anymore");
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 6, Menu.NONE, "Show Apk signatures").setVisible(false).setOnMenuItemClickListener(item -> {
+			} else {
+				SketchwareUtil.toast("APK does not exist anymore");
+			}
+			bottomSheetDialog.dismiss();
+		}).setId(R.id.action_install_apk)); // OK
+
+		options.add(new GridOptionAdapter.Option("Show Apk signatures", R.drawable.ic_mtrl_key, v -> {
 			ApkSignatures apkSignatures = new ApkSignatures(this, q.finalToInstallApkPath);
 			apkSignatures.showSignaturesDialog();
-			return true;
-		});
-		bottomMenu.add(Menu.NONE, 7, Menu.NONE, "Direct XML editor").setOnMenuItemClickListener(item -> {
+			bottomSheetDialog.dismiss();
+		}).setId(R.id.action_show_signatures)); // OK
+
+		options.add(new GridOptionAdapter.Option("XML editor", R.drawable.ic_mtrl_frame_source, v -> {
 			toViewCodeEditor();
-			return true;
+			bottomSheetDialog.dismiss();
+		}).setId(R.id.action_direct_xml_editor)); // OK
+
+		recyclerView.setAdapter(new GridOptionAdapter(options));
+
+		btnOptions.setOnClickListener(v -> {
+			if (bottomSheetDialog != null && ! bottomSheetDialog.isShowing()) {
+				bottomSheetDialog.show();
+
+			}
 		});
-		bottomPopupMenu.setOnDismissListener(menu -> btnOptions.setChecked(false));
+
+		bottomSheetDialog.setOnDismissListener(menu -> btnOptions.setChecked(false));
 
 		xmlLayoutOrientation = findViewById(R.id.img_orientation);
 		viewPager = findViewById(R.id.viewpager);
@@ -551,13 +580,13 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 					componentTabAdapter.unselectAll();
 				}
 				if (position == 0) {
-					bottomMenu.findItem(7).setVisible(true);
+					updateOptionVisibility(R.id.action_direct_xml_editor, true);
 					if (viewTabAdapter != null) {
 						viewTabAdapter.showHidePropertyView(true);
 						xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_screen);
 					}
 				} else if (position == 1) {
-					bottomMenu.findItem(7).setVisible(false);
+					updateOptionVisibility(R.id.action_direct_xml_editor, false);
 					if (viewTabAdapter != null) {
 						xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_code);
 						viewTabAdapter.showHidePropertyView(false);
@@ -566,7 +595,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 						}
 					}
 				} else {
-					bottomMenu.findItem(7).setVisible(false);
+					updateOptionVisibility(R.id.action_direct_xml_editor, false);
 					if (viewTabAdapter != null) {
 						xmlLayoutOrientation.setImageResource(R.drawable.ic_mtrl_code);
 						viewTabAdapter.showHidePropertyView(false);
@@ -591,6 +620,32 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 
 	}
 
+	private View addOptionItem(LinearLayout container, String title, int iconResId, View.OnClickListener listener) {
+		View itemView = getLayoutInflater().inflate(R.layout.property_grid_item, container, false);
+		TextView titleView = itemView.findViewById(R.id.tv_title);
+		ImageView iconView = itemView.findViewById(R.id.img_icon);
+		titleView.setText(title);
+		iconView.setImageResource(iconResId);
+		itemView.setOnClickListener(listener);
+		container.addView(itemView);
+		return itemView;
+	}
+
+	/**
+	 * Updates the visibility of a view inside the bottom sheet.
+	 * Handles cases where the dialog or the view within it may not exist.
+	 */
+	private void updateOptionVisibility(@IdRes int viewId, boolean isVisible) {
+		if (bottomSheetDialog == null) {
+			Log.w("OptionVisibility", "BottomSheetDialog is null, cannot update view visibility.");
+			return; // Early exit
+		}
+
+		if (recyclerView != null && recyclerView.getAdapter() instanceof GridOptionAdapter adapter) {
+			adapter.setItemVisibility(viewId, isVisible);
+		}
+	}
+
 	private boolean isDebugApkExists() {
 		if (q != null) {
 			return FileUtil.isExistFile(q.finalToInstallApkPath);
@@ -599,14 +654,17 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 	}
 
 	private void updateBottomMenu() {
-		if (bottomMenu != null) {
-			handler.post(() -> {
-				bottomMenu.findItem(2).setVisible(q != null && FileUtil.isExistFile(q.projectMyscPath));
-				var isDebugApkExists = isDebugApkExists();
-				bottomMenu.findItem(4).setVisible(isDebugApkExists);
-				bottomMenu.findItem(6).setVisible(isDebugApkExists);
-			});
-		}
+		handler.post(() -> {
+			boolean projectMyscPathExists = q != null && FileUtil.isExistFile(q.projectMyscPath);
+			updateOptionVisibility(R.id.action_clean_temp_files, projectMyscPathExists);
+
+			boolean isDebugApkExists = isDebugApkExists();
+			/*updateOptionVisibility(2, false);*/
+			updateOptionVisibility(R.id.action_install_apk, isDebugApkExists);
+
+			/*updateOptionVisibility(R.id.action_show_signatures, isDebugApkExists);*/
+			updateOptionVisibility(R.id.action_show_signatures, isDebugApkExists);
+		});
 	}
 
 	@Override

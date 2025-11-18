@@ -156,12 +156,13 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 		} else {
 			finish();
 		}
+		super.onBackPressed();
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		menu.clear();
-		if (Integer.parseInt(getIntent().getStringExtra("position")) != - 1) {
+		if (Integer.parseInt(Objects.requireNonNull(getIntent().getStringExtra("position"))) != - 1) {
 			if (mode.equals("normal")) {
 				menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Swap").setIcon(AppCompatResources.getDrawable(this, R.drawable.ic_mtrl_swap_vertical)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 				menu.add(Menu.NONE, Menu.NONE, Menu.NONE, "Import");
@@ -175,7 +176,7 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(@NonNull MenuItem menuItem) {
-		String title = menuItem.getTitle().toString();
+		String title = Objects.requireNonNull(menuItem.getTitle()).toString();
 		switch (title) {
 			case "Swap":
 				if (mode.equals("normal")) {
@@ -225,7 +226,7 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 			Object paletteName = pallet_list.get(palette - 9).get("name");
 
 			if (paletteName instanceof String) {
-				getSupportActionBar().setTitle("Manage Block");
+				Objects.requireNonNull(getSupportActionBar()).setTitle("Manage Block");
 				getSupportActionBar().setSubtitle((String) paletteName);
 			}
 		}
@@ -234,16 +235,17 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 	private void _refreshLists() {
 		filtered_list.clear();
 		reference_list.clear();
+
+		// Ensure palette and block files exist before reading, creating them if necessary.
+		if (! FileUtil.isExistFile(pallet_path)) {
+			FileUtil.writeFile(pallet_path, "[]");
+		}
+		if (! FileUtil.isExistFile(blocks_path)) {
+			FileUtil.writeFile(blocks_path, "[]");
+		}
+
 		String paletteFileContent = FileUtil.readFile(pallet_path);
 		String blocksFileContent = FileUtil.readFile(blocks_path);
-		if (paletteFileContent.isEmpty()) {
-			FileUtil.writeFile(pallet_path, "[]");
-			paletteFileContent = "[]";
-		}
-		if (blocksFileContent.isEmpty()) {
-			FileUtil.writeFile(blocks_path, "[]");
-			blocksFileContent = "[]";
-		}
 
 		parseLists:
 		{
@@ -253,11 +255,13 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 				if (pallet_list != null) {
 					break parseLists;
 				}
+				// if file was empty or contained "null", fromJson returns null
 				// fall-through to shared error handling
 			} catch (JsonParseException e) {
 				// fall-through to shared error handling
 			}
 
+			// Handle JSON parsing errors or null content
 			SketchwareUtil.showFailedToParseJsonDialog(this, new File(pallet_path), "Custom Block Palettes", v -> _refreshLists());
 			pallet_list = new ArrayList<>();
 		}
@@ -270,11 +274,14 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 				if (all_blocks_list != null) {
 					break parseBlocks;
 				}
+				// if file was empty or contained "null", fromJson returns null
 				// fall-through to shared error handling
 			} catch (JsonParseException e) {
+				SketchwareUtil.toastError("Invalid JSON file\n" + e.getMessage());
 				// fall-through to shared error handling
 			}
 
+			// Handle JSON parsing errors or null content
 			SketchwareUtil.showFailedToParseJsonDialog(this, new File(blocks_path), "Custom Blocks", v -> _refreshLists());
 			all_blocks_list = new ArrayList<>();
 		}
@@ -313,7 +320,7 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 			menu.add("Delete permanently");
 			menu.add("Restore");
 			popupMenu.setOnMenuItemClickListener(item -> {
-				switch (item.getTitle().toString()) {
+				switch (Objects.requireNonNull(item.getTitle()).toString()) {
 					case "Delete permanently":
 						_deleteBlock(position);
 						break;
@@ -337,14 +344,17 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 		menu.add("Duplicate");
 		menu.add("Move to palette");
 		popupMenu.setOnMenuItemClickListener(item -> {
-			switch (item.getTitle().toString()) {
+			switch (Objects.requireNonNull(item.getTitle()).toString()) {
 				case "Duplicate":
 					_duplicateBlock(position);
 					break;
 
 				case "Insert above":
 					Object paletteColor = pallet_list.get(palette - 9).get("color");
-					if (paletteColor instanceof String) {
+					// Assuming paletteList is a List<Map<String, Object>>
+					/*Map<String, Object> colorMap = pallet_list.get(palette - 9);*/
+
+					if (paletteColor != null && paletteColor instanceof String) {
 						Intent intent = new Intent(getApplicationContext(), BlocksManagerCreatorActivity.class);
 						intent.putExtra("mode", "insert");
 						intent.putExtra("path", blocks_path);
@@ -407,44 +417,130 @@ public class BlocksManagerDetailsActivity extends BaseAppCompatActivity {
 	}
 
 	private void _changePallette(int position) {
-		ArrayList<String> paletteNames = new ArrayList<>();
-		for (int j = 0, pallet_listSize = pallet_list.size(); j < pallet_listSize; j++) {
-			HashMap<String, Object> palette = pallet_list.get(j);
-			Object name = palette.get("name");
+		// 1. Verificar se a posição é válida
+		if (position < 0 || position >= all_blocks_list.size()) {
+			SketchwareUtil.toastError("Invalid block position: " + position);
+			return;
+		}
 
-			if (name instanceof String) {
-				paletteNames.add((String) name);
+		// 2. Verificar se pallet_list não é nula e tem elementos
+		if (pallet_list == null || pallet_list.isEmpty()) {
+			SketchwareUtil.toastError("Palette list is empty or null");
+			return;
+		}
+
+		// 3. Construir lista de nomes de paleta com segurança
+		ArrayList<String> paletteNames = new ArrayList<>();
+		for (int j = 0; j < pallet_list.size(); j++) {
+			HashMap<String, Object> palette = pallet_list.get(j);
+			if (palette == null) {
+				SketchwareUtil.toastError("Palette #" + (j + 1) + " is null");
+				continue;
+			}
+
+			Object nameObj = palette.get("name");
+			if (nameObj instanceof String && ! ((String) nameObj).trim().isEmpty()) {
+				paletteNames.add((String) nameObj);
 			} else {
-				SketchwareUtil.toastError("Invalid name of Custom Block palette #" + (j + 1));
+				String errorMsg = nameObj == null
+						                  ? "Missing name in palette #" + (j + 1)
+						                  : "Invalid name type in palette #" + (j + 1) + ": " + nameObj.getClass().getSimpleName();
+				SketchwareUtil.toastError(errorMsg);
+				paletteNames.add("Unnamed Palette #" + (j + 1)); // fallback
 			}
 		}
 
+		if (paletteNames.isEmpty()) {
+			SketchwareUtil.toastError("No valid palettes available");
+			return;
+		}
+
+		// 4. Obter bloco atual com segurança
+		HashMap<String, Object> currentBlock = all_blocks_list.get(position);
+		if (currentBlock == null) {
+			SketchwareUtil.toastError("Current block is null");
+			return;
+		}
+
+		// 5. Determinar se é "Restore" ou "Move"
+		Object paletteObj = currentBlock.get("palette");
+		int currentPaletteIndex = - 1;
+		if (paletteObj instanceof String) {
+			try {
+				currentPaletteIndex = Integer.parseInt((String) paletteObj);
+			} catch (NumberFormatException e) {
+				// ignorar, será tratado como -1
+			}
+		} else if (paletteObj instanceof Number) {
+			currentPaletteIndex = ((Number) paletteObj).intValue();
+		}
+
+		final int palette = currentPaletteIndex; // valor final para uso em lambda
+
 		MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(this)
 				                                     .setNegativeButton(R.string.common_word_cancel, null);
+
 		if (palette == - 1) {
+			// Modo RESTORE
 			AtomicInteger restoreToChoice = new AtomicInteger(- 1);
 			builder.setTitle("Restore to")
-					.setSingleChoiceItems(paletteNames.toArray(new String[0]), - 1, (dialog, which) -> restoreToChoice.set(which))
+					.setSingleChoiceItems(paletteNames.toArray(new String[0]), - 1,
+							(dialog, which) -> restoreToChoice.set(which))
 					.setPositiveButton("Restore", (dialog, which) -> {
-						if (restoreToChoice.get() != - 1) {
-							all_blocks_list.get(position).put("palette", String.valueOf(restoreToChoice.get() + 9));
-							Collections.swap(all_blocks_list, position, all_blocks_list.size() - 1);
-							FileUtil.writeFile(blocks_path, getGson().toJson(all_blocks_list));
-							_refreshLists();
+						int choice = restoreToChoice.get();
+						if (choice >= 0 && choice < paletteNames.size()) {
+							currentBlock.put("palette", String.valueOf(choice + 9));
+							swapAndSave(position);
+						} else {
+							SketchwareUtil.toastError("Invalid restore selection");
 						}
 					});
 		} else {
-			AtomicInteger moveToChoice = new AtomicInteger(palette - 9);
+			// Modo MOVE
+			int initialSelection = palette - 9;
+			if (initialSelection < 0 || initialSelection >= paletteNames.size()) {
+				SketchwareUtil.toastError("Current palette index out of range: " + palette);
+				return;
+			}
+
+			AtomicInteger moveToChoice = new AtomicInteger(initialSelection);
 			builder.setTitle("Move to")
-					.setSingleChoiceItems(paletteNames.toArray(new String[0]), palette - 9, (dialog, which) -> moveToChoice.set(which))
+					.setSingleChoiceItems(paletteNames.toArray(new String[0]), initialSelection,
+							(dialog, which) -> moveToChoice.set(which))
 					.setPositiveButton("Move", (dialog, which) -> {
-						all_blocks_list.get(position).put("palette", String.valueOf(moveToChoice.get() + 9));
-						Collections.swap(all_blocks_list, position, all_blocks_list.size() - 1);
-						FileUtil.writeFile(blocks_path, getGson().toJson(all_blocks_list));
-						_refreshLists();
+						int choice = moveToChoice.get();
+						if (choice >= 0 && choice < paletteNames.size()) {
+							currentBlock.put("palette", String.valueOf(choice + 9));
+							swapAndSave(position);
+						} else {
+							SketchwareUtil.toastError("Invalid move selection");
+						}
 					});
 		}
-		builder.show();
+
+		try {
+			builder.show();
+		} catch (Exception e) {
+			SketchwareUtil.toastError("Failed to show dialog: " + e.getMessage());
+		}
+	}
+
+	// Método auxiliar para reutilizar swap + save
+	private void swapAndSave(int position) {
+		if (position < 0 || position >= all_blocks_list.size()) return;
+
+		int lastIndex = all_blocks_list.size() - 1;
+		if (position != lastIndex) {
+			Collections.swap(all_blocks_list, position, lastIndex);
+		}
+
+		String json = getGson().toJson(all_blocks_list);
+		if (json != null && FileUtil.isExistFile(blocks_path)) {
+			FileUtil.writeFile(blocks_path, json);
+			_refreshLists();
+		} else {
+			SketchwareUtil.toastError("Failed to save blocks data");
+		}
 	}
 
 	private void _importBlocks(ArrayList<HashMap<String, Object>> blocks) {

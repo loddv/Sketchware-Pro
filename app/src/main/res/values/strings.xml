@@ -2306,6 +2306,5 @@ Please try again later"</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
-
-
+    <string name="link_sw_assist">https://play.google.com/store/apps/details?id=com.w3wide.swassist</string>
 </resources>

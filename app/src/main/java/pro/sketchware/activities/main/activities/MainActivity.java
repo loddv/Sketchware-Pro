@@ -41,10 +41,14 @@ import java.util.Objects;
 
 import a.a.a.DB;
 import a.a.a.GB;
+import a.a.a.oB;
+import a.a.a.wq;
+import a.a.a.xB;
 import mod.hey.studios.project.backup.BackupFactory;
 import mod.hey.studios.project.backup.BackupRestoreManager;
 import mod.hey.studios.util.Helper;
 import mod.hilal.saif.activities.tools.ConfigActivity;
+import mod.jbk.util.LogUtil;
 import mod.tyron.backup.SingleCopyTask;
 import pro.sketchware.R;
 import pro.sketchware.activities.about.AboutActivity;
@@ -169,7 +173,7 @@ public class MainActivity extends BasePermissionAppCompatActivity {
 		SplashScreen.installSplashScreen(this);
 		super.onCreate(savedInstanceState);
 		enableEdgeToEdgeNoContrast();
-
+		tryLoadingCustomizedAppStrings();
 		binding = MainBinding.inflate(getLayoutInflater());
 
 		setContentView(binding.getRoot());
@@ -484,4 +488,25 @@ public class MainActivity extends BasePermissionAppCompatActivity {
 		}
 	}
 
+	//This is annoying Please remove/togglize it
+	private void tryLoadingCustomizedAppStrings() {
+		// Refresh extracted provided strings file if necessary
+		oB oB = new oB();
+		try {
+			File extractedStringsProvidedXml = new File(wq.m());
+			if (oB.a(getApplicationContext(), "localization/strings.xml") != (extractedStringsProvidedXml.exists() ? extractedStringsProvidedXml.length() : 0)) {
+				oB.a(extractedStringsProvidedXml);
+				oB.a(getApplicationContext(), "localization/strings.xml", wq.m());
+			}
+		} catch (Exception e) {
+			String message = "Couldn't extract default strings to storage";
+			SketchwareUtil.toastError(message + ": " + e.getMessage());
+			LogUtil.e("MainActivity", message, e);
+		}
+
+		// Actual loading part
+		if (xB.b().b(getApplicationContext())) {
+			SketchwareUtil.toast(Helper.getResString(R.string.message_strings_xml_loaded));
+		}
+	}
 }

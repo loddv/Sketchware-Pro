@@ -47,7 +47,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -330,22 +330,38 @@ public class FileUtil {
 	}
 
 	public static void listDir(String path, ArrayList<String> list) {
-		File[] listFiles;
+		if (list == null) return;
+
 		File dir = new File(path);
-		if (dir.exists() && ! dir.isFile() && (listFiles = dir.listFiles()) != null && listFiles.length > 0 && list != null) {
+		if (! dir.isDirectory()) {
 			list.clear();
-			for (File file : listFiles) {
-				list.add(file.getAbsolutePath());
-			}
+			return;
+		}
+
+		File[] files = dir.listFiles();
+		if (files == null) {
+			list.clear();
+			return;
+		}
+
+		list.clear();
+		list.ensureCapacity(files.length);
+		String parent = dir.getAbsolutePath() + File.separator;
+
+		for (File file : files) {
+			list.add(parent + file.getName());  // Mais rápido que getAbsolutePath()
 		}
 	}
 
 	public static void listDirAsFile(String path, ArrayList<File> list) {
-		File[] listFiles;
+		if (list == null) return;
+
 		File dir = new File(path);
-		if (dir.exists() && ! dir.isFile() && (listFiles = dir.listFiles()) != null && listFiles.length > 0 && list != null) {
-			list.clear();
-			Collections.addAll(list, listFiles);
+		File[] files = dir.isDirectory() ? dir.listFiles() : null;
+
+		list.clear();
+		if (files != null) {
+			list.addAll(Arrays.asList(files));  // Rápido e limpo
 		}
 	}
 

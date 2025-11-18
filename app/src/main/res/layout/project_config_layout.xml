@@ -52,6 +52,22 @@
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
+        android:text="Resource processor"
+        android:textAppearance="?attr/textAppearanceBodyLargeEmphasized" />
+
+    <RadioGroup
+        android:id="@+id/rg_processor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:orientation="horizontal" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
         android:text="Dexer"
         android:textAppearance="?attr/textAppearanceBodyLargeEmphasized" />
 

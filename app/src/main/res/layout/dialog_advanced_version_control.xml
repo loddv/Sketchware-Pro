@@ -1,5 +1,5 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -7,59 +7,67 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:baselineAligned="false">
+        android:baselineAligned="true"
+        android:orientation="horizontal">
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilVersionCode"
+            style="@style/ThemeOverlay.Material3.TextInputEditText.FilledBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="5dp">
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="@dimen/card_view_margin8"
+            android:layout_weight="1">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/version_code"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Version code"
-                android:singleLine="true"
                 android:imeOptions="actionNext"
                 android:inputType="number"
-                android:textSize="13sp" />
+                android:singleLine="true"
+                tools:ignore="HardcodedText,SpUsage" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilVersionName"
+            style="@style/ThemeOverlay.Material3.TextInputEditText.FilledBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_margin="5dp">
+            android:layout_marginLeft="@dimen/card_view_margin8"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="16dp"
+            android:layout_weight="1">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/version_name1"
                 android:layout_width="match_parent"
-                android:singleLine="true"
                 android:layout_height="wrap_content"
+                android:digits="0123456789."
                 android:hint="Version name"
                 android:imeOptions="actionNext"
-                android:digits="0123456789."
-                android:textSize="13sp" />
+                android:singleLine="true"
+                tools:ignore="HardcodedText,SpUsage" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilVersionNameExtra"
+        style="@style/ThemeOverlay.Material3.TextInputEditText.FilledBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="5dp">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="6dp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/version_name2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:singleLine="true"
             android:hint="Version name extra"
             android:imeOptions="actionDone"
-            android:textSize="13sp" />
+            android:singleLine="true"
+            tools:ignore="HardcodedText,SpUsage" />
     </com.google.android.material.textfield.TextInputLayout>
 </LinearLayout>

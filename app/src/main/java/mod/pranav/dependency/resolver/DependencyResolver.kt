@@ -20,19 +20,22 @@ import org.cosmic.ide.dependency.resolver.getArtifact
 import org.cosmic.ide.dependency.resolver.repositories
 import pro.sketchware.utility.FileUtil
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
+import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 class DependencyResolver(
     private val groupId: String,
     private val artifactId: String,
-    private val version: String,
+    private var version: String,               // agora pode ser "latest"
     private val skipDependencies: Boolean,
     private val buildSettings: BuildSettings
 ) {
@@ -47,7 +50,7 @@ class DependencyResolver(
           |    {"url": "https://repo.spring.io/libs-milestone", "name": "Spring Milestone"},
           |    {"url": "https://repo.maven.apache.org/maven2", "name": "Apache Maven"}
           |]
-        """.trimMargin()
+        """.trimMargin("|")
     }
 
     private val downloadPath: String =
@@ -69,23 +72,16 @@ class DependencyResolver(
             val url: String? = it["url"] as String?
             if (url != null) {
                 repositories.add(object : Repository {
-                    override fun getName(): String {
-                        return it["name"] as String
-                    }
-
-                    override fun getURL(): String {
-                        return if (url.endsWith("/")) {
-                            url.substringBeforeLast("/")
-                        } else {
-                            url
-                        }
-                    }
+                    override fun getName(): String = it["name"] as String
+                    override fun getURL(): String =
+                        if (url.endsWith("/")) url.substringBeforeLast("/") else url
                 })
             }
         }
     }
 
     open class DependencyResolverCallback : EventReciever() {
+        // ... (mantidos todos os callbacks originais)
         override fun artifactFound(artifact: Artifact) {}
         override fun onArtifactNotFound(artifact: Artifact) {}
         override fun onFetchingLatestVersion(artifact: Artifact) {}
@@ -107,8 +103,22 @@ class DependencyResolver(
         open fun invalidPackaging(artifact: Artifact) {}
     }
 
+
     fun resolveDependency(callback: DependencyResolverCallback) = runBlocking {
         eventReciever = callback
+
+        if (version.equals("latest", ignoreCase = true) || version.equals("new", ignoreCase = true)) {
+            val tempArtifact = Artifact(groupId, artifactId, "latest", null, "")
+            callback.onFetchingLatestVersion(tempArtifact)
+            val resolved = resolveLatestVersion(groupId, artifactId)
+            if (resolved == null) {
+                callback.onVersionNotFound(tempArtifact)
+                return@runBlocking
+            }
+            version = resolved
+            callback.onFetchedLatestVersion(tempArtifact.apply { version = resolved }, resolved)
+        }
+
         val dependency = getArtifact(groupId, artifactId, version) ?: return@runBlocking
 
         if (dependency.extension != "jar" && dependency.extension != "aar") {
@@ -262,6 +272,45 @@ class DependencyResolver(
         callback.onTaskCompleted(
             dependency.getAllDependencies().map { "${it.artifactId}-v${it.version}" })
     }
+
+    // ====================== NOVO METODO PARA latest ======================
+    private fun resolveLatestVersion(groupId: String, artifactId: String): String? {
+        val groupPath = groupId.replace('.', '/')
+        for (repo in repositories) {
+            val metadataUrl = "${repo.getURL()}/$groupPath/$artifactId/maven-metadata.xml"
+            try {
+                val connection = URL(metadataUrl).openConnection() as HttpURLConnection
+                connection.connectTimeout = 8000
+                connection.readTimeout = 8000
+                connection.requestMethod = "GET"
+                connection.instanceFollowRedirects = true
+
+                if (connection.responseCode == 200) {
+                    val input = connection.inputStream
+                    val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                        .parse(input)
+                    doc.documentElement.normalize()
+
+                    // Primeiro tenta <latest>, depois <release>
+                    var latest = doc.getElementsByTagName("latest")
+                        .takeIf { it.length > 0 }?.item(0)?.textContent?.trim()
+
+                    if (latest.isNullOrEmpty()) {
+                        latest = doc.getElementsByTagName("release")
+                            .takeIf { it.length > 0 }?.item(0)?.textContent?.trim()
+                    }
+
+                    if (!latest.isNullOrEmpty()) {
+                        return latest
+                    }
+                }
+            } catch (ignored: Exception) {
+                // continua tentando nos próximos repositórios
+            }
+        }
+        return null
+    }
+    // =====================================================================
 
     private fun findPackageName(path: String, defaultValue: String): String {
         val manifest =

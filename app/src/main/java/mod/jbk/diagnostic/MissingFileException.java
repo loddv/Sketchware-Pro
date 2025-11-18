@@ -33,4 +33,8 @@ public class MissingFileException extends Exception {
     public boolean isMissingDirectory() {
         return isMissingDirectory;
     }
+
+    public Exception setStackTrace(String s) {
+        return null;
+    }
 }

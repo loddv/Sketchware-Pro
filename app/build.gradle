@@ -23,7 +23,7 @@ android {
         targetSdk = 28
         minSdk = 26
         versionCode = 150
-        versionName = "v7.0.0-beta1"
+        versionName = "v7.0.0-beta1-${gitCommitHash}"
 
         buildConfigField("String", "GIT_HASH", "\"${gitCommitHash}\"")
 
@@ -52,6 +52,7 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+        freeCompilerArgs = ['-XXLanguage:+BreakContinueInInlineLambdas']
     }
 
     androidResources {

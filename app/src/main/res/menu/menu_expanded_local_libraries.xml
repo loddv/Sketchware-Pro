@@ -24,4 +24,9 @@
         android:icon="@drawable/ic_mtrl_swap_vertical"
         android:title="Select Invert"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_select_update_library"
+        android:icon="@drawable/ic_mtrl_settings"
+        android:title="Select Update Library"
+        app:showAsAction="always" />
 </menu>

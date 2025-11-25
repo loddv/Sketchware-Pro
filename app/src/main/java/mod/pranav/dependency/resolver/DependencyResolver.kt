@@ -6,7 +6,9 @@ import com.android.tools.r8.D8
 import com.android.tools.r8.D8Command
 import com.android.tools.r8.OutputMode
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import mod.hey.studios.build.BuildSettings
 import mod.hey.studios.util.Helper
 import mod.jbk.build.BuiltInLibraries
@@ -17,6 +19,8 @@ import org.cosmic.ide.dependency.resolver.eventReciever
 import org.cosmic.ide.dependency.resolver.getArtifact
 import org.cosmic.ide.dependency.resolver.repositories
 import pro.sketchware.utility.FileUtil
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -29,21 +33,23 @@ import kotlin.io.path.writeText
 class DependencyResolver(
     private val groupId: String,
     private val artifactId: String,
-    private val version: String,
+    private var version: String, // Pode ser "latest", "release", "1.5+", "2.9.0" etc.
     private val skipDependencies: Boolean,
     private val buildSettings: BuildSettings
 ) {
+
     companion object {
+        private val client = OkHttpClient()
+
         private val DEFAULT_REPOS = """
-          |[
-          |    {"url": "https://repo.hortonworks.com/content/repositories/releases", "name": "HortanWorks"},
-          |    {"url": "https://maven.atlassian.com/content/repositories/atlassian-public", "name": "Atlassian"},
-          |    {"url": "https://jcenter.bintray.com", "name": "JCenter"},
-          |    {"url": "https://oss.sonatype.org/content/repositories/releases", "name": "Sonatype"},
-          |    {"url": "https://repo.spring.io/plugins-release", "name": "Spring Plugins"},
-          |    {"url": "https://repo.spring.io/libs-milestone", "name": "Spring Milestone"},
-          |    {"url": "https://repo.maven.apache.org/maven2", "name": "Apache Maven"}
-          |]
+            |[
+            |    {"url": "https://repo.maven.apache.org/maven2", "name": "Maven Central"},
+            |    {"url": "https://maven.google.com", "name": "Google Maven"},
+            |    {"url": "https://jcenter.bintray.com", "name": "JCenter"},
+            |    {"url": "https://oss.sonatype.org/content/repositories/releases", "name": "Sonatype Releases"},
+            |    {"url": "https://repo.spring.io/release", "name": "Spring Release"},
+            |    {"url": "https://androidx.dev/storage/compose-compiler/repository", "name": "Compose Compiler Repo"}
+            |]
         """.trimMargin()
     }
 
@@ -57,31 +63,27 @@ class DependencyResolver(
         "repositories.json"
     )
 
+    private var resolvedVersion: String = version
+
     init {
         if (Files.notExists(repositoriesJson)) {
             Files.createDirectories(repositoriesJson.parent)
             repositoriesJson.writeText(DEFAULT_REPOS)
         }
-        Gson().fromJson(repositoriesJson.readText(), Helper.TYPE_MAP_LIST).forEach {
-            val url: String? = it["url"] as String?
-            if (url != null) {
-                repositories.add(object : Repository {
-                    override fun getName(): String {
-                        return it["name"] as String
-                    }
 
-                    override fun getURL(): String {
-                        return if (url.endsWith("/")) {
-                            url.substringBeforeLast("/")
-                        } else {
-                            url
-                        }
-                    }
-                })
-            }
+        val reposList = Gson().fromJson(repositoriesJson.readText(), Helper.TYPE_MAP_LIST)
+        reposList.forEach { map ->
+            val url = (map["url"] as? String)?.removeSuffix("/") ?: return@forEach
+            val name = map["name"] as String
+
+            repositories.add(object : Repository {
+                override fun getName(): String = name
+                override fun getURL(): String = url
+            })
         }
     }
 
+    // ================================== CALLBACKS ==================================
     open class DependencyResolverCallback : EventReciever() {
         override fun artifactFound(artifact: Artifact) {}
         override fun onArtifactNotFound(artifact: Artifact) {}
@@ -102,11 +104,95 @@ class DependencyResolver(
         open fun onTaskCompleted(artifacts: List<String>) {}
         open fun dexingFailed(artifact: Artifact, e: Exception) {}
         open fun invalidPackaging(artifact: Artifact) {}
+        open fun onNoVersionsFound(artifact: Artifact) {}
     }
 
+    // ============================ RESOLUÇÃO DE VERSÃO DINÂMICA ============================
+    private suspend fun resolveDynamicVersion(): String? = withContext(Dispatchers.IO) {
+        val groupPath = groupId.replace(".", "/")
+        val metadataPath = "$groupPath/$artifactId/maven-metadata.xml"
+
+        for (repo in repositories) {
+            val url = "${repo.getURL()}/$metadataPath"
+            try {
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    val xml = response.body?.string() ?: return@use null
+
+                    // Prioridade: <release> e <latest> tags
+                    val releaseTag = xml.substringAfter("<release>", "")
+                        .substringBefore("</release>", "").trim()
+                    if (releaseTag.isNotEmpty() && version.equals("release", ignoreCase = true)) {
+                        return@withContext releaseTag
+                    }
+
+                    val latestTag = xml.substringAfter("<latest>", "")
+                        .substringBefore("</latest>", "").trim()
+                    if (latestTag.isNotEmpty() && version.equals("latest", ignoreCase = true)) {
+                        return@withContext latestTag
+                    }
+
+                    // Extrai todas as versões disponíveis
+                    val versionStrings = xml.split("<version>")
+                        .drop(1)
+                        .map { it.substringBefore("</version>").trim() }
+                        .filter { it.isNotEmpty() }
+
+                    if (versionStrings.isEmpty()) return@use null
+
+                    val versions = versionStrings.map { ComparableVersion(it) }.sortedDescending()
+
+                    return@withContext when {
+                        version.equals("latest", ignoreCase = true) -> versions[0].toString()
+                        version.equals("release", ignoreCase = true) -> {
+                            versions.find { !it.isSnapshot }?.toString() ?: versions[0].toString()
+                        }
+                        version.endsWith("+") -> {
+                            val base = version.dropLast(1).trim()
+                            val baseVersion = ComparableVersion(if (base.isEmpty()) "0" else base)
+                            versions.find { it >= baseVersion }?.toString()
+                        }
+                        else -> version // versão fixa
+                    }
+                }
+            } catch (e: Exception) {
+                // Tenta próximo repositório
+            }
+        }
+        return@withContext null
+    }
+
+    // ================================== MÉTODO PRINCIPAL ==================================
     fun resolveDependency(callback: DependencyResolverCallback) = runBlocking {
         eventReciever = callback
-        val dependency = getArtifact(groupId, artifactId, version) ?: return@runBlocking
+
+        val isDynamicVersion = version.equals("latest", ignoreCase = true) ||
+                version.equals("release", ignoreCase = true) ||
+                version.endsWith("+")
+
+        if (isDynamicVersion) {
+            val tempArtifact = getArtifact(groupId, artifactId, version) ?: run {
+                callback.onArtifactNotFound(Artifact(groupId, artifactId, version))
+                return@runBlocking
+            }
+
+            callback.onFetchingLatestVersion(tempArtifact)
+
+            val latest = resolveDynamicVersion()
+            if (latest == null) {
+                callback.onNoVersionsFound(tempArtifact)
+                return@runBlocking
+            }
+
+            resolvedVersion = latest
+            callback.onFetchedLatestVersion(tempArtifact.apply { this.version = latest }, latest)
+        }
+
+        val dependency = getArtifact(groupId, artifactId, resolvedVersion) ?: run {
+            callback.onArtifactNotFound(Artifact(groupId, artifactId, resolvedVersion))
+            return@runBlocking
+        }
 
         if (dependency.extension != "jar" && dependency.extension != "aar") {
             callback.invalidPackaging(dependency)
@@ -114,67 +200,44 @@ class DependencyResolver(
         }
 
         val libraryJars = listOf(
-            BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH.toPath()
-                .resolve("core-lambda-stubs.jar"), Paths.get(
+            BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH.toPath().resolve("core-lambda-stubs.jar"),
+            Paths.get(
                 buildSettings.getValue(
                     BuildSettings.SETTING_ANDROID_JAR_PATH,
                     BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH.resolve("android.jar").absolutePath
                 )
             )
         )
+
         val dependencyClasspath = mutableListOf<Path>()
-
-        val classpath = buildSettings.getValue(BuildSettings.SETTING_CLASSPATH, "")
-
-        classpath.split(":").forEach {
-            if (it.isEmpty()) return@forEach
-            dependencyClasspath.add(Paths.get(it))
+        buildSettings.getValue(BuildSettings.SETTING_CLASSPATH, "").split(":").forEach {
+            if (it.isNotBlank()) dependencyClasspath.add(Paths.get(it))
         }
 
-        dependency.downloadTo(
-            File(downloadPath + "/${dependency.artifactId}-v${dependency.version}/classes.${dependency.extension}")
-                .apply {
-                    parentFile?.mkdirs()
-                }
-        )
+        // Download do artefato principal
+        val outputFile = File("$downloadPath/${dependency.artifactId}-v${dependency.version}/classes.${dependency.extension}")
+        outputFile.parentFile?.mkdirs()
+        dependency.downloadTo(outputFile)
 
+        // Processamento de AAR
         if (dependency.extension == "aar") {
             callback.unzipping(dependency)
-            unzip(
-                Paths.get(
-                    downloadPath,
-                    "${dependency.artifactId}-v${dependency.version}",
-                    "classes.aar"
-                )
-            )
-            Files.delete(
-                Paths.get(
-                    downloadPath,
-                    "${dependency.artifactId}-v${dependency.version}",
-                    "classes.aar"
-                )
-            )
-            val packageName = findPackageName(
-                Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}")
-                    .toAbsolutePath().toString(),
-                dependency.groupId
-            )
-            Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}", "config")
-                .writeText(packageName)
+            unzip(outputFile.toPath())
+            Files.delete(outputFile.toPath())
+
+            val packageName = findPackageName(outputFile.parentFile!!, dependency.groupId)
+            Paths.get(outputFile.parent, "config").writeText(packageName)
         }
 
-        val jar = Paths.get(
-            downloadPath,
-            "${dependency.artifactId}-v${dependency.version}",
-            "classes.jar"
-        )
+        val jarPath = Paths.get("$downloadPath/${dependency.artifactId}-v${dependency.version}/classes.jar")
 
         callback.dexing(dependency)
         try {
-            compileJar(jar, dependencyClasspath, libraryJars)
+            compileJar(jarPath, dependencyClasspath, libraryJars)
             callback.onResolutionComplete(dependency)
         } catch (e: Exception) {
             callback.dexingFailed(dependency, e)
+            return@runBlocking
         }
 
         if (skipDependencies) {
@@ -182,93 +245,102 @@ class DependencyResolver(
             callback.onTaskCompleted(listOf("${dependency.artifactId}-v${dependency.version}"))
             return@runBlocking
         }
+
+        // Resolução de dependências transitivas
         dependency.resolveDependencyTree()
 
-        dependency.getAllDependencies().forEach { dep ->
-            println("Resolving dependency: ${dep.artifactId} v${dep.version}")
-            if (dep.extension != "jar" && dep.extension != "aar") {
-                callback.invalidPackaging(dep)
-                return@forEach
-            }
-
+        for (dep in dependency.getAllDependencies()) {
             if (dep.version.isEmpty()) {
                 callback.onVersionNotFound(dep)
-                return@forEach
+                continue
             }
 
-            val path = Paths.get(
-                downloadPath,
-                "${dep.artifactId}-v${dep.version}",
-                "classes.${dep.extension}"
-            )
+            if (dep.extension != "jar" && dep.extension != "aar") {
+                callback.invalidPackaging(dep)
+                continue
+            }
 
-            Files.createDirectories(path.parent)
-
-            dep.downloadTo(File(path.toString()))
+            val depFile = File("$downloadPath/${dep.artifactId}-v${dep.version}/classes.${dep.extension}")
+            depFile.parentFile?.mkdirs()
+            dep.downloadTo(depFile)
 
             if (dep.extension == "aar") {
                 callback.unzipping(dep)
-                unzip(path)
-                Files.delete(path)
-                val packageName =
-                    findPackageName(path.parent.toAbsolutePath().toString(), dep.groupId)
-                path.parent.resolve("config").writeText(packageName)
+                unzip(depFile.toPath())
+                Files.delete(depFile.toPath())
+
+                val pkg = findPackageName(depFile.parentFile!!, dep.groupId)
+                Paths.get(depFile.parent, "config").writeText(pkg)
             }
 
-            val jar = if (dep.extension == "jar") path else Paths.get(
-                downloadPath, "${dep.artifactId}-v${dep.version}", "classes.jar"
-            )
-            if (Files.notExists(jar)) {
-                callback.onDependenciesNotFound(dep)
-                return@forEach
-            }
-
-            dependencyClasspath.add(jar)
-        }
-
-        dependency.getAllDependencies().forEach { dep ->
-            val jar = Paths.get(downloadPath, "${dep.artifactId}-v${dep.version}", "classes.jar")
+            val depJar = Paths.get("$downloadPath/${dep.artifactId}-v${dep.version}/classes.jar")
+            dependencyClasspath.add(depJar)
 
             callback.dexing(dep)
             try {
-                compileJar(
-                    jar, dependencyClasspath.toMutableList().apply { remove(jar) }, libraryJars
-                )
+                compileJar(depJar, dependencyClasspath.toMutableList().apply { remove(depJar) }, libraryJars)
                 callback.onResolutionComplete(dep)
             } catch (e: Exception) {
                 callback.dexingFailed(dep, e)
-                return@forEach
             }
         }
 
-        callback.onTaskCompleted(
-            dependency.getAllDependencies().map { "${it.artifactId}-v${it.version}" })
+        val resolvedList = dependency.getAllDependencies().map { "${it.artifactId}-v${it.version}" }
+            .plus("${dependency.artifactId}-v${dependency.version}")
+
+        callback.onTaskCompleted(resolvedList)
     }
 
-    private fun findPackageName(path: String, defaultValue: String): String {
-        val manifest =
-            File(path).walk().filter { it.isFile && it.name == "AndroidManifest.xml" }.firstOrNull()
-        val content = manifest?.readText() ?: return defaultValue
-        val p = Pattern.compile("<manifest.*package=\"(.*?)\"", Pattern.DOTALL)
-        val m = p.matcher(content)
-        if (m.find()) {
-            return m.group(1)!!
+    // ============================ LISTAR TODAS AS VERSÕES ============================
+    suspend fun getAvailableVersions(): List<String> = withContext(Dispatchers.IO) {
+        val groupPath = groupId.replace(".", "/")
+        val metadataPath = "$groupPath/$artifactId/maven-metadata.xml"
+        val allVersions = mutableSetOf<String>()
+
+        for (repo in repositories) {
+            val url = "${repo.getURL()}/$metadataPath"
+            try {
+                val request = Request.Builder().url(url).build()
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        val xml = response.body?.string() ?: continue
+                        val versions = xml.split("<version>")
+                            .drop(1)
+                            .map { it.substringBefore("</version>").trim() }
+                            .filter { it.isNotEmpty() }
+                        allVersions.addAll(versions)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignora erro e tenta próximo repo
+            }
         }
 
-        return defaultValue
+        return@withContext allVersions
+            .map { ComparableVersion(it) }
+            .sortedDescending()
+            .map { it.toString() }
+    }
+
+    // ================================== UTILITÁRIOS ==================================
+    private fun findPackageName(path: File, defaultValue: String): String {
+        val manifest = path.walkTopDown().find { it.isFile && it.name == "AndroidManifest.xml" }
+            ?: return defaultValue
+        val content = manifest.readText()
+        val matcher = Pattern.compile("<manifest.*package=\"(.*?)\"").matcher(content)
+        return if (matcher.find()) matcher.group(1)!! else defaultValue
     }
 
     private fun unzip(path: Path) {
-        val zipFile = ZipFile(path.toFile())
-        zipFile.use { zip ->
+        ZipFile(path.toFile()).use { zip ->
             zip.entries().asSequence().forEach { entry ->
-                val entryDestination = path.parent.resolve(entry.name)
+                val destFile = path.parent.resolve(entry.name)
                 if (entry.isDirectory) {
-                    Files.createDirectories(entryDestination)
+                    Files.createDirectories(destFile)
                 } else {
-                    Files.createDirectories(entryDestination.parent)
+                    Files.createDirectories(destFile.parent)
                     zip.getInputStream(entry).use { input ->
-                        Files.newOutputStream(entryDestination).use { output ->
+                        Files.newOutputStream(destFile).use { output ->
                             input.copyTo(output)
                         }
                     }
@@ -277,12 +349,47 @@ class DependencyResolver(
         }
     }
 
-    private fun compileJar(jarFile: Path, jars: List<Path>, libraryJars: List<Path>) {
+    private fun compileJar(jarFile: Path, classpath: List<Path>, libraryJars: List<Path>) {
         Files.createDirectories(jarFile.parent)
         D8.run(
-            D8Command.builder().setIntermediate(true).setMode(CompilationMode.RELEASE)
-                .addProgramFiles(jarFile).addLibraryFiles(libraryJars).addClasspathFiles(jars)
-                .setOutput(jarFile.parent, OutputMode.DexIndexed).build()
+            D8Command.builder()
+                .setIntermediate(true)
+                .setMode(CompilationMode.RELEASE)
+                .addProgramFiles(jarFile)
+                .addLibraryFiles(libraryJars)
+                .addClasspathFiles(classpath)
+                .setOutput(jarFile.parent, OutputMode.DexIndexed)
+                .build()
         )
+    }
+
+    // ============================= COMPARADOR DE VERSÕES =============================
+    private class ComparableVersion(val version: String) : Comparable<ComparableVersion> {
+        private val parts: List<Int>
+        private val qualifier: String
+        val isSnapshot: Boolean
+
+        init {
+            val cleanVersion = version.substringBefore("-")
+            parts = cleanVersion.split('.').map { it.toIntOrNull() ?: 0 }
+            qualifier = version.substringAfter("-", "")
+            isSnapshot = version.contains("SNAPSHOT", ignoreCase = true)
+        }
+
+        override fun compareTo(other: ComparableVersion): Int {
+            val maxLength = maxOf(parts.size, other.parts.size)
+            for (i in 0 until maxLength) {
+                val a = parts.getOrElse(i) { 0 }
+                val b = other.parts.getOrElse(i) { 0 }
+                if (a != b) return a.compareTo(b)
+            }
+            return when {
+                qualifier.isEmpty() && other.qualifier.isNotEmpty() -> 1
+                qualifier.isNotEmpty() && other.qualifier.isEmpty() -> -1
+                else -> qualifier.compareTo(other.qualifier, ignoreCase = true)
+            }
+        }
+
+        override fun toString(): String = version
     }
 }

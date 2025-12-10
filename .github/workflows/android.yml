@@ -50,13 +50,18 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Inject google-services.json from secret
+      - name: Inject google-services.json from secret (base64-decode)
         shell: bash
         run: |
-          # cria pasta caso não exista e escreve o conteúdo do secret preservando novas linhas
+          set -euo pipefail
           mkdir -p app
-          printf '%s' "${{ secrets.GOOGLE_SERVICES_JSON }}" > app/google-services.json
-          echo "Wrote app/google-services.json (masked secret)"
+          if [[ -z "${{ secrets.GOOGLE_SERVICES_JSON }}" ]]; then
+            echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
+            exit 1
+          fi
+          # Decode base64 content from the secret and write to file without printing the secret
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+          echo "Wrote app/google-services.json (base64-decoded from secret)"
 
       - name: Build Release APK
         env:

@@ -32,6 +32,11 @@ on:
           - 'ubuntu-22.04'
         default: 'ubuntu-latest'
 
+      pass-secret-to-workflow:
+      uses: ./.github/workflows/android.yml 
+      secrets:
+        token: ${{ secrets.GOOGLE_SERVICES_JSON }}
+
         
 jobs:
   build:
@@ -49,13 +54,11 @@ jobs:
           distribution: temurin
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
+        uses: gradle/actions/setup-gradle@v3       
       - name: Set environmental variables
         shell: bash
         env:
           JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        if: ${{ env.JSON_CONTENT != '' }}
         run: |
           printf 'GOOGLE_SERVICES_JSON<<EOF\n%s\nEOF\n' "$JSON_CONTENT" >> $GITHUB_ENV
 

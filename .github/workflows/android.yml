@@ -52,15 +52,17 @@ jobs:
 
       - name: Inject google-services.json from secret (base64-decode)
         shell: bash
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           set -euo pipefail
           mkdir -p app
-          if [[ -z "${{ secrets.GOOGLE_SERVICES_JSON }}" ]]; then
+          if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
             echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
             exit 1
           fi
           # Decode base64 content from the secret and write to file without printing the secret
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > app/google-services.json
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
           echo "Wrote app/google-services.json (base64-decoded from secret)"
 
       - name: Build Release APK

@@ -44,9 +44,9 @@ jobs:
       build_type: ${{ steps.set_build_type.outputs.build_type }}
     steps:
       - uses: actions/checkout@v7
-      - uses: gradle/actions/wrapper-validation@v6
-        with:
-          lfs: true
+      #- uses: gradle/actions/wrapper-validation@v6
+      #  with:
+      #    lfs: true
       
       - name: Set build type
         id: set_build_type

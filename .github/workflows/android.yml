@@ -36,7 +36,7 @@ jobs:
   build:
     name: Building APK
     runs-on: ${{ inputs.build_os_version || 'ubuntu-latest' }}
-    
+    environment: GOOGLE_SERVICES_JSON
     permissions:
       contents: read
     outputs:
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo $GOOGLE_SERVICES_JSON_BASE64 | head
+          echo Repository secrets:$GOOGLE_SERVICES_JSON_BASE64 | head
           mkdir -p app
           if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
             echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2

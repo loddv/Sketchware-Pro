@@ -31,14 +31,30 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-
-      - name: Set environmental variables
-        shell: bash
+          
+      - name: Inject google-services.json from secret (base64-decode)
         env:
-          JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
-        if: ${{ env.JSON_CONTENT != '' }}
+         GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
         run: |
-          printf 'GOOGLE_SERVICES_JSON<<EOF\n%s\nEOF\n' "$JSON_CONTENT" >> $GITHUB_ENV
+          set -euo pipefail
+          echo Repository secrets:$GOOGLE_SERVICES_JSON_BASE64 | head
+          mkdir -p app
+          if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
+            echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
+            exit 1
+          fi
+          # Decode base64 content from the secret and write to file without printing the secret
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
+          echo "Wrote app/google-services.json (base64-decoded from secret)"
+
+      #- name: Set environmental variables
+      #  shell: bash
+      #  env:
+      #    JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
+      #  if: ${{ env.JSON_CONTENT != '' }}
+      #  run: |
+      #    printf 'GOOGLE_SERVICES_JSON<<EOF\n%s\nEOF\n' "$JSON_CONTENT" >> $GITHUB_ENV
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5

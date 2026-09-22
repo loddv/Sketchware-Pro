@@ -44,7 +44,8 @@ jobs:
       build_type: ${{ steps.set_build_type.outputs.build_type }}
     steps:
       - uses: actions/checkout@v7
-
+      - uses: gradle/actions/wrapper-validation@v6
+      
       - name: Set build type
         id: set_build_type
         env:

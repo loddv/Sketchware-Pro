@@ -36,9 +36,7 @@ jobs:
   build:
     name: Building APK
     runs-on: ${{ inputs.build_os_version || 'ubuntu-latest' }}
-    env:
-      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
-
+    
     permissions:
       contents: read
     outputs:
@@ -65,9 +63,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Inject google-services.json from secret (base64-decode)
+        env:
+         GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
         shell: bash
         run: |
           set -euo pipefail
+          echo $GOOGLE_SERVICES_JSON_BASE64 | head
           mkdir -p app
           if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
             echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2

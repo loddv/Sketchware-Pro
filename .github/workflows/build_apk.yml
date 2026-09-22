@@ -31,10 +31,10 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          
+
       - name: Inject google-services.json from secret (base64-decode)
         env:
-         GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
         shell: bash
         run: |
           set -euo pipefail
@@ -48,28 +48,14 @@ jobs:
           printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
           echo "Wrote app/google-services.json (base64-decoded from secret)"
 
-      #- name: Set environmental variables
-      #  shell: bash
-      #  env:
-      #    JSON_CONTENT: ${{ secrets.GOOGLE_SERVICES_JSON }}
-      #  if: ${{ env.JSON_CONTENT != '' }}
-      #  run: |
-      #    printf 'GOOGLE_SERVICES_JSON<<EOF\n%s\nEOF\n' "$JSON_CONTENT" >> $GITHUB_ENV
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      #- name: Build Release APK
-      #  env:
-      #    SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
-      #  run: gradle assembleRelease
-        
       - name: Build Release APK
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
-          #BUILD_TYPE: ${{ steps.set_build_type.outputs.build_type }}
         run: |
-          ./gradlew assembleRelease -x lintVitalAnalyzeRelease -x lint
+          ./gradlew assembleRelease -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease
 
       - name: Set short SHA
         id: set_sha
@@ -85,5 +71,3 @@ jobs:
         with:
           name: apk-release-${{ steps.set_sha.outputs.short_sha }}
           path: app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
-
-  

@@ -35,7 +35,12 @@ on:
 jobs:
   build:
     name: Building APK
-    runs-on: ${{ github.event.inputs.build_os_version || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.build_os_version || 'ubuntu-latest' }}
+    env:
+      GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+
+    permissions:
+      contents: read
     outputs:
       short_sha: ${{ steps.set_sha.outputs.short_sha }}
       build_type: ${{ steps.set_build_type.outputs.build_type }}
@@ -44,8 +49,10 @@ jobs:
 
       - name: Set build type
         id: set_build_type
+        env:
+          INPUT_BUILD_TYPE: ${{ inputs.build_type }}
         run: |
-          BUILD_TYPE="${{ github.event.inputs.build_type || 'release' }}"
+          BUILD_TYPE="${INPUT_BUILD_TYPE:-release}"
           echo "build_type=${BUILD_TYPE}" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 17
@@ -59,8 +66,6 @@ jobs:
 
       - name: Inject google-services.json from secret (base64-decode)
         shell: bash
-        env:
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
         run: |
           set -euo pipefail
           mkdir -p app
@@ -75,24 +80,26 @@ jobs:
       - name: Build APK
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
+          BUILD_TYPE: ${{ steps.set_build_type.outputs.build_type }}
         run: |
-          BUILD_TYPE="${{ steps.set_build_type.outputs.build_type }}"
           BUILD_TASK=$(echo "$BUILD_TYPE" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
-          ./gradlew assemble${BUILD_TASK}
+          ./gradlew "assemble${BUILD_TASK}"
 
       - name: Set short SHA
         id: set_sha
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Rename APK with commit hash
+        env:
+          BUILD_TYPE: ${{ steps.set_build_type.outputs.build_type }}
+          SHORT_SHA: ${{ steps.set_sha.outputs.short_sha }}
         run: |
-          BUILD_TYPE="${{ steps.set_build_type.outputs.build_type }}"
           if [[ "$BUILD_TYPE" == "release" ]]; then
             mv app/build/outputs/apk/release/app-release.apk \
-               app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
+               "app/build/outputs/apk/release/app-release-${SHORT_SHA}.apk"
           else
             mv app/build/outputs/apk/debug/app-debug.apk \
-               app/build/outputs/apk/debug/app-debug-${{ steps.set_sha.outputs.short_sha }}.apk
+               "app/build/outputs/apk/debug/app-debug-${SHORT_SHA}.apk"
           fi
 
       - name: Upload APK

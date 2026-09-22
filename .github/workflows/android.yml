@@ -58,7 +58,7 @@ jobs:
      
       - name: fix gradle
         id: fix_gradle
-        run: ./gradlew wrapper --gradle-version 9.1.4 --distribution-type bin
+        run: ./gradlew wrapper --gradle-version 9.4.1 --distribution-type bin
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6

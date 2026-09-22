@@ -44,7 +44,10 @@ jobs:
       build_type: ${{ steps.set_build_type.outputs.build_type }}
     steps:
       - uses: actions/checkout@v7
-
+      - uses: gradle/actions/wrapper-validation@v6
+        with:
+          lfs: true
+      
       - name: Set build type
         id: set_build_type
         env:
@@ -52,13 +55,17 @@ jobs:
         run: |
           BUILD_TYPE="${INPUT_BUILD_TYPE:-release}"
           echo "build_type=${BUILD_TYPE}" >> $GITHUB_OUTPUT
+     
+      - name: fix gradle
+        id: fix_gradle
+        run: ./gradlew wrapper --gradle-version 9.4.1 --distribution-type bin
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+          #cache: gradle
           
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6

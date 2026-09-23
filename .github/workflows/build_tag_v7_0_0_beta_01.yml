@@ -1,0 +1,69 @@
+name: Build APK - v7.0.0-beta-01
+
+on:
+  push:
+    tags:
+      - 'v7.0.0-beta-01'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag or branch to build
+        required: true
+        default: 'v7.0.0-beta-01'
+        type: string
+
+jobs:
+  build:
+    name: Build APK from tag v7.0.0-beta-01
+    runs-on: ubuntu-latest
+    environment: GOOGLE_SERVICES_JSON
+
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Inject google-services.json from secret
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app
+          if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
+            echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
+          echo "Wrote app/google-services.json"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build Release APK
+        env:
+          SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
+        run: |
+          ./gradlew assembleRelease -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease
+
+      - name: Rename APK with tag name
+        run: |
+          TAG_NAME="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}"
+          mkdir -p app/build/outputs/apk/release
+          cp app/build/outputs/apk/release/app-release.apk \
+            "app/build/outputs/apk/release/app-release-${TAG_NAME}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}
+          path: app/build/outputs/apk/release/app-release-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref_name }}.apk

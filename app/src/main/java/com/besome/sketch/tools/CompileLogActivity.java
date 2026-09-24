@@ -76,6 +76,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                     getIntent().removeExtra("error");
                     binding.tvCompileLog.setText("");
                     //((ViewGroup) binding.tvCompileLog.getParent()).removeView(binding.tvCompileLog);
+                    setErrorText();
                     SketchwareUtil.toast("Compile logs have been cleared.");
                 } else {
                     SketchwareUtil.toast("No compile logs found.");

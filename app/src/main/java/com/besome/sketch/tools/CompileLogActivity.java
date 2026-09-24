@@ -4,11 +4,13 @@ import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.net.Uri;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
@@ -36,7 +38,8 @@ public class CompileLogActivity extends BaseAppCompatActivity {
     private SharedPreferences logViewerPreferences;
 
     private CompileLogBinding binding;
-
+    private static final String GEMINI_PACKAGE = "com.google.android.apps.bard";
+    
     @SuppressLint("SetTextI18n")
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -85,6 +88,29 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                         clipboard.setPrimaryClip(clip);
                     }
                     SketchwareUtil.toast("Compile logs have been copied.");
+            });
+
+            binding.geminiButton.setOnClickListener(v -> {
+                // pegar o texto do log e enviarpara o gemini
+                String logs = compileErrorSaver.getLogsFromFile();
+                if (logs != null) {
+                    // Cria o Intent de compartilhamento de texto direcionado ao pacote do Gemini
+                    Intent geminiIntent = new Intent(Intent.ACTION_SEND);
+                    geminiIntent.setType("text/plain");
+                    geminiIntent.putExtra(Intent.EXTRA_TEXT, logs);
+                    geminiIntent.setPackage(geminiPackage);
+
+                    // Verifica se o Gemini está instalado e responde ao Intent
+                    if (geminiIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(geminiIntent);
+                    } else {
+                        // Fallback: caso o app não esteja instalado, abre a versão web no navegador
+                    SketchwareUtil.toast("App do Gemini não encontrado. Abrindo na Web...");
+                                                                                
+                        Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://gemini.google.com/"));
+                        startActivity(webIntent);
+                    }
+                }
             });
         }
 

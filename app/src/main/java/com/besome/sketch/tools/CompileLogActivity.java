@@ -39,7 +39,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
 
     private CompileLogBinding binding;
     private static final String geminiPackage = "com.google.android.apps.bard";
-    
+
     @SuppressLint("SetTextI18n")
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -89,7 +89,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                     }
                     SketchwareUtil.toast("Compile logs have been copied.");
             });
-
+            /*
             binding.geminiButton.setOnClickListener(v -> {
                 // pegar o texto do log e enviarpara o gemini
                 String logs = compileErrorSaver.getLogsFromFile();
@@ -112,14 +112,59 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                     }
                 }
             });
-        }
+            */
+            binding.geminiButton.setOnClickListener(v -> {
+            // Pegar o texto do log e enviar para o Gemini
+            String logs = compileErrorSaver.getLogsFromFile();
+            if (logs != null && !logs.isEmpty()) {
 
-        final String wrapTextLabel = "Wrap text";
-        final String monospacedFontLabel = "Monospaced font";
-        final String fontSizeLabel = "Font size";
+            // Monta o prompt completo formatado com o log inserido
+                String fullPrompt = "Atue como um especialista em desenvolvimento Android e depuração do Sketchware Pro.\n\n"
+                + "Estou enfrentando um erro de compilação no meu projeto. Preciso que você identifique a causa exata e me dê a solução prática.\n\n"
+                + "--- DETALHES DO AMBIENTE ---\n"
+                + "- Ferramenta: Sketchware Pro\n"
+                + "- Compilador de recursos em uso: [AAPT1 / AAPT2 / Não sei]\n"
+                + "- Bibliotecas ativas recentes: [Ex: Material 1.13.0, ConstraintLayout 2.2.1, Firebase, etc.]\n\n"
+                + "--- LOG DO ERRO ---\n"
+                + "'''\n" + logs + "\n'''\n\n"
+                + "--- O QUE PRECISO ---\n"
+                + "1. A causa raiz do problema em poucas palavras.\n"
+                + "2. Um passo a passo exato do que alterar nas configurações do Sketchware Pro, nas bibliotecas locais (Local Libraries) ou no código para corrigir.\n"
+                + "3. Se o erro for de compatibilidade, indique quais versões exatas de dependências eu devo usar.";
 
-        PopupMenu options = new PopupMenu(this, binding.formatButton);
-        options.getMenu().add(wrapTextLabel).setCheckable(true).setChecked(getWrappedTextPreference());
+                // Cria o Intent de compartilhamento de texto direcionado ao pacote do Gemini
+                Intent geminiIntent = new Intent(Intent.ACTION_SEND);
+                geminiIntent.setType("text/plain");
+                geminiIntent.putExtra(Intent.EXTRA_TEXT, fullPrompt);
+                geminiIntent.setPackage(geminiPackage);
+
+                // Verifica se o Gemini está instalado e responde ao Intent
+                if (geminiIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(geminiIntent);
+                } else {
+                    // Fallback: Copia o prompt para a área de transferência antes de abrir a web
+                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                    android.content.ClipData clip = android.content.ClipData.newPlainText("Prompt Gemini", fullPrompt);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(clip);
+                    }
+
+                    SketchwareUtil.toast("App do Gemini não encontrado. Prompt copiado! Cole na Web...");
+                    Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://gemini.google.com/"));
+                    startActivity(webIntent);
+                }
+            } else {
+                SketchwareUtil.toast("Nenhum log de erro encontrado.");
+            }
+        });
+    }
+
+    final String wrapTextLabel = "Wrap text";
+    final String monospacedFontLabel = "Monospaced font";
+    final String fontSizeLabel = "Font size";
+
+    PopupMenu options = new PopupMenu(this,
+            binding.formatButton);options.getMenu().add(wrapTextLabel).setCheckable(true).setChecked(getWrappedTextPreference());
         options.getMenu().add(monospacedFontLabel).setCheckable(true).setChecked(getMonospacedFontPreference());
         options.getMenu().add(fontSizeLabel);
 
@@ -151,7 +196,8 @@ public class CompileLogActivity extends BaseAppCompatActivity {
 
     private void setErrorText() {
         String error = getIntent().getStringExtra("error");
-        if (error == null) error = compileErrorSaver.getLogsFromFile();
+        if (error == null)
+            error = compileErrorSaver.getLogsFromFile();
         if (error == null) {
             binding.noContentLayout.setVisibility(View.VISIBLE);
             binding.optionsLayout.setVisibility(View.GONE);
@@ -215,7 +261,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
 
     private void changeFontSizeDialog() {
         NumberPicker picker = new NumberPicker(this);
-        picker.setMinValue(10); //Must not be less than setValue(), which is currently 11 in compile_log.xml
+        picker.setMinValue(10); // Must not be less than setValue(), which is currently 11 in compile_log.xml
         picker.setMaxValue(70);
         picker.setWrapSelectorWheel(false);
         picker.setValue(getFontSizePreference());

@@ -16,33 +16,46 @@
         android:focusable="true"
         app:cardCornerRadius="24dp"
         app:checkedIcon="@null">
+
+        <LinearLayout
+            android:id="@+id/library_status"
+            android:layout_width="15dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center|left"
+            android:layout_marginStart="0dp"
+            android:background="@color/design_tab_indicator_color"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="@+id/library_size"
+            app:layout_constraintTop_toTopOf="@+id/library_name" />
         <!--        app:cardBackgroundColor="@android:color/transparent"-->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingEnd="16dp"
+            android:paddingVertical="8dp"
             android:paddingStart="20dp"
-            android:paddingVertical="8dp">
+            android:paddingEnd="16dp">
 
             <TextView
                 android:id="@+id/library_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
                 android:ellipsize="marquee"
                 android:singleLine="true"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
                 android:textColor="?attr/colorOnSurface"
-                app:layout_constraintVertical_chainStyle="packed"
+                app:layout_constraintBottom_toTopOf="@id/library_size"
                 app:layout_constraintEnd_toStartOf="@id/material_switch"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/library_size"
                 app:layout_constraintTop_toTopOf="@id/material_switch"
+                app:layout_constraintVertical_chainStyle="packed"
                 tools:text="appcompat-v1.7.0" />
 
             <TextView
                 android:id="@+id/library_size"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
                 android:layout_marginTop="2dp"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant"

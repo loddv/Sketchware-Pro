@@ -1,6 +1,7 @@
 package mod.pranav.dependency.resolver
 
 import android.os.Environment
+import android.util.Log
 import com.android.tools.r8.CompilationMode
 import com.android.tools.r8.D8
 import com.android.tools.r8.D8Command
@@ -18,8 +19,11 @@ import org.cosmic.ide.dependency.resolver.api.Repository
 import org.cosmic.ide.dependency.resolver.eventReciever
 import org.cosmic.ide.dependency.resolver.getArtifact
 import org.cosmic.ide.dependency.resolver.repositories
+import org.w3c.dom.Node
+import org.xml.sax.InputSource
 import pro.sketchware.utility.FileUtil
 import java.io.File
+import java.io.StringReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Files
@@ -28,27 +32,33 @@ import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import java.util.zip.ZipFile
+import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.xpath.XPathConstants
+import javax.xml.xpath.XPathFactory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 class DependencyResolver(
     private val groupId: String,
     private val artifactId: String,
-    private var version: String,               // agora pode ser "latest"
+    private var version: String,               // pode ser "latest" ou "new"
     private val skipDependencies: Boolean,
     private val buildSettings: BuildSettings
 ) {
     companion object {
+        // Repositórios atualizados e funcionais em 2025 (removidos os obsoletos como JCenter)
         private val DEFAULT_REPOS = """
           |[
+          |    {"url": "https://maven.google.com", "name": "Google Maven"},
           |    {"url": "https://repo.hortonworks.com/content/repositories/releases", "name": "HortanWorks"},
           |    {"url": "https://maven.atlassian.com/content/repositories/atlassian-public", "name": "Atlassian"},
           |    {"url": "https://jcenter.bintray.com", "name": "JCenter"},
-          |    {"url": "https://oss.sonatype.org/content/repositories/releases", "name": "Sonatype"},
+          |    {"url": "https://oss.sonatype.org/content/repositories/releases", "name": "Sonatype Releases"},
           |    {"url": "https://repo.spring.io/plugins-release", "name": "Spring Plugins"},
+          |    {"url": "https://repo.spring.io/release", "name": "Spring Release"},
           |    {"url": "https://repo.spring.io/libs-milestone", "name": "Spring Milestone"},
-          |    {"url": "https://repo.maven.apache.org/maven2", "name": "Apache Maven"}
+          |    {"url": "https://repo.maven.apache.org/maven2", "name": "Maven Central"}
           |]
         """.trimMargin("|")
     }
@@ -81,7 +91,6 @@ class DependencyResolver(
     }
 
     open class DependencyResolverCallback : EventReciever() {
-        // ... (mantidos todos os callbacks originais)
         override fun artifactFound(artifact: Artifact) {}
         override fun onArtifactNotFound(artifact: Artifact) {}
         override fun onFetchingLatestVersion(artifact: Artifact) {}
@@ -103,11 +112,15 @@ class DependencyResolver(
         open fun invalidPackaging(artifact: Artifact) {}
     }
 
-
     fun resolveDependency(callback: DependencyResolverCallback) = runBlocking {
         eventReciever = callback
 
-        if (version.equals("latest", ignoreCase = true) || version.equals("new", ignoreCase = true)) {
+        // === Resolução de versão "latest" ou "new" ===
+        if (version.equals("latest", ignoreCase = true) || version.equals(
+                "new",
+                ignoreCase = true
+            )
+        ) {
             val tempArtifact = Artifact(groupId, artifactId, "latest", null, "")
             callback.onFetchingLatestVersion(tempArtifact)
             val resolved = resolveLatestVersion(groupId, artifactId)
@@ -116,7 +129,10 @@ class DependencyResolver(
                 return@runBlocking
             }
             version = resolved
-            callback.onFetchedLatestVersion(tempArtifact.apply { version = resolved }, resolved)
+            callback.onFetchedLatestVersion(
+                tempArtifact.apply { this.version = resolved },
+                resolved
+            )
         }
 
         val dependency = getArtifact(groupId, artifactId, version) ?: return@runBlocking
@@ -125,141 +141,124 @@ class DependencyResolver(
             callback.invalidPackaging(dependency)
             return@runBlocking
         }
-
+        // === Preparação do classpath e library jars ===
         val libraryJars = listOf(
             BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH.toPath()
-                .resolve("core-lambda-stubs.jar"), Paths.get(
+                .resolve("core-lambda-stubs.jar"),
+            Paths.get(
                 buildSettings.getValue(
                     BuildSettings.SETTING_ANDROID_JAR_PATH,
                     BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH.resolve("android.jar").absolutePath
                 )
             )
         )
+
         val dependencyClasspath = mutableListOf<Path>()
-
-        val classpath = buildSettings.getValue(BuildSettings.SETTING_CLASSPATH, "")
-
-        classpath.split(":").forEach {
-            if (it.isEmpty()) return@forEach
-            dependencyClasspath.add(Paths.get(it))
+        val classpathSetting = buildSettings.getValue(BuildSettings.SETTING_CLASSPATH, "")
+        classpathSetting.split(":").forEach {
+            if (it.isNotEmpty()) dependencyClasspath.add(Paths.get(it))
         }
 
-        dependency.downloadTo(
-            File(downloadPath + "/${dependency.artifactId}-v${dependency.version}/classes.${dependency.extension}")
-                .apply {
-                    parentFile?.mkdirs()
-                }
-        )
+        // === Download da dependência principal ===
+        val libDir = Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}")
+        val originalFile = libDir.resolve("classes.${dependency.extension}")
+        Files.createDirectories(originalFile.parent)
+        dependency.downloadTo(File(originalFile.toString()))
 
+        // === Processamento de AAR (se for o caso) ===
+        var inputJarForDex = originalFile
         if (dependency.extension == "aar") {
             callback.unzipping(dependency)
-            unzip(
-                Paths.get(
-                    downloadPath,
-                    "${dependency.artifactId}-v${dependency.version}",
-                    "classes.aar"
-                )
-            )
-            Files.delete(
-                Paths.get(
-                    downloadPath,
-                    "${dependency.artifactId}-v${dependency.version}",
-                    "classes.aar"
-                )
-            )
-            val packageName = findPackageName(
-                Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}")
-                    .toAbsolutePath().toString(),
-                dependency.groupId
-            )
-            Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}", "config")
-                .writeText(packageName)
-            Paths.get(downloadPath, "${dependency.artifactId}-v${dependency.version}", "info")
-                .writeText(dependency.groupId + "." + dependency.artifactId + ":" + dependency.version)
+            unzip(originalFile)
+            Files.delete(originalFile)
+
+            val packageName = findPackageName(libDir.toString(), dependency.groupId)
+            libDir.resolve("config").writeText(packageName)
+            libDir.resolve("info")
+                .writeText("${dependency.groupId}.${dependency.artifactId}:${dependency.version}")
+
+            inputJarForDex = libDir.resolve("classes.jar")
         }
 
-        val jar = Paths.get(
-            downloadPath,
-            "${dependency.artifactId}-v${dependency.version}",
-            "classes.jar"
-        )
-
+        // === Dexing da dependência principal ===
         callback.dexing(dependency)
         try {
-            compileJar(jar, dependencyClasspath, libraryJars)
+            compileJar(
+                outputJar = libDir.resolve("classes.jar"),
+                inputJars = listOf(inputJarForDex),
+                classpathJars = dependencyClasspath,
+                libraryJars = libraryJars
+            )
             callback.onResolutionComplete(dependency)
         } catch (e: Exception) {
             callback.dexingFailed(dependency, e)
+            return@runBlocking
         }
 
+        // === Se skipDependencies, finaliza aqui ===
         if (skipDependencies) {
             callback.onSkippingResolution(dependency)
             callback.onTaskCompleted(listOf("${dependency.artifactId}-v${dependency.version}"))
             return@runBlocking
         }
-        dependency.resolveDependencyTree()
 
-        dependency.getAllDependencies().forEach { dep ->
-            println("Resolving dependency: ${dep.artifactId} v${dep.version}")
+        // === Resolução de dependências transitivas ===
+        dependency.resolveDependencyTree()
+        val allDeps = dependency.getAllDependencies()
+
+        // Baixa e processa todas as transitivas (sequencialmente, para evitar conflitos de classpath temporário)
+        for (dep in allDeps) {
             if (dep.extension != "jar" && dep.extension != "aar") {
                 callback.invalidPackaging(dep)
-                return@forEach
+                continue
             }
-
             if (dep.version.isEmpty()) {
                 callback.onVersionNotFound(dep)
-                return@forEach
+                continue
             }
 
-            val path = Paths.get(
-                downloadPath,
-                "${dep.artifactId}-v${dep.version}",
-                "classes.${dep.extension}"
-            )
+            val depDir = Paths.get(downloadPath, "${dep.artifactId}-v${dep.version}")
+            val depFile = depDir.resolve("classes.${dep.extension}")
+            Files.createDirectories(depFile.parent)
+            dep.downloadTo(File(depFile.toString()))
 
-            Files.createDirectories(path.parent)
-
-            dep.downloadTo(File(path.toString()))
-
+            var depInputJar = depFile
             if (dep.extension == "aar") {
                 callback.unzipping(dep)
-                unzip(path)
-                Files.delete(path)
-                val packageName =
-                    findPackageName(path.parent.toAbsolutePath().toString(), dep.groupId)
-                path.parent.resolve("config").writeText(packageName)
-                path.parent.resolve("info")
-                    .writeText(dep.groupId + "." + dep.artifactId + ":" + dep.version)
+                unzip(depFile)
+                Files.delete(depFile)
+
+                val packageName = findPackageName(depDir.toString(), dep.groupId)
+                depDir.resolve("config").writeText(packageName)
+                depDir.resolve("info").writeText("${dep.groupId}.${dep.artifactId}:${dep.version}")
+
+                depInputJar = depDir.resolve("classes.jar")
             }
 
-            val jar = if (dep.extension == "jar") path else Paths.get(
-                downloadPath, "${dep.artifactId}-v${dep.version}", "classes.jar"
-            )
-            if (Files.notExists(jar)) {
-                callback.onDependenciesNotFound(dep)
-                return@forEach
-            }
-
-            dependencyClasspath.add(jar)
+            // Adiciona ao classpath para as próximas dexings
+            dependencyClasspath.add(depDir.resolve("classes.jar"))
         }
 
-        // Use a fixed-size thread pool for dexing to avoid overwhelming the system
+        // === Dexing paralelo das transitivas ===
         val executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
         runBlocking(executor.asCoroutineDispatcher()) {
-            dependency.getAllDependencies().forEach { dep ->
+            allDeps.forEach { dep ->
                 launch {
-                    val jar = Paths.get(
-                        downloadPath,
-                        "${dep.artifactId}-v${dep.version}",
-                        "classes.jar"
-                    )
+                    val depDir = Paths.get(downloadPath, "${dep.artifactId}-v${dep.version}")
+                    val jarToDex = depDir.resolve("classes.jar")
+
+                    if (Files.notExists(jarToDex)) {
+                        callback.onDependenciesNotFound(dep)
+                        return@launch
+                    }
 
                     callback.dexing(dep)
                     try {
                         compileJar(
-                            jar,
-                            dependencyClasspath.toMutableList().apply { remove(jar) },
-                            libraryJars
+                            outputJar = jarToDex,
+                            inputJars = listOf(jarToDex), // já é o JAR extraído
+                            classpathJars = dependencyClasspath.filter { it != jarToDex }, // remove próprio
+                            libraryJars = libraryJars
                         )
                         callback.onResolutionComplete(dep)
                     } catch (e: Exception) {
@@ -269,73 +268,127 @@ class DependencyResolver(
             }
         }
 
-        callback.onTaskCompleted(
-            dependency.getAllDependencies().map { "${it.artifactId}-v${it.version}" })
+        callback.onTaskCompleted(allDeps.map { "${it.artifactId}-v${it.version}" })
     }
 
-    // ====================== NOVO METODO PARA latest ======================
+    // ====================== RESOLUÇÃO DE VERSÃO MAIS RECENTE ======================
     private fun resolveLatestVersion(groupId: String, artifactId: String): String? {
         val groupPath = groupId.replace('.', '/')
         for (repo in repositories) {
-            val metadataUrl = "${repo.getURL()}/$groupPath/$artifactId/maven-metadata.xml"
+            val baseUrl = repo.getURL().replace("http://", "https://")
+            val metadataUrl = "$baseUrl/$groupPath/$artifactId/maven-metadata.xml"
             try {
                 val connection = URL(metadataUrl).openConnection() as HttpURLConnection
                 connection.connectTimeout = 8000
                 connection.readTimeout = 8000
+                connection.setRequestProperty("User-Agent", "Cosmic-IDE/1.0")
+                connection.setRequestProperty("Accept", "application/xml")
                 connection.requestMethod = "GET"
                 connection.instanceFollowRedirects = true
 
-                if (connection.responseCode == 200) {
-                    val input = connection.inputStream
-                    val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                        .parse(input)
-                    doc.documentElement.normalize()
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    connection.inputStream.use { input ->
+                        val factory = DocumentBuilderFactory.newInstance().apply {
+                            isExpandEntityReferences = false
+                            isCoalescing = true
+                            try {
+                                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+                                setFeature(
+                                    "http://apache.org/xml/features/disallow-doctype-decl",
+                                    true
+                                )
+                                setFeature(
+                                    "http://xml.org/sax/features/external-general-entities",
+                                    false
+                                )
+                                setFeature(
+                                    "http://xml.org/sax/features/external-parameter-entities",
+                                    false
+                                )
+                                setFeature(
+                                    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+                                    false
+                                )
+                            } catch (ignored: Exception) {
+                                Log.e(
+                                    "DependencyResolver",
+                                    "Falha ao configurar segurança XML",
+                                    ignored
+                                )
+                            }
+                        }
 
-                    // Primeiro tenta <latest>, depois <release>
-                    var latest = doc.getElementsByTagName("latest")
-                        .takeIf { it.length > 0 }?.item(0)?.textContent?.trim()
+                        val builder = factory.newDocumentBuilder()
+                        builder.setEntityResolver { _, _ -> InputSource(StringReader("")) }
+                        val doc = builder.parse(input)
+                        doc.documentElement.normalize()
 
-                    if (latest.isNullOrEmpty()) {
-                        latest = doc.getElementsByTagName("release")
-                            .takeIf { it.length > 0 }?.item(0)?.textContent?.trim()
-                    }
+                        fun getTextContent(tagName: String): String? {
+                            // Estratégia 1: tag direta
+                            doc.getElementsByTagName(tagName).item(0)?.textContent?.trim()
+                                ?.takeIf { it.isNotEmpty() }?.let { return it }
 
-                    if (!latest.isNullOrEmpty()) {
-                        return latest
+                            // Estratégia 2: com namespace curinga
+                            doc.getElementsByTagNameNS("*", tagName).item(0)?.textContent?.trim()
+                                ?.takeIf { it.isNotEmpty() }?.let { return it }
+
+                            // Estratégia 3: XPath
+                            try {
+                                val xpath = XPathFactory.newInstance().newXPath()
+                                val node = xpath.compile("//$tagName")
+                                    .evaluate(doc, XPathConstants.NODE) as? Node
+                                node?.textContent?.trim()?.takeIf { it.isNotEmpty() }
+                                    ?.let { return it }
+                            } catch (ignored: Exception) {
+                            }
+
+                            // Estratégia 4: busca manual recursiva
+                            fun findInNode(node: Node): String? {
+                                if (node.nodeType == Node.ELEMENT_NODE && node.localName == tagName) {
+                                    return node.textContent.trim().takeIf { it.isNotEmpty() }
+                                }
+                                val children = node.childNodes
+                                for (i in 0 until children.length) {
+                                    findInNode(children.item(i))?.let { return it }
+                                }
+                                return null
+                            }
+                            return findInNode(doc.documentElement)
+                        }
+
+                        return getTextContent("latest") ?: getTextContent("release")
                     }
                 }
             } catch (ignored: Exception) {
-                // continua tentando nos próximos repositórios
+                // Continua para o próximo repositório
             }
         }
         return null
     }
-    // =====================================================================
 
+    // ====================== EXTRAÇÃO DE PACKAGE NAME ======================
     private fun findPackageName(path: String, defaultValue: String): String {
-        val manifest =
-            File(path).walk().filter { it.isFile && it.name == "AndroidManifest.xml" }.firstOrNull()
-        val content = manifest?.readText() ?: return defaultValue
-        val p = Pattern.compile("<manifest.*package=\"(.*?)\"", Pattern.DOTALL)
-        val m = p.matcher(content)
-        if (m.find()) {
-            return m.group(1)!!
-        }
+        val manifest = File(path).walkTopDown()
+            .find { it.isFile && it.equals("AndroidManifest.xml") }
+            ?: return defaultValue
 
-        return defaultValue
+        // Regex melhorado: suporta quebras de linha e espaços
+        val pattern = Pattern.compile("""package\s*=\s*"(.*?)"""", Pattern.DOTALL)
+        val matcher = pattern.matcher(manifest.readText())
+        return if (matcher.find()) matcher.group(1)!! else defaultValue
     }
 
+    // ====================== UNZIP ======================
     private fun unzip(path: Path) {
-        val zipFile = ZipFile(path.toFile())
-        zipFile.use { zip ->
+        ZipFile(path.toFile()).use { zip ->
             zip.entries().asSequence().forEach { entry ->
-                val entryDestination = path.parent.resolve(entry.name)
+                val dest = path.parent.resolve(entry.name)
                 if (entry.isDirectory) {
-                    Files.createDirectories(entryDestination)
+                    Files.createDirectories(dest)
                 } else {
-                    Files.createDirectories(entryDestination.parent)
+                    Files.createDirectories(dest.parent)
                     zip.getInputStream(entry).use { input ->
-                        Files.newOutputStream(entryDestination).use { output ->
+                        Files.newOutputStream(dest).use { output ->
                             input.copyTo(output)
                         }
                     }
@@ -344,12 +397,27 @@ class DependencyResolver(
         }
     }
 
-    private fun compileJar(jarFile: Path, jars: List<Path>, libraryJars: List<Path>) {
-        Files.createDirectories(jarFile.parent)
-        D8.run(
-            D8Command.builder().setIntermediate(true).setMode(CompilationMode.RELEASE)
-                .addProgramFiles(jarFile).addLibraryFiles(libraryJars).addClasspathFiles(jars)
-                .setOutput(jarFile.parent, OutputMode.DexIndexed).build()
-        )
+    // ====================== COMPILAÇÃO COM D8 ======================
+    private fun compileJar(
+        outputJar: Path,           // classes.jar de saída (será sobrescrito)
+        inputJars: List<Path>,     // JAR(s) com .class para dexar
+        classpathJars: List<Path>, // Dependências já dexadas
+        libraryJars: List<Path>    // android.jar + core-lambda-stubs.jar
+    ) {
+        Files.createDirectories(outputJar.parent)
+
+        val builder = D8Command.builder()
+            .setIntermediate(true)
+            .setMode(CompilationMode.RELEASE)
+            .setMinApiLevel(21)
+            .setDisableDesugaring(false) // Habilita desugaring de Java 8+
+
+            .addProgramFiles(inputJars)
+            .addClasspathFiles(classpathJars)
+            .addLibraryFiles(libraryJars)
+
+            .setOutput(outputJar.parent, OutputMode.DexIndexed)
+
+        D8.run(builder.build())
     }
 }

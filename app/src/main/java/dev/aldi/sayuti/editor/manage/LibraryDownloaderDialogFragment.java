@@ -36,224 +36,248 @@ import pro.sketchware.utility.FileUtil;
 import pro.sketchware.utility.SketchwareUtil;
 
 public class LibraryDownloaderDialogFragment extends BottomSheetDialogFragment {
-	private final Gson gson = new Gson();
-	private LibraryDownloaderDialogBinding binding;
-	private BuildSettings buildSettings;
+    private final Gson gson = new Gson();
+    private LibraryDownloaderDialogBinding binding;
+    private BuildSettings buildSettings;
 
-	private boolean notAssociatedWithProject;
-	private String dependencyName;
-	private String localLibFile;
-	private OnLibraryDownloadedTask onLibraryDownloadedTask;
+    private boolean notAssociatedWithProject;
+    private String dependencyName;
+    private String localLibFile;
+    private OnLibraryDownloadedTask onLibraryDownloadedTask;
 
-	@Nullable
-	@Override
-	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-		binding = LibraryDownloaderDialogBinding.inflate(inflater, container, false);
-		return binding.getRoot();
-	}
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+        binding = LibraryDownloaderDialogBinding.inflate(inflater, container, false);
+        return binding.getRoot();
+    }
 
-	@Override
-	public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-		super.onViewCreated(view, savedInstanceState);
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        if (getArguments() == null) return;
+        notAssociatedWithProject = getArguments().getBoolean("notAssociatedWithProject", false);
+        buildSettings = (BuildSettings) getArguments().getSerializable("buildSettings");
+        localLibFile = getArguments().getString("localLibFile");
+        binding.btnCancel.setOnClickListener(v -> dismiss());
+        binding.btnDownload.setOnClickListener(v -> initDownloadFlow());
+    }
 
-		if (getArguments() == null) return;
+    public void setOnLibraryDownloadedTask(OnLibraryDownloadedTask onLibraryDownloadedTask) {
+        this.onLibraryDownloadedTask = onLibraryDownloadedTask;
+    }
 
-		notAssociatedWithProject = getArguments().getBoolean("notAssociatedWithProject", false);
-		buildSettings = (BuildSettings) getArguments().getSerializable("buildSettings");
-		localLibFile = getArguments().getString("localLibFile");
+    private void initDownloadFlow() {
+        TextInputEditText dependencyInput = binding.dependencyInput;
+        dependencyName = Helper.getText(dependencyInput).trim();
+        if (dependencyName.isEmpty()) {
+            binding.dependencyInputLayout.setError("Please enter a dependency");
+            binding.dependencyInputLayout.setErrorEnabled(true);
+            dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
+            return;
+        }
+        String dependencyIdentifier = null;
+        // 1. Primeiro: tenta extrair do formato Gradle clássico (com ou sem aspas)
+        Pattern gradlePattern = Pattern.compile("(['\"]?)([\\w.\\-]+:[\\w.\\-]+:[\\w.\\-]+)\\1");
+        Matcher gradleMatcher = gradlePattern.matcher(dependencyName);
+        if (gradleMatcher.find()) {
+            dependencyIdentifier = gradleMatcher.group(2);
+        }
+        // 2. Se não encontrou, tenta extrair de um bloco XML Maven/Gradle
+        if (dependencyIdentifier == null) {
+            Pattern xmlPattern = Pattern.compile(
+                    "<groupId>\\s*(.+?)\\s*</groupId>\\s*" +
+                            "<artifactId>\\s*(.+?)\\s*</artifactId>\\s*" +
+                            "<version>\\s*(.+?)\\s*</version>",
+                    Pattern.DOTALL
+            );
+            Matcher xmlMatcher = xmlPattern.matcher(dependencyName);
+            if (xmlMatcher.find()) {
+                String groupId = xmlMatcher.group(1).trim();
+                String artifactId = xmlMatcher.group(2).trim();
+                String version = xmlMatcher.group(3).trim();
+                dependencyIdentifier = groupId + ":" + artifactId + ":" + version;
+            }
+        }
+        // 3. Validação final
+        if (dependencyIdentifier == null || dependencyIdentifier.split(":").length != 3) {
+            binding.dependencyInputLayout.setError("Invalid dependency format. Expected 'group:name:version' or a " +
+                    "valid <dependency> XML block.");
+            binding.dependencyInputLayout.setErrorEnabled(true);
+            dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
+            return;
+        }
+        String[] parts = dependencyIdentifier.split(":");
+        if (parts.length != 3) {
+            binding.dependencyInputLayout.setError("Invalid dependency format. Expected 'group:name:version'.");
+            binding.dependencyInputLayout.setErrorEnabled(true);
+            dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
+            return;
+        }
+        binding.dependencyInfo.setText("Looking for dependency...");
+        binding.dependencyInputLayout.setErrorEnabled(false);
+        setDownloadState(true);
+        String groupId = parts[0];
+        String artifactId = parts[1];
+        String version = parts[2];
+        // Normaliza o campo de entrada para o formato padrão
+        dependencyInput.setText(groupId + ":" + artifactId + ":" + version);
+        dependencyInput.setSelection(Objects.requireNonNull(dependencyInput.getText()).length());
+        dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_green_01));
+        var resolver = new DependencyResolver(
+                groupId,
+                artifactId,
+                version,
+                binding.cbSkipSubdependencies.isChecked(),
+                buildSettings
+        );
+        var handler = new Handler(Looper.getMainLooper());
+        binding.dependencyInputLayout.setError(null);
+        class SetTextRunnable implements Runnable {
+            private final String text;
 
-		binding.btnCancel.setOnClickListener(v -> dismiss());
-		binding.btnDownload.setOnClickListener(v -> initDownloadFlow());
-	}
+            SetTextRunnable(String text) {
+                this.text = text;
+            }
 
-	public void setOnLibraryDownloadedTask(OnLibraryDownloadedTask onLibraryDownloadedTask) {
-		this.onLibraryDownloadedTask = onLibraryDownloadedTask;
-	}
+            @Override
+            public void run() {
+                binding.dependencyInfo.setText(text);
+            }
+        }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            BuiltInLibraries.maybeExtractAndroidJar((message, progress) -> handler.post(new SetTextRunnable(message)));
+            BuiltInLibraries.maybeExtractCoreLambdaStubsJar();
+            resolver.resolveDependency(new DependencyResolver.DependencyResolverCallback() {
+                @Override
+                public void onResolving(@NonNull Artifact artifact, @NonNull Artifact dependency) {
+                    handler.post(new SetTextRunnable("Resolving " + dependency + " for " + artifact + "..."));
+                }
 
-	private void initDownloadFlow() {
-		TextInputEditText dependencyInput = binding.dependencyInput;
-		dependencyName = Helper.getText(dependencyInput);
-		if (dependencyName.isEmpty()) {
-			binding.dependencyInputLayout.setError("Please enter a dependency");
-			binding.dependencyInputLayout.setErrorEnabled(true);
-			dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
-			return;
-		}
-		String dependencyIdentifier = null;
-		// This regex extracts the dependency identifier (e.g., group:name:version)
-		// from common Gradle dependency declarations like:
-		// implementation 'androidx.activity:activity:1.12.0-beta01'
-		// implementation("androidx.activity:activity:1.12.0-beta01") or just 'androidx.activity:activity:1.12.0-beta01'
-		Pattern pattern = Pattern.compile("(['\"]?)([\\w.\\-]+:[\\w.\\-]+:[\\w.\\-]+)\\1");
-		Matcher matcher = pattern.matcher(dependencyName);
-		if (matcher.find()) { // group(2) contains the captured dependency identifier
-			dependencyIdentifier = matcher.group(2);
-		}
+                @Override
+                public void onResolutionComplete(@NonNull Artifact dep) {
+                    handler.post(new SetTextRunnable("Dependency " + dep + " resolved"));
+                }
 
-		if (dependencyIdentifier == null || dependencyIdentifier.split(":").length != 3) {
-			binding.dependencyInputLayout.setError("Invalid dependency format. Expected 'group:name:version'.");
-			binding.dependencyInputLayout.setErrorEnabled(true);
-			// It's better practice to use ContextCompat for getting colors to ensure
-			// compatibility across different Android versions.
-			dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
-			return;
-		}
+                @Override
+                public void onArtifactNotFound(@NonNull Artifact dep) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Dependency '" + dep + "' not found");
+                    });
+                }
 
-		String[] parts = dependencyIdentifier.split(":");
-		// Now 'parts' will correctly contain the group, artifact, and version.
-		if (parts.length != 3) {
-			binding.dependencyInputLayout.setError("Invalid dependency format. Expected 'group:name:version'.");
-			binding.dependencyInputLayout.setErrorEnabled(true);
-			dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_red_02));
-			return;
-		}
+                @Override
+                public void onSkippingResolution(@NonNull Artifact dep) {
+                    handler.post(new SetTextRunnable("Skipping resolution for " + dep));
+                }
 
-		binding.dependencyInfo.setText("Looking for dependency...");
-		binding.dependencyInputLayout.setErrorEnabled(false);
-		setDownloadState(true);
+                @Override
+                public void onVersionNotFound(@NonNull Artifact dep) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        new SetTextRunnable("Version not available for \"" + dep + "\"").run();
+                    });
+                }
 
-		var groupId = parts[0];
-		var artifactId = parts[1];
-		var version = parts[2];
-		dependencyInput.setText(groupId + ":" + artifactId + ":" + version);
-		dependencyInput.setSelection(Objects.requireNonNull(dependencyInput.getText()).length());
-		dependencyInput.setTextColor(ContextCompat.getColor(requireContext(), R.color.scolor_green_01));
+                @Override
+                public void onDependenciesNotFound(@NonNull Artifact dep) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        new SetTextRunnable("Dependencies not found for \"" + dep + "\"").run();
+                    });
+                }
 
-		var resolver = new DependencyResolver(groupId, artifactId, version, binding.cbSkipSubdependencies.isChecked(), buildSettings);
-		var handler = new Handler(Looper.getMainLooper());
-		binding.dependencyInputLayout.setError(null);
-		class SetTextRunnable implements Runnable {
-			private final String text;
+                @Override
+                public void onInvalidScope(@NonNull Artifact dep, @NonNull String scope) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        new SetTextRunnable("Invalid scope for dependency " + dep + ": " + scope).run();
+                    });
+                }
 
-			SetTextRunnable(String text) {
-				this.text = text;
-			}
+                @Override
+                public void invalidPackaging(@NonNull Artifact dep) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        new SetTextRunnable("Invalid packaging for dependency " + dep).run();
+                    });
+                }
 
-			@Override
-			public void run() {
-				binding.dependencyInfo.setText(text);
-			}
-		}
+                @Override
+                public void onDownloadStart(@NonNull Artifact dep) {
+                    handler.post(new SetTextRunnable("Downloading dependency " + dep + "..."));
+                }
 
-		Executors.newSingleThreadExecutor().execute(() -> {
-			BuiltInLibraries.maybeExtractAndroidJar((message, progress) -> handler.post(new SetTextRunnable(message)));
-			BuiltInLibraries.maybeExtractCoreLambdaStubsJar();
+                @Override
+                public void onDownloadEnd(@NonNull Artifact dep) {
+                    handler.post(new SetTextRunnable("Dependency " + dep + " downloaded"));
+                }
 
-			resolver.resolveDependency(new DependencyResolver.DependencyResolverCallback() {
-				@Override
-				public void onResolving(@NonNull Artifact artifact, @NonNull Artifact dependency) {
-					handler.post(new SetTextRunnable("Resolving " + dependency + " for " + artifact + "..."));
-				}
+                @Override
+                public void onDownloadError(@NonNull Artifact dep, @NonNull Throwable e) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Downloading dependency '" + dep + "'" +
+                                " failed: " + Log.getStackTraceString(e));
+                    });
+                }
 
-				@Override
-				public void onResolutionComplete(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Dependency " + dep + " resolved"));
-				}
+                @Override
+                public void unzipping(@NonNull Artifact artifact) {
+                    handler.post(new SetTextRunnable("Unzipping dependency " + artifact));
+                }
 
-				@Override
-				public void onArtifactNotFound(@NonNull Artifact dep) {
-					handler.post(() -> {
-						setDownloadState(false);
-						SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Dependency '" + dep + "' not found");
-					});
-				}
+                @Override
+                public void dexing(@NonNull Artifact dep) {
+                    handler.post(new SetTextRunnable("Dexing dependency " + dep));
+                }
 
-				@Override
-				public void onSkippingResolution(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Skipping resolution for " + dep));
-				}
+                @Override
+                public void dexingFailed(@NonNull Artifact dependency, @NonNull Exception e) {
+                    handler.post(() -> {
+                        setDownloadState(false);
+                        SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Dexing dependency '" + dependency +
+                                "' failed: " + Log.getStackTraceString(e));
+                    });
+                }
 
-				@Override
-				public void onVersionNotFound(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Version not available for " + dep));
-				}
+                @Override
+                public void onTaskCompleted(@NonNull List<String> dependencies) {
+                    handler.post(() -> {
+                        SketchwareUtil.toast("Library downloaded successfully");
+                        if (!notAssociatedWithProject) {
+                            new SetTextRunnable("Adding dependencies to project...").run();
+                            var fileContent = FileUtil.readFile(localLibFile);
+                            var enabledLibs = gson.fromJson(fileContent, Helper.TYPE_MAP_LIST);
+                            enabledLibs.addAll(dependencies.stream()
+                                    .map(name -> createLibraryMap(name, dependencyName))
+                                    .toList());
+                            FileUtil.writeFile(localLibFile, gson.toJson(enabledLibs));
+                        }
+                        if (getActivity() == null) return;
+                        dismiss();
+                        if (onLibraryDownloadedTask != null) onLibraryDownloadedTask.invoke();
+                    });
+                }
+            });
+        });
+        setDownloadState(true);
+    }
 
-				@Override
-				public void onDependenciesNotFound(@NonNull Artifact dep) {
-					handler.post(() -> new SetTextRunnable("Dependencies not found for \"" + dep + "\"").run());
-				}
+    private void setDownloadState(boolean downloading) {
+        binding.btnCancel.setVisibility(downloading ? View.GONE : View.VISIBLE);
+        binding.btnDownload.setEnabled(!downloading);
+        binding.dependencyInput.setEnabled(!downloading);
+        binding.cbSkipSubdependencies.setEnabled(!downloading);
+        setCancelable(!downloading);
+        if (!downloading) {
+            binding.dependencyInfo.setText(R.string.local_library_manager_dependency_info);
+        }
+    }
 
-				@Override
-				public void onInvalidScope(@NonNull Artifact dep, @NonNull String scope) {
-					handler.post(new SetTextRunnable("Invalid scope for " + dep + ": " + scope));
-				}
-
-				@Override
-				public void invalidPackaging(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Invalid packaging for dependency " + dep));
-				}
-
-				@Override
-				public void onDownloadStart(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Downloading dependency " + dep + "..."));
-				}
-
-				@Override
-				public void onDownloadEnd(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Dependency " + dep + " downloaded"));
-				}
-
-				@Override
-				public void onDownloadError(@NonNull Artifact dep, @NonNull Throwable e) {
-					handler.post(() -> {
-						setDownloadState(false);
-						SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Downloading dependency '" + dep + "' failed: " + Log.getStackTraceString(e));
-					});
-				}
-
-				@Override
-				public void unzipping(@NonNull Artifact artifact) {
-					handler.post(new SetTextRunnable("Unzipping dependency " + artifact));
-				}
-
-				@Override
-				public void dexing(@NonNull Artifact dep) {
-					handler.post(new SetTextRunnable("Dexing dependency " + dep));
-				}
-
-				@Override
-				public void dexingFailed(@NonNull Artifact dependency, @NonNull Exception e) {
-					handler.post(() -> {
-						setDownloadState(false);
-						SketchwareUtil.showAnErrorOccurredDialog(getActivity(), "Dexing dependency '" + dependency + "' failed: " + Log.getStackTraceString(e));
-					});
-				}
-
-				@Override
-				public void onTaskCompleted(@NonNull List<String> dependencies) {
-					handler.post(() -> {
-						SketchwareUtil.toast("Library downloaded successfully");
-						if (! notAssociatedWithProject) {
-							new SetTextRunnable("Adding dependencies to project...").run();
-							var fileContent = FileUtil.readFile(localLibFile);
-							var enabledLibs = gson.fromJson(fileContent, Helper.TYPE_MAP_LIST);
-							enabledLibs.addAll(dependencies.stream()
-									                   .map(name -> createLibraryMap(name, dependencyName))
-									                   .toList());
-							FileUtil.writeFile(localLibFile, gson.toJson(enabledLibs));
-						}
-						if (getActivity() == null) return;
-						dismiss();
-						if (onLibraryDownloadedTask != null) onLibraryDownloadedTask.invoke();
-					});
-				}
-			});
-		});
-	}
-
-	private void setDownloadState(boolean downloading) {
-		binding.btnCancel.setVisibility(downloading ? View.GONE : View.VISIBLE);
-		binding.btnDownload.setEnabled(! downloading);
-		binding.dependencyInput.setEnabled(! downloading);
-		binding.cbSkipSubdependencies.setEnabled(! downloading);
-		setCancelable(! downloading);
-
-		if (! downloading) {
-			binding.dependencyInfo.setText(R.string.local_library_manager_dependency_info);
-		}
-	}
-
-	public interface OnLibraryDownloadedTask {
-		void invoke();
-	}
+    public interface OnLibraryDownloadedTask {
+        void invoke();
+    }
 }

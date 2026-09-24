@@ -38,15 +38,11 @@ public class AboutActivity extends BaseAppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         enableEdgeToEdgeNoContrast();
         super.onCreate(savedInstanceState);
-
         binding = ActivityAboutAppBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         binding.toolbar.setNavigationOnClickListener(v -> finish());
-
         aboutAppData = new ViewModelProvider(this).get(AboutAppViewModel.class);
         sharedPref = getSharedPreferences("AppData", Activity.MODE_PRIVATE);
-
         initViews();
         initData();
     }
@@ -62,15 +58,14 @@ public class AboutActivity extends BaseAppCompatActivity {
         AboutAdapter adapter = new AboutAdapter(this);
         binding.viewPager.setOffscreenPageLimit(3);
         binding.viewPager.setAdapter(adapter);
-
         String[] tabTitles = new String[]{
+                //getString()
                 Helper.getResString(R.string.about_team_title),
                 Helper.getResString(R.string.about_changelog_title),
                 Helper.getResString(R.string.about_beta_changes_title)
         };
-
-        new TabLayoutMediator(binding.tabLayout, binding.viewPager, (tab, position) -> tab.setText(tabTitles[position])).attach();
-
+        new TabLayoutMediator(binding.tabLayout, binding.viewPager,
+                (tab, position) -> tab.setText(tabTitles[position])).attach();
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -81,7 +76,6 @@ public class AboutActivity extends BaseAppCompatActivity {
                 }
             }
         });
-
         String toSelect = getIntent().getStringExtra("select");
         if (toSelect != null) {
             if ("changelog".equals(toSelect)) {
@@ -100,7 +94,6 @@ public class AboutActivity extends BaseAppCompatActivity {
                 response = sharedPref.getString("aboutData", null);
             }
             if (response == null) return;
-
             Gson gson = new Gson();
             AboutResponseModel aboutResponseModel = gson.fromJson(response, AboutResponseModel.class);
             aboutAppData.setDiscordInviteLink(aboutResponseModel.getDiscordInviteLink());
@@ -108,7 +101,6 @@ public class AboutActivity extends BaseAppCompatActivity {
             aboutAppData.setChangelog(aboutResponseModel.getChangelog());
         });
     }
-
     // ----------------- classes ----------------- //
 
     public static class AboutAdapter extends FragmentStateAdapter {

@@ -10,7 +10,7 @@
 
     <item
         android:id="@+id/design_actionbar_titleopen_drawer"
-        android:icon="@drawable/selector_ic_more_tinted_24"
+        android:icon="@drawable/ic_drawer"
         android:orderInCategory="110"
         android:title="Design Drawer"
         app:showAsAction="always" />

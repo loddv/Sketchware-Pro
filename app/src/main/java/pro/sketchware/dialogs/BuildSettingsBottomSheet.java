@@ -58,12 +58,12 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
     }
 
     public static String[] getAvailableJavaVersions() {
-        return new String[] {SETTING_JAVA_VERSION_1_7, SETTING_JAVA_VERSION_1_8, SETTING_JAVA_VERSION_1_9,
+        return new String[]{SETTING_JAVA_VERSION_1_7, SETTING_JAVA_VERSION_1_8, SETTING_JAVA_VERSION_1_9,
                 SETTING_JAVA_VERSION_10, SETTING_JAVA_VERSION_11, SETTING_JAVA_VERSION_12};
     }
 
     public static void handleJavaVersionChange(String choice) {
-        if (! choice.equals(SETTING_JAVA_VERSION_1_7)) {
+        if (!choice.equals(SETTING_JAVA_VERSION_1_7)) {
             SketchwareUtil.toast("Don't forget to enable D8 to be able to compile Java 8+ code");
         }
     }
@@ -71,7 +71,6 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Bundle arguments = getArguments();
         assert arguments != null;
         projectSettings = new BuildSettings(arguments.getString("sc_id"));
@@ -90,31 +89,28 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view,
                 savedInstanceState);
-
         initializeViews();
-
         binding.noWarnings.setOnClickListener(v -> binding.cbNoWarnings.performClick());
         binding.noHttpLegacy.setOnClickListener(v -> binding.cbNoHttpLegacy.performClick());
         binding.enableLogcat.setOnClickListener(v -> binding.cbEnableLogcat.performClick());
-
+        assert binding.tilAndroidJar.getEditText() != null;
         binding.tilAndroidJar.getEditText().setText(projectSettings.getValue(SETTING_ANDROID_JAR_PATH,
                 ""));
+        assert binding.tilClasspath.getEditText() != null;
         binding.tilClasspath.getEditText().setText(projectSettings.getValue(SETTING_CLASSPATH,
                 ""));
-
         setRadioGroupOptions(binding.rgProcessor,
-                new String[] {"AAPT", "AAPT2"},
+                new String[]{"AAPT", "AAPT2"},
                 SETTING_RESOURCE_PROCESSOR,
                 "AAPT2");
         setRadioGroupOptions(binding.rgDexer,
-                new String[] {"Dx", "D8"},
+                new String[]{"Dx", "D8"},
                 SETTING_DEXER,
                 "Dx");
         setRadioGroupOptions(binding.rgJavaVersion,
                 getAvailableJavaVersions(),
                 SETTING_JAVA_VERSION,
                 "1.7");
-
         setCheckboxValue(binding.cbNoWarnings,
                 SETTING_NO_WARNINGS,
                 true);
@@ -124,7 +120,6 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
         setCheckboxValue(binding.cbEnableLogcat,
                 SETTING_ENABLE_LOGCAT,
                 true);
-
         binding.btnCancel.setOnClickListener(v -> dismiss());
         binding.btnSave.setOnClickListener(v -> {
             projectSettings.setValues(views);
@@ -149,7 +144,6 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
         binding.cbNoWarnings.setTag(SETTING_NO_WARNINGS);
         binding.cbNoHttpLegacy.setTag(SETTING_NO_HTTP_LEGACY);
         binding.cbEnableLogcat.setTag(SETTING_ENABLE_LOGCAT);
-
         views[VIEW_ANDROID_JAR_PATH] = binding.tilAndroidJar.getEditText();
         views[VIEW_CLASS_PATH] = binding.tilClasspath.getEditText();
         views[VIEW_PROCESSOR] = binding.rgProcessor;
@@ -169,13 +163,13 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
             radioButton.setText(option);
             radioButton.setId(View.generateViewId());
             radioButton.setLayoutParams(new RadioGroup.LayoutParams(0,
-                    - 2,
+                    -2,
                     1f));
             if (value.equals(option)) {
                 radioButton.setChecked(true);
             }
             radioButton.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                if (! isChecked) {return;}
+                if (!isChecked) {return;}
                 if (key.equals(SETTING_JAVA_VERSION)) {
                     handleJavaVersionChange(option);
                 }
@@ -188,7 +182,6 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
         String value = projectSettings.getValue(key,
                 defaultValue ? "true" : "false");
         checkBox.setChecked(value.equals("true"));
-
         checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 if (key.equals(SETTING_NO_HTTP_LEGACY)) {

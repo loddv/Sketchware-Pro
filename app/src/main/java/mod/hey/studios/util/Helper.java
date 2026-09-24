@@ -79,6 +79,7 @@ public class Helper {
 
     public static String getResString(@StringRes int resId) {
         return getContext().getString(resId);
+        //        return getContext().getResources().getString(resId);
     }
 
     public static String getResString(@StringRes int resId, Object... formatArgs) {
@@ -96,7 +97,6 @@ public class Helper {
     public static void applyRipple(Context context, View view) {
         TypedValue typedValue = new TypedValue();
         context.getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, typedValue, true);
-
         view.setBackgroundResource(typedValue.resourceId);
         view.setClickable(true);
     }
@@ -131,7 +131,6 @@ public class Helper {
     public static void applyRippleToToolbarView(View view) {
         GradientDrawable content = new GradientDrawable();
         content.setCornerRadius(90);
-
         view.setBackground(
                 new RippleDrawable(
                         new ColorStateList(
@@ -155,7 +154,6 @@ public class Helper {
         if (!target.isClickable()) {
             target.setClickable(true);
         }
-
         target.setBackground(
                 new RippleDrawable(
                         new ColorStateList(
@@ -175,7 +173,6 @@ public class Helper {
     public static void sortPaths(ArrayList<String> paths) {
         ArrayList<String> directories = new ArrayList<>();
         ArrayList<String> files = new ArrayList<>();
-
         for (String str : paths) {
             if (FileUtil.isDirectory(str)) {
                 directories.add(str);
@@ -183,7 +180,6 @@ public class Helper {
                 files.add(str);
             }
         }
-
         // ignore the warnings, we need this for compatibility with pre-API level 24
         //noinspection Java8ListSort
         Collections.sort(directories, String.CASE_INSENSITIVE_ORDER);

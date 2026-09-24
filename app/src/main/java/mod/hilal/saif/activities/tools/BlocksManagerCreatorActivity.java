@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
-import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
@@ -28,6 +27,7 @@ import com.besome.sketch.lib.base.BaseAppCompatActivity;
 import com.besome.sketch.lib.ui.ColorPickerDialog;
 import com.google.android.material.color.MaterialColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.JsonParseException;
 
 import java.io.File;
@@ -53,252 +53,241 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 
-	private static final Pattern PARAM_PATTERN = Pattern.compile("%m(?!\\.[\\w]+)");
-	private final ArrayList<String> id_detector = new ArrayList<>();
-	private final List<Param> paramList = new ArrayList<>(); // Nova lista com pares
-	private ActivityBlocksManagerCreatorBinding binding;
-	private ArrayList<HashMap<String, Object>> blocksList = new ArrayList<>();
-	/**
-	 * Current mode of this activity, "edit" if editing a block, "add" if creating a new block and "insert" if inserting a block above another
-	 */
-	private String mode = "";
-	/**
-	 * Position of current editing/adding/inserting block in palette
-	 */
-	private int blockPosition = 0;
-	private ArrayList<String> autoCompleteList = new ArrayList<>(); // Não será mais usado diretamente
-	private String palletColour = "";
-	private String path = "";
-	private MultiAutoCompleteTextView specAutoComplete;
+    private static final Pattern PARAM_PATTERN = Pattern.compile("%m(?!\\.[\\w]+)");
+    private final ArrayList<String> id_detector = new ArrayList<>();
+    private final List<Param> paramList = new ArrayList<>(); // Nova lista com pares
+    private ActivityBlocksManagerCreatorBinding binding;
+    private ArrayList<HashMap<String, Object>> blocksList = new ArrayList<>();
+    /**
+     * Current mode of this activity, "edit" if editing a block, "add" if creating a new block and "insert" if
+     * inserting a block above another
+     */
+    private String mode = "";
+    /**
+     * Position of current editing/adding/inserting block in palette
+     */
+    private int blockPosition = 0;
+    private ArrayList<String> autoCompleteList = new ArrayList<>(); // Não será mais usado diretamente
+    private String palletColour = "";
+    private String path = "";
+    private TextInputEditText specAutoComplete;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		enableEdgeToEdgeNoContrast();
-		super.onCreate(savedInstanceState);
-		binding = ActivityBlocksManagerCreatorBinding.inflate(getLayoutInflater());
-		setContentView(binding.getRoot());
-		initialize();
-		initializeLogic();
-	}
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        enableEdgeToEdgeNoContrast();
+        super.onCreate(savedInstanceState);
+        binding = ActivityBlocksManagerCreatorBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        initialize();
+        initializeLogic();
+    }
 
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		binding = null;
-	}
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        binding = null;
+    }
 
-	@SuppressLint("ClickableViewAccessibility")
-	private void initialize() {
-		Toolbar toolbar = findViewById(R.id.toolbar);
-		setSupportActionBar(toolbar);
-		getSupportActionBar().setDisplayShowTitleEnabled(true);
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		toolbar.setNavigationOnClickListener(view -> onBackPressed());
+    @SuppressLint("ClickableViewAccessibility")
+    private void initialize() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar.setNavigationOnClickListener(view -> onBackPressed());
+        binding.name.addTextChangedListener(new BaseTextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String string = s.toString();
+                if (!id_detector.contains(string)) {
+                    binding.nameLayout.setError(null);
+                    binding.nameLayout.setErrorEnabled(false);
+                    binding.save.setEnabled(true);
+                } else if (!mode.equals("edit")) {
+                    binding.nameLayout.setError("Block name already in use");
+                    binding.nameLayout.setErrorEnabled(true);
+                    binding.save.setEnabled(false);
+                } else {
+                    HashMap<String, Object> savedBlocksListBlock = blocksList.get(blockPosition);
+                    Object blockNameObject = savedBlocksListBlock.get("name");
+                    if (!string.equals(blockNameObject)) {
+                        binding.nameLayout.setError("Block name already in use");
+                        binding.nameLayout.setErrorEnabled(true);
+                        binding.save.setEnabled(false);
+                    }
+                }
+            }
+        });
+        binding.selectType.setOnClickListener(v -> {
+            List<String> types = Arrays.asList(
+                    "regular", "c", "e", "s", "b",
+                    "d", "v", "a", "f", "l", "p", "h"
+            );
+            List<String> choices = Arrays.asList(
+                    "Regular block (regular)",
+                    "if block (c)",
+                    "if-else block (e)",
+                    "String (s)",
+                    "Boolean (b)",
+                    "Number (d)",
+                    "Variable (v)",
+                    "Map (a)",
+                    "stop block (f)",
+                    "List (l)",
+                    "Component (p)",
+                    "Header (h)"
+            );
+            AtomicInteger choice = new AtomicInteger();
+            new MaterialAlertDialogBuilder(this).setTitle("Block type")
+                    .setSingleChoiceItems(choices.toArray(new CharSequence[0]),
+                            types.indexOf(Helper.getText(binding.type)), (dialog, which) -> choice.set(which))
+                    .setPositiveButton(R.string.common_word_save,
+                            (dialog, which) -> binding.type.setText(types.get(choice.get())))
+                    .setNegativeButton(R.string.common_word_cancel, null)
+                    .setBackground(new android.graphics.drawable.ColorDrawable(MaterialColors.getColor(this,
+                            R.attr.colorSurfaceContainerLowest, Color.WHITE)))
+                    .create().show();
+        });
+        binding.type.addTextChangedListener(new BaseTextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().equals("e")) {
+                    AutoTransition transition = new AutoTransition();
+                    transition.setDuration(300L);
+                    TransitionManager.beginDelayedTransition(binding.scrollView, transition);
+                    binding.spec2Layout.setVisibility(View.VISIBLE);
+                } else {
+                    AutoTransition transition = new AutoTransition();
+                    transition.setDuration(300L);
+                    TransitionManager.beginDelayedTransition(binding.scrollView, transition);
+                    binding.spec2Layout.setVisibility(View.GONE);
+                }
+                updateBlockSpec(s.toString(), Helper.getText(binding.colour));
+            }
+        });
+        TextInputEditText specAutoComplete =
+                (TextInputEditText) binding.spec;
+        specAutoComplete.addTextChangedListener(new BaseTextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateBlockSpec(Helper.getText(binding.type), Helper.getText(binding.colour));
+            }
+        });
+        binding.openColorPalette.setOnClickListener(v -> {
+            ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, false, false);
+            colorPickerDialog.a(new PCP(binding.colour));
+            colorPickerDialog.showAtLocation(v, Gravity.CENTER, 0, 0);
+        });
+        binding.colour.addTextChangedListener(new BaseTextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!PropertiesUtil.isHexColor(s.toString())) {
+                    binding.colourLayout.setError("Invalid hex color");
+                    binding.colourLayout.setErrorEnabled(true);
+                } else {
+                    binding.colourLayout.setError(null);
+                    binding.colourLayout.setErrorEnabled(false);
+                }
+                updateBlockSpec(Helper.getText(binding.type), s.toString());
+            }
+        });
+        binding.cancel.setOnClickListener(Helper.getBackPressedClickListener(this));
+        binding.save.setOnClickListener(v -> {
+            if (!PropertiesUtil.isHexColor(Helper.getText(binding.colour))) {
+                SketchwareUtil.showMessage(getApplicationContext(), "Invalid hex color");
+                return;
+            }
+            Matcher matcher = PARAM_PATTERN.matcher(Helper.getText(binding.spec));
+            if (matcher.find()) {
+                SketchwareUtil.showMessage(getApplicationContext(), "Invalid block params");
+                return;
+            }
+            if (Helper.getText(binding.type).isEmpty()) {
+                binding.type.setText(" ");
+            }
+            if (mode.equals("add")) {
+                addBlock();
+            }
+            if (mode.equals("insert")) {
+                insertBlockAt(blockPosition);
+            }
+            if (mode.equals("edit")) {
+                editBlock(blockPosition);
+            }
+        });
+        binding.reset.setOnClickListener(v -> binding.colour.setText(palletColour));
+        binding.spec.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    v.getParent().requestDisallowInterceptTouchEvent(true);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    v.getParent().requestDisallowInterceptTouchEvent(false);
+                    break;
+            }
+            v.onTouchEvent(event);
+            return true;
+        });
+    }
 
-		binding.name.addTextChangedListener(new BaseTextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				String string = s.toString();
-				if (! id_detector.contains(string)) {
-					binding.nameLayout.setError(null);
-					binding.nameLayout.setErrorEnabled(false);
-					binding.save.setEnabled(true);
-				} else if (! mode.equals("edit")) {
-					binding.nameLayout.setError("Block name already in use");
-					binding.nameLayout.setErrorEnabled(true);
-					binding.save.setEnabled(false);
-				} else {
-					HashMap<String, Object> savedBlocksListBlock = blocksList.get(blockPosition);
-					Object blockNameObject = savedBlocksListBlock.get("name");
+    private void initializeLogic() {
+        inputProperties();
+        addParameters();
+        addSugestions();
+        receiveIntents();
+        // setupAutoComplete();    // Configura o AutoComplete com nomes amigáveis
+        new SimpleHighlighter(binding.code); // This does nothing on EditTexts without a custom TextPaint
+        new SimpleHighlighter(binding.spec);
+        {
+            View view = binding.content;
+            int left = view.getPaddingLeft();
+            int top = view.getPaddingTop();
+            int right = view.getPaddingRight();
+            int bottom = view.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(view, (v, i) -> {
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime() | WindowInsetsCompat.Type.displayCutout());
+                v.setPadding(left + insets.left, top, right + insets.right, bottom + insets.bottom);
+                return i;
+            });
+        }
+        {
+            View view = binding.appBarLayout;
+            int left = view.getPaddingLeft();
+            int top = view.getPaddingTop();
+            int right = view.getPaddingRight();
+            int bottom = view.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(view, (v, i) -> {
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                v.setPadding(left + insets.left, top + insets.top, right + insets.right, bottom + insets.bottom);
+                return i;
+            });
+        }
+    }
 
-					if (! string.equals(blockNameObject)) {
-						binding.nameLayout.setError("Block name already in use");
-						binding.nameLayout.setErrorEnabled(true);
-						binding.save.setEnabled(false);
-					}
-				}
-			}
-		});
-
-		binding.selectType.setOnClickListener(v -> {
-			List<String> types = Arrays.asList(
-					"regular", "c", "e", "s", "b",
-					"d", "v", "a", "f", "l", "p", "h"
-			);
-			List<String> choices = Arrays.asList(
-					"Regular block (regular)",
-					"if block (c)",
-					"if-else block (e)",
-					"String (s)",
-					"Boolean (b)",
-					"Number (d)",
-					"Variable (v)",
-					"Map (a)",
-					"stop block (f)",
-					"List (l)",
-					"Component (p)",
-					"Header (h)"
-			);
-			AtomicInteger choice = new AtomicInteger();
-			new MaterialAlertDialogBuilder(this).setTitle("Block type")
-					.setSingleChoiceItems(choices.toArray(new CharSequence[0]),
-							types.indexOf(Helper.getText(binding.type)), (dialog, which) -> choice.set(which))
-					.setPositiveButton(R.string.common_word_save, (dialog, which) -> binding.type.setText(types.get(choice.get())))
-					.setNegativeButton(R.string.common_word_cancel, null)
-					.setBackground(new android.graphics.drawable.ColorDrawable(MaterialColors.getColor(this, R.attr.colorSurfaceContainerLowest, Color.WHITE)))
-					.create().show();
-		});
-
-		binding.type.addTextChangedListener(new BaseTextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (s.toString().equals("e")) {
-					AutoTransition transition = new AutoTransition();
-					transition.setDuration(300L);
-					TransitionManager.beginDelayedTransition(binding.scrollView, transition);
-					binding.spec2Layout.setVisibility(View.VISIBLE);
-				} else {
-					AutoTransition transition = new AutoTransition();
-					transition.setDuration(300L);
-					TransitionManager.beginDelayedTransition(binding.scrollView, transition);
-					binding.spec2Layout.setVisibility(View.GONE);
-				}
-				updateBlockSpec(s.toString(), Helper.getText(binding.colour));
-			}
-		});
-
-		MultiAutoCompleteTextView specAutoComplete = (MultiAutoCompleteTextView) binding.spec;
-		specAutoComplete.addTextChangedListener(new BaseTextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				updateBlockSpec(Helper.getText(binding.type), Helper.getText(binding.colour));
-			}
-		});
-
-		binding.openColorPalette.setOnClickListener(v -> {
-			ColorPickerDialog colorPickerDialog = new ColorPickerDialog(this, 0, false, false);
-			colorPickerDialog.a(new PCP(binding.colour));
-			colorPickerDialog.showAtLocation(v, Gravity.CENTER, 0, 0);
-		});
-
-		binding.colour.addTextChangedListener(new BaseTextWatcher() {
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				if (! PropertiesUtil.isHexColor(s.toString())) {
-					binding.colourLayout.setError("Invalid hex color");
-					binding.colourLayout.setErrorEnabled(true);
-				} else {
-					binding.colourLayout.setError(null);
-					binding.colourLayout.setErrorEnabled(false);
-				}
-				updateBlockSpec(Helper.getText(binding.type), s.toString());
-			}
-		});
-
-		binding.cancel.setOnClickListener(Helper.getBackPressedClickListener(this));
-		binding.save.setOnClickListener(v -> {
-			if (! PropertiesUtil.isHexColor(Helper.getText(binding.colour))) {
-				SketchwareUtil.showMessage(getApplicationContext(), "Invalid hex color");
-				return;
-			}
-			Matcher matcher = PARAM_PATTERN.matcher(Helper.getText(binding.spec));
-			if (matcher.find()) {
-				SketchwareUtil.showMessage(getApplicationContext(), "Invalid block params");
-				return;
-			}
-			if (Helper.getText(binding.type).isEmpty()) {
-				binding.type.setText(" ");
-			}
-			if (mode.equals("add")) {
-				addBlock();
-			}
-			if (mode.equals("insert")) {
-				insertBlockAt(blockPosition);
-			}
-			if (mode.equals("edit")) {
-				editBlock(blockPosition);
-			}
-		});
-
-		binding.reset.setOnClickListener(v -> binding.colour.setText(palletColour));
-		binding.spec.setOnTouchListener((v, event) -> {
-			switch (event.getAction()) {
-				case MotionEvent.ACTION_DOWN:
-					v.getParent().requestDisallowInterceptTouchEvent(true);
-					break;
-
-				case MotionEvent.ACTION_UP:
-					v.getParent().requestDisallowInterceptTouchEvent(false);
-					break;
-			}
-			v.onTouchEvent(event);
-			return true;
-		});
-	}
-
-	private void initializeLogic() {
-		inputProperties();
-		addParameters();
-		addSugestions();
-		receiveIntents();
-		setupAutoComplete();    // Configura o AutoComplete com nomes amigáveis
-		new SimpleHighlighter(binding.code); // This does nothing on EditTexts without a custom TextPaint
-		new SimpleHighlighter(binding.spec);
-
-		{
-			View view = binding.content;
-			int left = view.getPaddingLeft();
-			int top = view.getPaddingTop();
-			int right = view.getPaddingRight();
-			int bottom = view.getPaddingBottom();
-
-			ViewCompat.setOnApplyWindowInsetsListener(view, (v, i) -> {
-				Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime() | WindowInsetsCompat.Type.displayCutout());
-				v.setPadding(left + insets.left, top, right + insets.right, bottom + insets.bottom);
-				return i;
-			});
-		}
-
-		{
-			View view = binding.appBarLayout;
-			int left = view.getPaddingLeft();
-			int top = view.getPaddingTop();
-			int right = view.getPaddingRight();
-			int bottom = view.getPaddingBottom();
-
-			ViewCompat.setOnApplyWindowInsetsListener(view, (v, i) -> {
-				Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-				v.setPadding(left + insets.left, top + insets.top, right + insets.right, bottom + insets.bottom);
-				return i;
-			});
-		}
-	}
-
-	private View addBlockMenu(String menu, String name) {
-		TextView textView = new TextView(this);
-		textView.setLayoutParams(new LinearLayout.LayoutParams(
-				ViewGroup.LayoutParams.WRAP_CONTENT,
-				ViewGroup.LayoutParams.MATCH_PARENT));
-		int padding = (int) SketchwareUtil.getDip(8);
-		textView.setPadding(padding, 0, padding, 0);
-		textView.setTextColor(MaterialColors.getColor(textView, R.attr.colorPrimary));
-		textView.setText(name);
-		textView.setTextSize(14.0f);
-		textView.setTypeface(Typeface.DEFAULT_BOLD);
-
-		textView.setOnClickListener(v -> {
-			String currentText = Helper.getText(binding.spec);
-			int selectionStart = binding.spec.getSelectionStart();
-			if (selectionStart == - 1) selectionStart = currentText.length();
-
-			StringBuilder sb = new StringBuilder(currentText);
-			sb.insert(selectionStart, menu);
-			binding.spec.setText(sb.toString());
-			binding.spec.setSelection(selectionStart + menu.length());
-		});
-
-		return textView;
-	}
+    private View addBlockMenu(String menu, String name) {
+        TextView textView = new TextView(this);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        int padding = (int) SketchwareUtil.getDip(8);
+        textView.setPadding(padding, 0, padding, 0);
+        textView.setTextColor(MaterialColors.getColor(textView, R.attr.colorPrimary));
+        textView.setText(name);
+        textView.setTextSize(14.0f);
+        textView.setTypeface(Typeface.DEFAULT_BOLD);
+        textView.setOnClickListener(v -> {
+            String currentText = Helper.getText(binding.spec);
+            int selectionStart = binding.spec.getSelectionStart();
+            if (selectionStart == -1) selectionStart = currentText.length();
+            StringBuilder sb = new StringBuilder(currentText);
+            sb.insert(selectionStart, menu);
+            binding.spec.setText(sb.toString());
+            binding.spec.setSelection(selectionStart + menu.length());
+        });
+        return textView;
+    }
 	/*private View addBlockMenu(String menu, String name) {
 		TextView textView = new TextView(this);
 		textView.setLayoutParams(new LinearLayout.LayoutParams(
@@ -327,460 +316,440 @@ public class BlocksManagerCreatorActivity extends BaseAppCompatActivity {
 		return textView;
 	}*/
 
-	private void inputProperties() {
-		binding.name.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		binding.name.setMaxLines(1);
-		binding.type.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		binding.type.setMaxLines(1);
-		binding.typename.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		binding.typename.setMaxLines(1);
-		/*binding.spec.setInputType(InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_CONVERSION_SUGGESTIONS);*/
-		binding.spec.setMaxLines(1);
-		binding.colour.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		binding.colour.setMaxLines(1);
-		binding.spec2.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-		binding.spec2.setMaxLines(1);
-		binding.spec2Layout.setVisibility(View.GONE);
-	}
+    private void inputProperties() {
+        binding.name.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        binding.name.setMaxLines(1);
+        binding.type.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        binding.type.setMaxLines(1);
+        binding.typename.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        binding.typename.setMaxLines(1);
+        /*binding.spec.setInputType(InputType.TYPE_TEXT_FLAG_ENABLE_TEXT_CONVERSION_SUGGESTIONS);*/
+        binding.spec.setMaxLines(1);
+        binding.colour.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        binding.colour.setMaxLines(1);
+        binding.spec2.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        binding.spec2.setMaxLines(1);
+        binding.spec2Layout.setVisibility(View.GONE);
+    }
 
-	private void addParameters() {
-		binding.parametersHolder.addView(addBlockMenu("%s.inputOnly ", "InputOnly"));
-		binding.parametersHolder.addView(addBlockMenu("%s ", "String"));
-		binding.parametersHolder.addView(addBlockMenu("%b ", "Boolean"));
-		binding.parametersHolder.addView(addBlockMenu("%d ", "Number"));
-		binding.parametersHolder.addView(addBlockMenu("%m.activity ", "Activity"));
-		binding.parametersHolder.addView(addBlockMenu("%m.anim ", "Anim"));
-		binding.parametersHolder.addView(addBlockMenu("%m.color ", "Color"));
-		binding.parametersHolder.addView(addBlockMenu("%m.customViews ", "Custom Views"));
-		binding.parametersHolder.addView(addBlockMenu("%m.drawable ", "Drawable"));
-		binding.parametersHolder.addView(addBlockMenu("%m.edittext ", "EditText"));
-		binding.parametersHolder.addView(addBlockMenu("%m.imageview ", "ImageView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.intent ", "Intent"));
-		binding.parametersHolder.addView(addBlockMenu("%m.layout ", "Layout"));
-		binding.parametersHolder.addView(addBlockMenu("%m.list ", "List"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listInt ", "ListNumber"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listMap ", "ListMap"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listStr ", "ListString"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listview ", "ListView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.resource ", "Resource"));
-		binding.parametersHolder.addView(addBlockMenu("%m.ResString ", "ResStrings"));
-		binding.parametersHolder.addView(addBlockMenu("%m.textview ", "TextView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.varMap ", "Map"));
-		binding.parametersHolder.addView(addBlockMenu("%m.view ", "View"));
-		//
-		binding.parametersHolder.addView(addBlockMenu("%m.actv", "AutoComplete"));
-		binding.parametersHolder.addView(addBlockMenu("%m.badgeview", "BadgeView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.bottomnavigation ", "BottomNavigation"));
-		binding.parametersHolder.addView(addBlockMenu("%m.calendarview", "CalendarView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.cardview ", "CardView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.checkbox", "CheckBox"));
-		binding.parametersHolder.addView(addBlockMenu("%m.class ", "Class"));
-		binding.parametersHolder.addView(addBlockMenu("%m.codeview ", "CodeView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.cv_language ", "CV_Language"));
-		binding.parametersHolder.addView(addBlockMenu("%m.cv_theme ", "CV_Theme"));
-		binding.parametersHolder.addView(addBlockMenu("%m.fabsize ", "FabSize"));
-		binding.parametersHolder.addView(addBlockMenu("%m.fabvisible ", "FabVisible"));
-		binding.parametersHolder.addView(addBlockMenu("%m.fragmentAdapter ", "FragmentAdapter"));
-		binding.parametersHolder.addView(addBlockMenu("%m.gravity_h ", "Gravity_Horizontal"));
-		binding.parametersHolder.addView(addBlockMenu("%m.gravity_v ", "Gravity_Vertical"));
-		binding.parametersHolder.addView(addBlockMenu("%m.gridview", "GridView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.image ", "Image"));
-		binding.parametersHolder.addView(addBlockMenu("%m.imageview", "ImageView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.import ", "Import"));
-		binding.parametersHolder.addView(addBlockMenu("%m.inputstream ", "InputStream"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listscrollparam ", "ListScrollParam"));
-		binding.parametersHolder.addView(addBlockMenu("%m.listview", "ListView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.lottie ", "Lottie"));
-		binding.parametersHolder.addView(addBlockMenu("%m.mactv", "MultiAutoComplete"));
-		binding.parametersHolder.addView(addBlockMenu("%m.menuaction ", "MenuAction"));
-		binding.parametersHolder.addView(addBlockMenu("%m.pagerscrollparam ", "PagerScrollParam"));
-		binding.parametersHolder.addView(addBlockMenu("%m.patternview ", "PatternView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.porterduff ", "PorterDuff"));
-		binding.parametersHolder.addView(addBlockMenu("%m.progressbar", "ProgressBar"));
-		binding.parametersHolder.addView(addBlockMenu("%m.radiobutton", "RadioButton"));
-		binding.parametersHolder.addView(addBlockMenu("%m.ratingbar", "RatingBar"));
-		binding.parametersHolder.addView(addBlockMenu("%m.recyclerscrollparam ", "RecyclerScrollParam"));
-		binding.parametersHolder.addView(addBlockMenu("%m.recyclerview ", "RecyclerView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.resource_bg ", "Resource_BG"));
-		binding.parametersHolder.addView(addBlockMenu("%m.searchview", "SearchView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.seekbar", "SeekBar"));
-		binding.parametersHolder.addView(addBlockMenu("%m.sidebar ", "SideBar"));
-		binding.parametersHolder.addView(addBlockMenu("%m.spinner", "Spinner"));
-		binding.parametersHolder.addView(addBlockMenu("%m.submenu ", "SubMenuA"));
-		binding.parametersHolder.addView(addBlockMenu("%m.swiperefreshlayout ", "SwipeRefreshLayout"));
-		binding.parametersHolder.addView(addBlockMenu("%m.switch", "Switch"));
-		binding.parametersHolder.addView(addBlockMenu("%m.tablayout ", "TabLayout"));
-		binding.parametersHolder.addView(addBlockMenu("%m.textinputlayout ", "TextInputLayout"));
-		binding.parametersHolder.addView(addBlockMenu("%m.textview", "TextView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.timepicker ", "TimePicker"));
-		binding.parametersHolder.addView(addBlockMenu("%m.transcriptmode ", "TranscriptMode"));
-		binding.parametersHolder.addView(addBlockMenu("%m.varInt ", "Int"));
-		binding.parametersHolder.addView(addBlockMenu("%m.videoview", "VideoView"));
-		binding.parametersHolder.addView(addBlockMenu("%m.view", "View"));
-		binding.parametersHolder.addView(addBlockMenu("%m.viewpager", "ViewPager"));
-		binding.parametersHolder.addView(addBlockMenu("%m.webview", "WebView"));
-	}
+    private void addParameters() {
+        binding.parametersHolder.addView(addBlockMenu("%s.inputOnly ", "InputOnly"));
+        binding.parametersHolder.addView(addBlockMenu("%s ", "String"));
+        binding.parametersHolder.addView(addBlockMenu("%b ", "Boolean"));
+        binding.parametersHolder.addView(addBlockMenu("%d ", "Number"));
+        binding.parametersHolder.addView(addBlockMenu("%m.activity ", "Activity"));
+        binding.parametersHolder.addView(addBlockMenu("%m.anim ", "Anim"));
+        binding.parametersHolder.addView(addBlockMenu("%m.color ", "Color"));
+        binding.parametersHolder.addView(addBlockMenu("%m.customViews ", "Custom Views"));
+        binding.parametersHolder.addView(addBlockMenu("%m.drawable ", "Drawable"));
+        binding.parametersHolder.addView(addBlockMenu("%m.edittext ", "EditText"));
+        binding.parametersHolder.addView(addBlockMenu("%m.imageview ", "ImageView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.intent ", "Intent"));
+        binding.parametersHolder.addView(addBlockMenu("%m.layout ", "Layout"));
+        binding.parametersHolder.addView(addBlockMenu("%m.list ", "List"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listInt ", "ListNumber"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listMap ", "ListMap"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listStr ", "ListString"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listview ", "ListView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.resource ", "Resource"));
+        binding.parametersHolder.addView(addBlockMenu("%m.ResString ", "ResStrings"));
+        binding.parametersHolder.addView(addBlockMenu("%m.textview ", "TextView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.varMap ", "Map"));
+        binding.parametersHolder.addView(addBlockMenu("%m.view ", "View"));
+        //
+        binding.parametersHolder.addView(addBlockMenu("%m.actv", "AutoComplete"));
+        binding.parametersHolder.addView(addBlockMenu("%m.badgeview", "BadgeView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.bottomnavigation ", "BottomNavigation"));
+        binding.parametersHolder.addView(addBlockMenu("%m.calendarview", "CalendarView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.cardview ", "CardView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.checkbox", "CheckBox"));
+        binding.parametersHolder.addView(addBlockMenu("%m.class ", "Class"));
+        binding.parametersHolder.addView(addBlockMenu("%m.codeview ", "CodeView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.cv_language ", "CV_Language"));
+        binding.parametersHolder.addView(addBlockMenu("%m.cv_theme ", "CV_Theme"));
+        binding.parametersHolder.addView(addBlockMenu("%m.fabsize ", "FabSize"));
+        binding.parametersHolder.addView(addBlockMenu("%m.fabvisible ", "FabVisible"));
+        binding.parametersHolder.addView(addBlockMenu("%m.fragmentAdapter ", "FragmentAdapter"));
+        binding.parametersHolder.addView(addBlockMenu("%m.gravity_h ", "Gravity_Horizontal"));
+        binding.parametersHolder.addView(addBlockMenu("%m.gravity_v ", "Gravity_Vertical"));
+        binding.parametersHolder.addView(addBlockMenu("%m.gridview", "GridView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.image ", "Image"));
+        binding.parametersHolder.addView(addBlockMenu("%m.imageview", "ImageView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.import ", "Import"));
+        binding.parametersHolder.addView(addBlockMenu("%m.inputstream ", "InputStream"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listscrollparam ", "ListScrollParam"));
+        binding.parametersHolder.addView(addBlockMenu("%m.listview", "ListView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.lottie ", "Lottie"));
+        binding.parametersHolder.addView(addBlockMenu("%m.mactv", "MultiAutoComplete"));
+        binding.parametersHolder.addView(addBlockMenu("%m.menuaction ", "MenuAction"));
+        binding.parametersHolder.addView(addBlockMenu("%m.pagerscrollparam ", "PagerScrollParam"));
+        binding.parametersHolder.addView(addBlockMenu("%m.patternview ", "PatternView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.porterduff ", "PorterDuff"));
+        binding.parametersHolder.addView(addBlockMenu("%m.progressbar", "ProgressBar"));
+        binding.parametersHolder.addView(addBlockMenu("%m.radiobutton", "RadioButton"));
+        binding.parametersHolder.addView(addBlockMenu("%m.ratingbar", "RatingBar"));
+        binding.parametersHolder.addView(addBlockMenu("%m.recyclerscrollparam ", "RecyclerScrollParam"));
+        binding.parametersHolder.addView(addBlockMenu("%m.recyclerview ", "RecyclerView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.resource_bg ", "Resource_BG"));
+        binding.parametersHolder.addView(addBlockMenu("%m.searchview", "SearchView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.seekbar", "SeekBar"));
+        binding.parametersHolder.addView(addBlockMenu("%m.sidebar ", "SideBar"));
+        binding.parametersHolder.addView(addBlockMenu("%m.spinner", "Spinner"));
+        binding.parametersHolder.addView(addBlockMenu("%m.submenu ", "SubMenuA"));
+        binding.parametersHolder.addView(addBlockMenu("%m.swiperefreshlayout ", "SwipeRefreshLayout"));
+        binding.parametersHolder.addView(addBlockMenu("%m.switch", "Switch"));
+        binding.parametersHolder.addView(addBlockMenu("%m.tablayout ", "TabLayout"));
+        binding.parametersHolder.addView(addBlockMenu("%m.textinputlayout ", "TextInputLayout"));
+        binding.parametersHolder.addView(addBlockMenu("%m.textview", "TextView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.timepicker ", "TimePicker"));
+        binding.parametersHolder.addView(addBlockMenu("%m.transcriptmode ", "TranscriptMode"));
+        binding.parametersHolder.addView(addBlockMenu("%m.varInt ", "Int"));
+        binding.parametersHolder.addView(addBlockMenu("%m.videoview", "VideoView"));
+        binding.parametersHolder.addView(addBlockMenu("%m.view", "View"));
+        binding.parametersHolder.addView(addBlockMenu("%m.viewpager", "ViewPager"));
+        binding.parametersHolder.addView(addBlockMenu("%m.webview", "WebView"));
+    }
 
-	private void addSugestions() {
-		// Lista de parâmetros: {placeholder, displayName}
-		String[][] rawParams = {
-				{"%s.inputOnly", "InputOnly"},
-				{"%s", "String"},
-				{"%b", "Boolean"},
-				{"%d", "Number"},
-				{"%m.activity", "Activity"},
-				{"%m.anim", "Anim"},
-				{"%m.color", "Color"},
-				{"%m.customViews", "Custom Views"},
-				{"%m.drawable", "Drawable"},
-				{"%m.edittext", "EditText"},
-				{"%m.imageview", "ImageView"},
-				{"%m.intent", "Intent"},
-				{"%m.layout", "Layout"},
-				{"%m.list", "List"},
-				{"%m.listInt", "ListNumber"},
-				{"%m.listMap", "ListMap"},
-				{"%m.listStr", "ListString"},
-				{"%m.listview", "ListView"},
-				{"%m.resource", "Resource"},
-				{"%m.ResString", "ResStrings"},
-				{"%m.textview", "TextView"},
-				{"%m.varMap", "Map"},
-				{"%m.view", "View"},
-				{"%m.actv", "AutoComplete"},
-				{"%m.badgeview", "BadgeView"},
-				{"%m.bottomnavigation", "BottomNavigation"},
-				{"%m.calendarview", "CalendarView"},
-				{"%m.cardview", "CardView"},
-				{"%m.checkbox", "CheckBox"},
-				{"%m.class", "Class"},
-				{"%m.codeview", "CodeView"},
-				{"%m.cv_language", "CV_Language"},
-				{"%m.cv_theme", "CV_Theme"},
-				{"%m.fabsize", "FabSize"},
-				{"%m.fabvisible", "FabVisible"},
-				{"%m.fragmentAdapter", "FragmentAdapter"},
-				{"%m.gravity_h", "Gravity_Horizontal"},
-				{"%m.gravity_v", "Gravity_Vertical"},
-				{"%m.gridview", "GridView"},
-				{"%m.image", "Image"},
-				{"%m.import", "Import"},
-				{"%m.inputstream", "InputStream"},
-				{"%m.listscrollparam", "ListScrollParam"},
-				{"%m.lottie", "Lottie"},
-				{"%m.mactv", "MultiAutoComplete"},
-				{"%m.menuaction", "MenuAction"},
-				{"%m.pagerscrollparam", "PagerScrollParam"},
-				{"%m.patternview", "PatternView"},
-				{"%m.porterduff", "PorterDuff"},
-				{"%m.progressbar", "ProgressBar"},
-				{"%m.radiobutton", "RadioButton"},
-				{"%m.ratingbar", "RatingBar"},
-				{"%m.recyclerscrollparam", "RecyclerScrollParam"},
-				{"%m.recyclerview", "RecyclerView"},
-				{"%m.resource_bg", "Resource_BG"},
-				{"%m.searchview", "SearchView"},
-				{"%m.seekbar", "SeekBar"},
-				{"%m.sidebar", "SideBar"},
-				{"%m.spinner", "Spinner"},
-				{"%m.submenu", "SubMenuA"},
-				{"%m.swiperefreshlayout", "SwipeRefreshLayout"},
-				{"%m.switch", "Switch"},
-				{"%m.tablayout", "TabLayout"},
-				{"%m.textinputlayout", "TextInputLayout"},
-				{"%m.timepicker", "TimePicker"},
-				{"%m.transcriptmode", "TranscriptMode"},
-				{"%m.varInt", "Int"},
-				{"%m.videoview", "VideoView"},
-				{"%m.viewpager", "ViewPager"},
-				{"%m.webview", "WebView"}
-		};
+    private void addSugestions() {
+        // Lista de parâmetros: {placeholder, displayName}
+        String[][] rawParams = {
+                {"%s.inputOnly", "InputOnly"},
+                {"%s", "String"},
+                {"%b", "Boolean"},
+                {"%d", "Number"},
+                {"%m.activity", "Activity"},
+                {"%m.anim", "Anim"},
+                {"%m.color", "Color"},
+                {"%m.customViews", "Custom Views"},
+                {"%m.drawable", "Drawable"},
+                {"%m.edittext", "EditText"},
+                {"%m.imageview", "ImageView"},
+                {"%m.intent", "Intent"},
+                {"%m.layout", "Layout"},
+                {"%m.list", "List"},
+                {"%m.listInt", "ListNumber"},
+                {"%m.listMap", "ListMap"},
+                {"%m.listStr", "ListString"},
+                {"%m.listview", "ListView"},
+                {"%m.resource", "Resource"},
+                {"%m.ResString", "ResStrings"},
+                {"%m.textview", "TextView"},
+                {"%m.varMap", "Map"},
+                {"%m.view", "View"},
+                {"%m.actv", "AutoComplete"},
+                {"%m.badgeview", "BadgeView"},
+                {"%m.bottomnavigation", "BottomNavigation"},
+                {"%m.calendarview", "CalendarView"},
+                {"%m.cardview", "CardView"},
+                {"%m.checkbox", "CheckBox"},
+                {"%m.class", "Class"},
+                {"%m.codeview", "CodeView"},
+                {"%m.cv_language", "CV_Language"},
+                {"%m.cv_theme", "CV_Theme"},
+                {"%m.fabsize", "FabSize"},
+                {"%m.fabvisible", "FabVisible"},
+                {"%m.fragmentAdapter", "FragmentAdapter"},
+                {"%m.gravity_h", "Gravity_Horizontal"},
+                {"%m.gravity_v", "Gravity_Vertical"},
+                {"%m.gridview", "GridView"},
+                {"%m.image", "Image"},
+                {"%m.import", "Import"},
+                {"%m.inputstream", "InputStream"},
+                {"%m.listscrollparam", "ListScrollParam"},
+                {"%m.lottie", "Lottie"},
+                {"%m.mactv", "MultiAutoComplete"},
+                {"%m.menuaction", "MenuAction"},
+                {"%m.pagerscrollparam", "PagerScrollParam"},
+                {"%m.patternview", "PatternView"},
+                {"%m.porterduff", "PorterDuff"},
+                {"%m.progressbar", "ProgressBar"},
+                {"%m.radiobutton", "RadioButton"},
+                {"%m.ratingbar", "RatingBar"},
+                {"%m.recyclerscrollparam", "RecyclerScrollParam"},
+                {"%m.recyclerview", "RecyclerView"},
+                {"%m.resource_bg", "Resource_BG"},
+                {"%m.searchview", "SearchView"},
+                {"%m.seekbar", "SeekBar"},
+                {"%m.sidebar", "SideBar"},
+                {"%m.spinner", "Spinner"},
+                {"%m.submenu", "SubMenuA"},
+                {"%m.swiperefreshlayout", "SwipeRefreshLayout"},
+                {"%m.switch", "Switch"},
+                {"%m.tablayout", "TabLayout"},
+                {"%m.textinputlayout", "TextInputLayout"},
+                {"%m.timepicker", "TimePicker"},
+                {"%m.transcriptmode", "TranscriptMode"},
+                {"%m.varInt", "Int"},
+                {"%m.videoview", "VideoView"},
+                {"%m.viewpager", "ViewPager"},
+                {"%m.webview", "WebView"}
+        };
+        // Evita duplicatas no displayName
+        java.util.LinkedHashMap<String, Param> uniqueParams = new java.util.LinkedHashMap<>();
+        for (String[] p : rawParams) {
+            String placeholder = p[0];
+            String displayName = p[1];
+            // Adiciona ao mapa (evita duplicatas por displayName)
+            if (!uniqueParams.containsKey(displayName)) {
+                uniqueParams.put(displayName, new Param(placeholder, displayName));
+            }
+        }
+        // Converte para lista ordenada
+        paramList.addAll(uniqueParams.values());
+    }
 
-		// Evita duplicatas no displayName
-		java.util.LinkedHashMap<String, Param> uniqueParams = new java.util.LinkedHashMap<>();
+    private void setupAutoComplete() {
+        ArrayAdapter<Param> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                paramList
+        );
+        /*specAutoComplete = binding.spec;
+        specAutoComplete.setAdapter(adapter);
+        specAutoComplete.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+        // Configura o clique no item do dropdown
+        specAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
+            Param selectedParam = (Param) parent.getItemAtPosition(position);
+            String placeholder = selectedParam.getPlaceholder(); // já inclui espaço no final
+            String currentText = Helper.getText(binding.spec);
+            int selectionStart = binding.spec.getSelectionStart();
+            if (selectionStart == -1) selectionStart = currentText.length();
+            StringBuilder sb = new StringBuilder(currentText);
+            sb.insert(selectionStart, placeholder);
+            binding.spec.setText(sb.toString());
+            binding.spec.setSelection(selectionStart + placeholder.length());
+        });*/
+    }
 
-		for (String[] p : rawParams) {
-			String placeholder = p[0];
-			String displayName = p[1];
+    private void receiveIntents() {
+        mode = getIntent().getStringExtra("mode");
+        path = getIntent().getStringExtra("path");
+        palletColour = getIntent().getStringExtra("color");
+        getBlockList();
+        if (mode.equals("add")) {
+            blockPosition = Integer.parseInt(Objects.requireNonNull(getIntent().getStringExtra("pallet")));
+            binding.colour.setText(palletColour);
+            Objects.requireNonNull(getSupportActionBar()).setTitle("Add a new block");
+            return;
+        }
+        blockPosition = Integer.parseInt(Objects.requireNonNull(getIntent().getStringExtra("pos")));
+        binding.colour.setText(palletColour);
+        Objects.requireNonNull(getSupportActionBar()).setTitle("Insert block");
+        if (mode.equals("edit")) {
+            getSupportActionBar().setTitle("Edit block");
+            fillUpInputs(blockPosition);
+        }
+    }
 
-			// Adiciona ao mapa (evita duplicatas por displayName)
-			if (! uniqueParams.containsKey(displayName)) {
-				uniqueParams.put(displayName, new Param(placeholder, displayName));
-			}
-		}
+    private void fillUpInputs(int position) {
+        HashMap<String, Object> block = blocksList.get(position);
+        Object nameObject = block.get("name");
+        if (nameObject instanceof String) {
+            binding.name.setText((String) nameObject);
+        } else {
+            binding.nameLayout.setError("Invalid name block data");
+            binding.nameLayout.setErrorEnabled(true);
+        }
+        Object typeObject = block.get("type");
+        if (typeObject instanceof String typeString) {
+            if (typeString.equals(" ")) {
+                binding.type.setText("regular");
+            } else {
+                binding.type.setText(typeString);
+            }
+        } else {
+            binding.typeLayout.setError("Invalid type block data");
+            binding.typeLayout.setErrorEnabled(true);
+        }
+        Object typeName = block.get("typeName");
+        if (typeName != null) {
+            if (typeName instanceof String) {
+                binding.typename.setText((String) typeName);
+            } else {
+                binding.typenameLayout.setError("Invalid typeName block data");
+                binding.typenameLayout.setErrorEnabled(true);
+            }
+        }
+        Object specObject = block.get("spec");
+        if (specObject instanceof String) {
+            binding.spec.setText((String) specObject);
+        } else {
+            binding.specLayout.setError("Invalid spec block data");
+            binding.specLayout.setErrorEnabled(true);
+        }
+        Object spec2Object = block.get("spec2");
+        if (spec2Object != null) {
+            if (spec2Object instanceof String) {
+                binding.spec2.setText((String) spec2Object);
+            } else {
+                binding.spec2Layout.setError("Invalid spec2 block data");
+                binding.spec2Layout.setErrorEnabled(true);
+            }
+        }
+        Object importsObject = block.get("imports");
+        if (importsObject != null) {
+            if (importsObject instanceof String) {
+                binding.customImport.setText((String) importsObject);
+            } else {
+                binding.customImportLayout.setError("Invalid imports block data");
+                binding.customImportLayout.setErrorEnabled(true);
+            }
+        }
+        Object colorObject = block.get("color");
+        if (colorObject != null) {
+            if (colorObject instanceof String) {
+                binding.colour.setText((String) colorObject);
+            } else {
+                binding.colourLayout.setError("Invalid color block data");
+                binding.colourLayout.setErrorEnabled(true);
+            }
+        } else {
+            binding.colour.setText(palletColour);
+        }
+        Object codeObject = block.get("code");
+        if (codeObject instanceof String) {
+            binding.code.setText((String) codeObject);
+        } else {
+            binding.code.setHint("(Invalid code block data)");
+        }
+    }
 
-		// Converte para lista ordenada
-		paramList.addAll(uniqueParams.values());
-	}
+    private void getBlockList() {
+        try {
+            blocksList = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
+            if (blocksList != null) {
+                for (int i = 0, blocksListSize = blocksList.size(); i < blocksListSize; i++) {
+                    HashMap<String, Object> block = blocksList.get(i);
+                    Object name = block.get("name");
+                    if (name instanceof String) {
+                        id_detector.add((String) name);
+                    } else {
+                        SketchwareUtil.toastError("Custom Block #" + i + " in current palette has an invalid name");
+                    }
+                }
+                return;
+            }
+        } catch (JsonParseException e) {
+            SketchwareUtil.toastError(e.toString());
+            return;
+        }
+        SketchwareUtil.showFailedToParseJsonDialog(this, new File(path), "Custom Blocks", v -> getBlockList());
+        blocksList = new ArrayList<>();
+    }
 
-	private void setupAutoComplete() {
-		ArrayAdapter<Param> adapter = new ArrayAdapter<>(
-				this,
-				android.R.layout.simple_dropdown_item_1line,
-				paramList
-		);
+    private void updateBlockSpec(String specId, String color) {
+        binding.blockArea.removeAllViews();
+        var blockType = specId.equalsIgnoreCase("regular") ? " " : specId;
+        try {
+            var block = new Rs(this, -1, Helper.getText(binding.spec), blockType, Helper.getText(binding.name));
+            block.e = PropertiesUtil.isHexColor(color) ? PropertiesUtil.parseColor(color) : Color.parseColor("#F0F0F0");
+            block.setDrawingCacheBackgroundColor(0x00000000);
+            binding.blockArea.addView(block);
+        } catch (Exception e) {
+            var block = new TextView(this);
+            block.setTextColor(Color.RED);
+            var input = Helper.getText(binding.spec);
+            Matcher matcher = PARAM_PATTERN.matcher(input);
+            if (matcher.find()) {
+                int position = matcher.end();
+                //Unable to resolve this error because the Rs class still Un-decompiled.
+                block.setText("Error: '%m' must be followed by '.param' at position " + position);
+            } else {
+                block.setText(e.toString());
+            }
+            binding.blockArea.addView(block);
+        }
+    }
 
-		specAutoComplete = binding.spec;
-		specAutoComplete.setAdapter(adapter);
-		specAutoComplete.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+    private void addBlock() {
+        HashMap<String, Object> tempMap = new HashMap<>();
+        tempMap.put("name", Helper.getText(binding.name));
+        if (Helper.getText(binding.type).equals("regular")) {
+            tempMap.put("type", " ");
+        } else if (Helper.getText(binding.type).isEmpty()) {
+            tempMap.put("type", " ");
+        } else {
+            tempMap.put("type", Helper.getText(binding.type));
+        }
+        tempMap.put("typeName", Helper.getText(binding.typename));
+        tempMap.put("spec", Helper.getText(binding.spec));
+        tempMap.put("color", Helper.getText(binding.colour));
+        if (Helper.getText(binding.type).equals("e")) {
+            tempMap.put("spec2", Helper.getText(binding.spec2));
+        }
+        if (!TextUtils.isEmpty(Helper.getText(binding.customImport))) {
+            tempMap.put("imports", Helper.getText(binding.customImport));
+        }
+        tempMap.put("code", Helper.getText(binding.code));
+        tempMap.put("palette", String.valueOf(blockPosition));
+        blocksList.add(tempMap);
+        FileUtil.writeFile(path, getGson().toJson(blocksList));
+        SketchwareUtil.toast("Saved");
+        finish();
+    }
 
-		// Configura o clique no item do dropdown
-		specAutoComplete.setOnItemClickListener((parent, view, position, id) -> {
-			Param selectedParam = (Param) parent.getItemAtPosition(position);
-			String placeholder = selectedParam.getPlaceholder(); // já inclui espaço no final
+    private void insertBlockAt(int position) {
+        HashMap<String, Object> tempMap = new HashMap<>();
+        tempMap.put("name", Helper.getText(binding.name));
+        if (Helper.getText(binding.type).equals("regular") || Helper.getText(binding.type).isEmpty()) {
+            tempMap.put("type", " ");
+        } else {
+            tempMap.put("type", Helper.getText(binding.type));
+        }
+        tempMap.put("typeName", Helper.getText(binding.typename));
+        tempMap.put("spec", Helper.getText(binding.spec));
+        tempMap.put("color", Helper.getText(binding.colour));
+        if (Helper.getText(binding.type).equals("e")) {
+            tempMap.put("spec2", Helper.getText(binding.spec2));
+        }
+        if (!TextUtils.isEmpty(Helper.getText(binding.customImport))) {
+            tempMap.put("imports", Helper.getText(binding.customImport));
+        }
+        tempMap.put("code", Helper.getText(binding.code));
+        tempMap.put("palette", blocksList.get(position).get("palette"));
+        blocksList.add(position, tempMap);
+        FileUtil.writeFile(path, getGson().toJson(blocksList));
+        SketchwareUtil.toast("Saved");
+        finish();
+    }
 
-			String currentText = Helper.getText(binding.spec);
-			int selectionStart = binding.spec.getSelectionStart();
-			if (selectionStart == - 1) selectionStart = currentText.length();
+    private void editBlock(int position) {
+        HashMap<String, Object> tempMap = blocksList.get(position);
+        tempMap.put("name", Helper.getText(binding.name));
+        if (Helper.getText(binding.type).equals("regular") || Helper.getText(binding.type).isEmpty()) {
+            tempMap.put("type", " ");
+        } else {
+            tempMap.put("type", Helper.getText(binding.type));
+        }
+        tempMap.put("typeName", Helper.getText(binding.typename));
+        tempMap.put("spec", Helper.getText(binding.spec));
+        tempMap.put("color", Helper.getText(binding.colour));
+        if (Helper.getText(binding.type).equals("e")) {
+            tempMap.put("spec2", Helper.getText(binding.spec2));
+        }
+        tempMap.put("imports", Helper.getText(binding.customImport));
+        tempMap.put("code", Helper.getText(binding.code));
+        FileUtil.writeFile(path, getGson().toJson(blocksList));
+        SketchwareUtil.toast("Saved");
+        finish();
+    }
 
-			StringBuilder sb = new StringBuilder(currentText);
-			sb.insert(selectionStart, placeholder);
+    private static class Param {
+        String placeholder;
+        String displayName;
 
-			binding.spec.setText(sb.toString());
-			binding.spec.setSelection(selectionStart + placeholder.length());
-		});
-	}
+        Param(String placeholder, String displayName) {
+            this.placeholder = placeholder.endsWith(" ") ? placeholder : placeholder + " ";
+            this.displayName = displayName;
+        }
 
-	private void receiveIntents() {
-		mode = getIntent().getStringExtra("mode");
-		path = getIntent().getStringExtra("path");
-		palletColour = getIntent().getStringExtra("color");
-		getBlockList();
-		if (mode.equals("add")) {
-			blockPosition = Integer.parseInt(Objects.requireNonNull(getIntent().getStringExtra("pallet")));
-			binding.colour.setText(palletColour);
-			Objects.requireNonNull(getSupportActionBar()).setTitle("Add a new block");
-			return;
-		}
-		blockPosition = Integer.parseInt(Objects.requireNonNull(getIntent().getStringExtra("pos")));
-		binding.colour.setText(palletColour);
-		Objects.requireNonNull(getSupportActionBar()).setTitle("Insert block");
-		if (mode.equals("edit")) {
-			getSupportActionBar().setTitle("Edit block");
-			fillUpInputs(blockPosition);
-		}
-	}
+        @Override
+        public String toString() {
+            return displayName;
+        }
 
-	private void fillUpInputs(int position) {
-		HashMap<String, Object> block = blocksList.get(position);
-
-		Object nameObject = block.get("name");
-		if (nameObject instanceof String) {
-			binding.name.setText((String) nameObject);
-		} else {
-			binding.nameLayout.setError("Invalid name block data");
-			binding.nameLayout.setErrorEnabled(true);
-		}
-
-		Object typeObject = block.get("type");
-		if (typeObject instanceof String typeString) {
-
-			if (typeString.equals(" ")) {
-				binding.type.setText("regular");
-			} else {
-				binding.type.setText(typeString);
-			}
-		} else {
-			binding.typeLayout.setError("Invalid type block data");
-			binding.typeLayout.setErrorEnabled(true);
-		}
-
-		Object typeName = block.get("typeName");
-		if (typeName != null) {
-			if (typeName instanceof String) {
-				binding.typename.setText((String) typeName);
-			} else {
-				binding.typenameLayout.setError("Invalid typeName block data");
-				binding.typenameLayout.setErrorEnabled(true);
-			}
-		}
-
-		Object specObject = block.get("spec");
-		if (specObject instanceof String) {
-			binding.spec.setText((String) specObject);
-		} else {
-			binding.specLayout.setError("Invalid spec block data");
-			binding.specLayout.setErrorEnabled(true);
-		}
-
-		Object spec2Object = block.get("spec2");
-		if (spec2Object != null) {
-			if (spec2Object instanceof String) {
-				binding.spec2.setText((String) spec2Object);
-			} else {
-				binding.spec2Layout.setError("Invalid spec2 block data");
-				binding.spec2Layout.setErrorEnabled(true);
-			}
-		}
-
-		Object importsObject = block.get("imports");
-		if (importsObject != null) {
-			if (importsObject instanceof String) {
-				binding.customImport.setText((String) importsObject);
-			} else {
-				binding.customImportLayout.setError("Invalid imports block data");
-				binding.customImportLayout.setErrorEnabled(true);
-			}
-		}
-
-		Object colorObject = block.get("color");
-		if (colorObject != null) {
-			if (colorObject instanceof String) {
-				binding.colour.setText((String) colorObject);
-			} else {
-				binding.colourLayout.setError("Invalid color block data");
-				binding.colourLayout.setErrorEnabled(true);
-			}
-		} else {
-			binding.colour.setText(palletColour);
-		}
-
-		Object codeObject = block.get("code");
-		if (codeObject instanceof String) {
-			binding.code.setText((String) codeObject);
-		} else {
-			binding.code.setHint("(Invalid code block data)");
-		}
-	}
-
-	private void getBlockList() {
-		try {
-			blocksList = getGson().fromJson(FileUtil.readFile(path), Helper.TYPE_MAP_LIST);
-
-			if (blocksList != null) {
-				for (int i = 0, blocksListSize = blocksList.size(); i < blocksListSize; i++) {
-					HashMap<String, Object> block = blocksList.get(i);
-					Object name = block.get("name");
-
-					if (name instanceof String) {
-						id_detector.add((String) name);
-					} else {
-						SketchwareUtil.toastError("Custom Block #" + i + " in current palette has an invalid name");
-					}
-				}
-				return;
-			}
-		} catch (JsonParseException e) {
-			SketchwareUtil.toastError(e.toString());
-			return;
-		}
-		SketchwareUtil.showFailedToParseJsonDialog(this, new File(path), "Custom Blocks", v -> getBlockList());
-		blocksList = new ArrayList<>();
-	}
-
-	private void updateBlockSpec(String specId, String color) {
-		binding.blockArea.removeAllViews();
-		var blockType = specId.equalsIgnoreCase("regular") ? " " : specId;
-		try {
-			var block = new Rs(this, - 1, Helper.getText(binding.spec), blockType, Helper.getText(binding.name));
-			block.e = PropertiesUtil.isHexColor(color) ? PropertiesUtil.parseColor(color) : Color.parseColor("#F0F0F0");
-			block.setDrawingCacheBackgroundColor(0x00000000);
-			binding.blockArea.addView(block);
-		} catch (Exception e) {
-			var block = new TextView(this);
-			block.setTextColor(Color.RED);
-			var input = Helper.getText(binding.spec);
-			Matcher matcher = PARAM_PATTERN.matcher(input);
-			if (matcher.find()) {
-				int position = matcher.end();
-				//Unable to resolve this error because the Rs class still Un-decompiled.
-				block.setText("Error: '%m' must be followed by '.param' at position " + position);
-			} else {
-				block.setText(e.toString());
-			}
-			binding.blockArea.addView(block);
-		}
-	}
-
-	private void addBlock() {
-		HashMap<String, Object> tempMap = new HashMap<>();
-		tempMap.put("name", Helper.getText(binding.name));
-		if (Helper.getText(binding.type).equals("regular")) {
-			tempMap.put("type", " ");
-		} else if (Helper.getText(binding.type).isEmpty()) {
-			tempMap.put("type", " ");
-		} else {
-			tempMap.put("type", Helper.getText(binding.type));
-		}
-		tempMap.put("typeName", Helper.getText(binding.typename));
-		tempMap.put("spec", Helper.getText(binding.spec));
-		tempMap.put("color", Helper.getText(binding.colour));
-		if (Helper.getText(binding.type).equals("e")) {
-			tempMap.put("spec2", Helper.getText(binding.spec2));
-		}
-		if (! TextUtils.isEmpty(Helper.getText(binding.customImport))) {
-			tempMap.put("imports", Helper.getText(binding.customImport));
-		}
-		tempMap.put("code", Helper.getText(binding.code));
-		tempMap.put("palette", String.valueOf(blockPosition));
-		blocksList.add(tempMap);
-		FileUtil.writeFile(path, getGson().toJson(blocksList));
-		SketchwareUtil.toast("Saved");
-		finish();
-	}
-
-	private void insertBlockAt(int position) {
-		HashMap<String, Object> tempMap = new HashMap<>();
-		tempMap.put("name", Helper.getText(binding.name));
-		if (Helper.getText(binding.type).equals("regular") || Helper.getText(binding.type).isEmpty()) {
-			tempMap.put("type", " ");
-		} else {
-			tempMap.put("type", Helper.getText(binding.type));
-		}
-		tempMap.put("typeName", Helper.getText(binding.typename));
-		tempMap.put("spec", Helper.getText(binding.spec));
-		tempMap.put("color", Helper.getText(binding.colour));
-		if (Helper.getText(binding.type).equals("e")) {
-			tempMap.put("spec2", Helper.getText(binding.spec2));
-		}
-		if (! TextUtils.isEmpty(Helper.getText(binding.customImport))) {
-			tempMap.put("imports", Helper.getText(binding.customImport));
-		}
-		tempMap.put("code", Helper.getText(binding.code));
-		tempMap.put("palette", blocksList.get(position).get("palette"));
-		blocksList.add(position, tempMap);
-		FileUtil.writeFile(path, getGson().toJson(blocksList));
-		SketchwareUtil.toast("Saved");
-		finish();
-	}
-
-	private void editBlock(int position) {
-		HashMap<String, Object> tempMap = blocksList.get(position);
-		tempMap.put("name", Helper.getText(binding.name));
-		if (Helper.getText(binding.type).equals("regular") || Helper.getText(binding.type).isEmpty()) {
-			tempMap.put("type", " ");
-		} else {
-			tempMap.put("type", Helper.getText(binding.type));
-		}
-		tempMap.put("typeName", Helper.getText(binding.typename));
-		tempMap.put("spec", Helper.getText(binding.spec));
-		tempMap.put("color", Helper.getText(binding.colour));
-		if (Helper.getText(binding.type).equals("e")) {
-			tempMap.put("spec2", Helper.getText(binding.spec2));
-		}
-		tempMap.put("imports", Helper.getText(binding.customImport));
-		tempMap.put("code", Helper.getText(binding.code));
-		FileUtil.writeFile(path, getGson().toJson(blocksList));
-		SketchwareUtil.toast("Saved");
-		finish();
-	}
-
-	private static class Param {
-		String placeholder;
-		String displayName;
-
-		Param(String placeholder, String displayName) {
-			this.placeholder = placeholder.endsWith(" ") ? placeholder : placeholder + " ";
-			this.displayName = displayName;
-		}
-
-		@Override
-		public String toString() {
-			return displayName;
-		}
-
-		public String getPlaceholder() {
-			return placeholder;
-		}
-	}
+        public String getPlaceholder() {
+            return placeholder;
+        }
+    }
 }

@@ -12,104 +12,154 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
+
 import com.google.android.material.card.MaterialCardView;
 
 import a.a.a.Rs;
 import a.a.a.Ts;
 import a.a.a.wB;
+import mod.hilal.saif.activities.tools.ConfigActivity;
 import pro.sketchware.R;
 import pro.sketchware.databinding.PaletteBlockBinding;
+import pro.sketchware.databinding.PaletteBlockHorizontalBinding;
 
 public class PaletteBlock extends LinearLayout {
 
-    public float f = 0.0F;
-    private PaletteBlockBinding binding;
+    private float f = 0.0F;
     private Context context;
+
+    // Um dos dois será null dependendo do modo
+    @Nullable
+    private PaletteBlockBinding bindingVertical;
+    @Nullable
+    private PaletteBlockHorizontalBinding bindingHorizontal;
+
+    private boolean isHorizontalMode;
+    private boolean needsReinitialization = false;
 
     public PaletteBlock(Context context) {
         super(context);
-        initialize(context);
+        initialize(context, null);
     }
 
     public PaletteBlock(Context context, AttributeSet attrs) {
         super(context, attrs);
-        initialize(context);
+        initialize(context, attrs);
     }
 
-    private void initialize(Context context) {
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (needsReinitialization) {
+            reinitialize();
+        }
+    }
+
+    private void initialize(Context context, AttributeSet attrs) {
         this.context = context;
-        binding = PaletteBlockBinding.inflate(LayoutInflater.from(context), this, true);
+        this.isHorizontalMode = ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_PALETTE_ON_VERTICAL);
         f = wB.a(context, 1.0F);
+        LayoutInflater inflater = LayoutInflater.from(context);
+        if (isHorizontalMode) {
+            bindingHorizontal = PaletteBlockHorizontalBinding.inflate(inflater, this, true);
+        } else {
+            bindingVertical = PaletteBlockBinding.inflate(inflater, this, true);
+        }
+    }
+
+    private void reinitialize() {
+        boolean newIsHorizontalMode = ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_PALETTE_ON_VERTICAL);
+        if (newIsHorizontalMode != this.isHorizontalMode) {
+            this.isHorizontalMode = newIsHorizontalMode;
+            removeAllViews();
+            initialize(context, null);
+            // The parent (LogicEditor) needs to re-populate this view.
+            // This can be handled by the parent noticing the change and calling its refresh method.
+        }
+        needsReinitialization = false;
+    }
+
+    // Métodos auxiliares para acessar os containers corretos
+    private LinearLayout getBlockBuilder() {
+        return isHorizontalMode ? bindingHorizontal.blockBuilder : bindingVertical.blockBuilder;
+    }
+
+    private LinearLayout getActionsContainer() {
+        return isHorizontalMode ? bindingHorizontal.actionsContainer : bindingVertical.actionsContainer;
+    }
+
+    private View getScrollView() {
+        return isHorizontalMode ? bindingHorizontal.scrollHorizontal : bindingVertical.scroll;
     }
 
     public Ts a(String var1, String var2, String var3) {
-        View view = new View(context);
-        view.setLayoutParams(getLayoutParams(8.0F));
-        binding.blockBuilder.addView(view);
+        View spacer = new View(context);
+        spacer.setLayoutParams(getLayoutParams(8.0F));
+        getBlockBuilder().addView(spacer);
         Rs blockView = new Rs(context, -1, var1, var2, var3);
         blockView.setContentDescription(generateContentDescription(var3));
         blockView.setBlockType(1);
-        binding.blockBuilder.addView(blockView);
+        getBlockBuilder().addView(blockView);
         return blockView;
     }
 
     public Ts a(String var1, String var2, String var3, String var4) {
-        View view = new View(context);
-        view.setLayoutParams(getLayoutParams(8.0F));
-        binding.blockBuilder.addView(view);
+        View spacer = new View(context);
+        spacer.setLayoutParams(getLayoutParams(8.0F));
+        getBlockBuilder().addView(spacer);
         Rs blockView = new Rs(context, -1, var1, var2, var3, var4);
         blockView.setContentDescription(generateContentDescription(var4));
         blockView.setBlockType(1);
-        binding.blockBuilder.addView(blockView);
+        getBlockBuilder().addView(blockView);
         return blockView;
     }
 
     public TextView a(String title) {
-        var textView = new TextView(context);
+        TextView textView = new TextView(context);
         textView.setText(title);
         textView.setTextSize(10.0F);
         textView.setTypeface(null, Typeface.BOLD);
         textView.setGravity(Gravity.CENTER);
         textView.setPadding((int) (f * 8.0F), 0, (int) (f * 8.0F), 0);
-
-        var cardView = new MaterialCardView(context);
-        var params = getLayoutParams(30.0F);
+        MaterialCardView cardView = new MaterialCardView(context);
+        LinearLayout.LayoutParams params = getLayoutParams(30.0F);
         params.setMargins(0, 0, (int) (f * 4), (int) (f * 6));
         cardView.setLayoutParams(params);
-        cardView.setCardBackgroundColor(getColor(context, isDarkThemeEnabled(context) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceContainerHighest));
+        cardView.setCardBackgroundColor(getColor(context,
+                isDarkThemeEnabled(context) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceContainerHighest));
         cardView.addView(textView);
-
-        binding.actionsContainer.addView(cardView);
+        getActionsContainer().addView(cardView);
         return textView;
     }
 
     public void a() {
-        binding.blockBuilder.removeAllViews();
-        binding.actionsContainer.removeAllViews();
+        getBlockBuilder().removeAllViews();
+        getActionsContainer().removeAllViews();
     }
 
     public void a(String title, int color) {
-        var cardView = new MaterialCardView(context);
-        var params = getLayoutParams(18.0F);
+        MaterialCardView cardView = new MaterialCardView(context);
+        LinearLayout.LayoutParams params = getLayoutParams(18.0F);
         params.topMargin = (int) (f * 16.0F);
         cardView.setLayoutParams(params);
         cardView.setCardBackgroundColor(color);
         cardView.setRadius(f * 8f);
-
         TextView textView = new TextView(context);
         textView.setText(title);
-        textView.setTextColor(getColor(context, isDarkThemeEnabled(context) ? R.attr.colorOnSurface : R.attr.colorOnSurfaceInverse));
+        textView.setTextColor(getColor(context,
+                isDarkThemeEnabled(context) ? R.attr.colorOnSurface : R.attr.colorOnSurfaceInverse));
         textView.setTextSize(10.0F);
         textView.setGravity(Gravity.CENTER | Gravity.LEFT);
         textView.setPadding((int) (f * 12.0F), 0, (int) (f * 12.0F), 0);
         cardView.addView(textView);
-
-        binding.blockBuilder.addView(cardView);
+        getBlockBuilder().addView(cardView);
     }
 
     public void addDeprecatedBlock(String message, String type, String opCode) {
         if (message != null && !message.isEmpty()) {
-            a(message, getColor(context, isDarkThemeEnabled(context) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceInverse));
+            a(message, getColor(context,
+                    isDarkThemeEnabled(context) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceInverse));
         }
         Ts blockView = a("", type, opCode);
         blockView.e = 0xFFBDBDBD;
@@ -117,48 +167,83 @@ public class PaletteBlock extends LinearLayout {
     }
 
     private String generateContentDescription(String name) {
-        if (name == null || name.isEmpty()) {
-            return "";
-        }
+        if (name == null || name.isEmpty()) return "";
         StringBuilder result = new StringBuilder();
-        result.append(name.charAt(0));
+        result.append(Character.toUpperCase(name.charAt(0)));
         for (int i = 1; i < name.length(); i++) {
-            char currentChar = name.charAt(i);
-            if (Character.isUpperCase(currentChar)) {
-                // Check if previous char is not already a space (for acronyms like "HTTPExample")
-                // and if the current char is not part of an acronym (e.g. the TTP in HTTP)
-                // For simplicity here, just add a space before any uppercase unless it's followed by lowercase.
-                if (i + 1 < name.length() && Character.isLowerCase(name.charAt(i + 1)) || Character.isLowerCase(name.charAt(i - 1))) {
+            char current = name.charAt(i);
+            char previous = name.charAt(i - 1);
+            if (Character.isUpperCase(current)) {
+                if (Character.isLowerCase(previous) || (i + 1 < name.length() && Character.isLowerCase(name.charAt(i + 1)))) {
                     result.append(' ');
                 }
             }
-            result.append(currentChar);
+            result.append(current);
         }
         return result.toString();
     }
 
     private LinearLayout.LayoutParams getLayoutParams(float heightMultiplier) {
-        return new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (int) (f * heightMultiplier));
+        return new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                (int) (f * heightMultiplier)
+        );
     }
 
     public void setDragEnabled(boolean dragEnabled) {
-        if (dragEnabled) {
-            binding.scroll.b();
-            binding.scrollHorizontal.b();
+        if (isHorizontalMode) {
+            if (dragEnabled) {
+                assert bindingHorizontal != null;
+                bindingHorizontal.scroll.b();
+                bindingHorizontal.scrollHorizontal.b();
+            } else {
+                assert bindingHorizontal != null;
+                bindingHorizontal.scroll.a();
+                bindingHorizontal.scrollHorizontal.a();
+            }
         } else {
-            binding.scroll.a();
-            binding.scrollHorizontal.a();
+            if (dragEnabled) {
+                assert bindingVertical != null;
+                bindingVertical.scroll.b();
+                bindingVertical.scrollHorizontal.b();
+            } else {
+                assert bindingVertical != null;
+                bindingVertical.scroll.a();
+                bindingVertical.scrollHorizontal.a();
+            }
         }
     }
 
     public void setMinWidth(int minWidth) {
-        binding.scroll.setMinimumWidth(minWidth - (int) (f * 5.0F));
-        binding.scrollHorizontal.setMinimumWidth(minWidth - (int) (f * 5.0F));
-        getLayoutParams().width = minWidth;
+        if (isHorizontalMode) {
+            assert bindingHorizontal != null;
+            bindingHorizontal.scroll.setMinimumWidth(minWidth - (int) (f * 5.0F));
+            bindingHorizontal.scrollHorizontal.setMinimumWidth(minWidth - (int) (f * 5.0F));
+            getLayoutParams().width = minWidth;
+        } else {
+            assert bindingVertical != null;
+            bindingVertical.scroll.setMinimumWidth(minWidth - (int) (f * 5.0F));
+            bindingVertical.scrollHorizontal.setMinimumWidth(minWidth - (int) (f * 5.0F));
+            getLayoutParams().width = minWidth;
+        }
     }
 
+    /*public void setUseScroll(boolean useScroll) {
+        if (isHorizontalMode) {
+            if (bindingHorizontal != null) bindingHorizontal.scrollHorizontal.setUseScroll(useScroll);
+        } else {
+            if (bindingVertical != null) bindingVertical.scroll.setUseScroll(useScroll);
+        }
+    }*/
     public void setUseScroll(boolean useScroll) {
-        binding.scroll.setUseScroll(useScroll);
-        binding.scrollHorizontal.setUseScroll(useScroll);
+        if (isHorizontalMode) {
+            assert bindingHorizontal != null;
+            bindingHorizontal.scroll.setUseScroll(useScroll);
+            bindingHorizontal.scrollHorizontal.setUseScroll(useScroll);
+        } else {
+            assert bindingVertical != null;
+            bindingVertical.scroll.setUseScroll(useScroll);
+            bindingVertical.scrollHorizontal.setUseScroll(useScroll);
+        }
     }
 }

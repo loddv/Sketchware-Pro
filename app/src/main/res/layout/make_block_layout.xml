@@ -1,13 +1,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
-    android:orientation="vertical">
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
 
+    <!-- Área superior fixa (HorizontalScrollView) -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="80dp"
+        android:fitsSystemWindows="true"
         android:paddingLeft="8dp"
         android:paddingRight="8dp">
 
@@ -30,15 +34,18 @@
         </LinearLayout>
     </HorizontalScrollView>
 
+    <!-- ScrollView principal que ocupa o espaço restante -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -198,9 +205,9 @@
                 android:id="@+id/tv_title_add_variable"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
+                android:layout_marginHorizontal="8dp"
                 android:layout_marginTop="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginBottom="8dp"
                 android:text="Add Variable"
                 android:textColor="?attr/colorPrimary"
                 android:textSize="14sp"
@@ -222,6 +229,7 @@
                 android:layout_marginLeft="8dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginRight="8dp"
+                android:gravity="top"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -248,18 +256,21 @@
                     android:id="@+id/add_variable"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
                     android:layout_width="@dimen/project_button_height"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0.40in"
                     android:text=""
                     app:cornerRadius="14dp"
                     app:icon="@drawable/ic_add_white_24dp"
-                    app:iconGravity="textEnd" />
+                    app:iconGravity="textEnd"
+                    tools:ignore="InOrMmUsage" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
                 android:layout_marginEnd="8dp"
+                android:gravity="top"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -286,10 +297,11 @@
                     android:id="@+id/add_label"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
                     android:layout_width="@dimen/project_button_height"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0.4in"
                     app:cornerRadius="14dp"
                     app:icon="@drawable/ic_add_white_24dp"
-                    app:iconGravity="textEnd" />
+                    app:iconGravity="textEnd"
+                    tools:ignore="InOrMmUsage" />
             </LinearLayout>
 
             <TextView
@@ -309,14 +321,15 @@
                 android:layout_marginLeft="8dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginRight="8dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="24dp"
+                android:gravity="top"
                 android:orientation="horizontal">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/ti_parameter"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:hint="Parameter"
                     app:counterEnabled="true"
@@ -337,7 +350,7 @@
                 <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="8dp"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
                     android:hint="Variable name"
                     app:counterEnabled="true"
@@ -358,10 +371,11 @@
                     android:id="@+id/add"
                     style="@style/Widget.Material3Expressive.Button.IconButton.Filled"
                     android:layout_width="@dimen/project_button_height"
-                    android:layout_height="wrap_content"
+                    android:layout_height="0.4in"
                     app:cornerRadius="14dp"
                     app:icon="@drawable/ic_add_white_24dp"
-                    app:iconGravity="textEnd" />
+                    app:iconGravity="textEnd"
+                    tools:ignore="InOrMmUsage" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

@@ -3,8 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingHorizontal="20dp"
-    android:background="?attr/colorSurfaceContainerLowest"
+    android:paddingHorizontal="0dp"
     android:paddingTop="10dp">
 
     <LinearLayout

@@ -73,9 +73,17 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                 } else {
                     SketchwareUtil.toast("No compile logs found.");
                 }
-
-                setErrorText();
             });
+
+            binding.copyButton.setOnClickListener(v -> {
+                    String logs = compileErrorSaver.getLogsFromFile();
+                    if (logs != null) {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("compile logs", logs);
+                        clipboard.setPrimaryClip(clip);
+                    }
+                    SketchwareUtil.toast("Compile logs have been copied.");
+                });
         }
 
         final String wrapTextLabel = "Wrap text";

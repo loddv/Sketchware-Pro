@@ -1,6 +1,8 @@
 package com.besome.sketch.tools;
 
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
@@ -83,7 +85,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
                         clipboard.setPrimaryClip(clip);
                     }
                     SketchwareUtil.toast("Compile logs have been copied.");
-                });
+            });
         }
 
         final String wrapTextLabel = "Wrap text";

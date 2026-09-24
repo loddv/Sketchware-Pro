@@ -38,7 +38,7 @@ public class CompileLogActivity extends BaseAppCompatActivity {
     private SharedPreferences logViewerPreferences;
 
     private CompileLogBinding binding;
-    private static final String GEMINI_PACKAGE = "com.google.android.apps.bard";
+    private static final String geminiPackage = "com.google.android.apps.bard";
     
     @SuppressLint("SetTextI18n")
     @Override

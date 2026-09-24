@@ -1,0 +1,41 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/palette_selector_item"
+    android:layout_width="wrap_content"
+    android:layout_height="24dp">
+
+    <View
+        android:id="@+id/bg1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignStart="@+id/tv_category"
+        android:layout_alignEnd="@+id/tv_category"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        tools:background="@color/color_accent" />
+
+    <View
+        android:id="@+id/bg"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:layout_alignEnd="@+id/tv_category"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        tools:background="@color/color_accent" />
+
+    <TextView
+        android:id="@+id/tv_category"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="false"
+        android:layout_marginTop="2dp"
+        android:gravity="center|fill"
+        android:minWidth="14mm"
+        android:paddingHorizontal="4dp"
+        android:text="@string/search_in_palettes_dialog_title"
+        android:textColor="?attr/colorSurfaceInverse"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        tools:ignore="InOrMmUsage" />
+</RelativeLayout>

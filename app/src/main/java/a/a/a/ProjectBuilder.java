@@ -86,14 +86,12 @@ import proguard.ProGuard;
 public class ProjectBuilder {
     public static final String TAG = "AppBuilder";
     private static final ThreadLocal<org.eclipse.jdt.internal.compiler.batch.Main> COMPILER_POOL =
-            ThreadLocal.withInitial(() -> {
-                return new org.eclipse.jdt.internal.compiler.batch.Main(
-                        new PrintWriter(new NullOutputStream()),
-                        new PrintWriter(new NullOutputStream()),
-                        false,
-                        null,
-                        null);
-            });
+            ThreadLocal.withInitial(() -> new org.eclipse.jdt.internal.compiler.batch.Main(
+                    new PrintWriter(new NullOutputStream()),
+                    new PrintWriter(new NullOutputStream()),
+                    true,
+                    null,
+                    null));
     private final File aapt2Binary;
     private final File aaptBinary;
     private final Context context;
@@ -122,9 +120,7 @@ public class ProjectBuilder {
                 .detectAll()
                 .penaltyLog()
                 .build());
-
         SystemLogPrinter.start();
-
         try {
             PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(),
                     0);
@@ -141,12 +137,7 @@ public class ProjectBuilder {
                     "Somehow failed to get package info about us!",
                     e);
         }
-
-        usingAapt2 = new BuildSettings(yqVar.sc_id).getValue(
-                BuildSettings.SETTING_RESOURCE_PROCESSOR,
-                BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT
-        ).equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);
-
+        usingAapt2 = isAAPT2Enabled(yqVar.sc_id);
         aaptBinary = new File(context.getCacheDir(),
                 "aapt");
         aapt2Binary = new File(context.getCacheDir(),
@@ -186,7 +177,6 @@ public class ProjectBuilder {
         if (lengthOfFileInAssets == length) {
             return false;
         }
-
         fileUtil.a(compareToFile);
         fileUtil.a(SketchApplication.getContext(),
                 fileInAssets,
@@ -201,10 +191,10 @@ public class ProjectBuilder {
     }
 
     private void shutdownExecutor() {
-        if (executor != null && ! executor.isShutdown()) {
+        if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
             try {
-                if (! executor.awaitTermination(60,
+                if (!executor.awaitTermination(60,
                         TimeUnit.SECONDS)) {
                     executor.shutdownNow();
                 }
@@ -240,12 +230,10 @@ public class ProjectBuilder {
         File outputDirectory = new File(yq.javaFilesPath + File.separator + yq.packageName.replace(".",
                 File.separator) + File.separator + "databinding");
         outputDirectory.mkdirs();
-
         List<File> layouts = FileUtil.listFiles(yq.layoutFilesPath,
                         "xml").stream()
                 .map(File::new)
                 .collect(Collectors.toList());
-
         ViewBindingBuilder builder = new ViewBindingBuilder(layouts,
                 outputDirectory,
                 yq.packageName);
@@ -256,6 +244,17 @@ public class ProjectBuilder {
         return build_settings.getValue(BuildSettings.SETTING_DEXER,
                         BuildSettings.SETTING_DEXER_DX)
                 .equals(BuildSettings.SETTING_DEXER_D8);
+
+    }
+
+    public boolean isAAPT2Enabled(String yqVar) {
+        /*return build_settings.getValue(BuildSettings.SETTING_RESOURCE_PROCESSOR,
+                        BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT)
+                .equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);*/
+        return new BuildSettings(yqVar).getValue(
+                BuildSettings.SETTING_RESOURCE_PROCESSOR,
+                BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT
+        ).equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);
     }
 
     public String getAaptRunningText() {
@@ -269,7 +268,6 @@ public class ProjectBuilder {
     public void createDexFilesFromClasses() throws Exception {
         FileUtil.makeDir(yq.binDirectoryPath + File.separator + "dex");
         if (proguard.isShrinkingEnabled() && proguard.isR8Enabled()) {return;}
-
         if (isD8Enabled()) {
             long savedTimeMillis = System.currentTimeMillis();
             try {
@@ -282,7 +280,6 @@ public class ProjectBuilder {
                             }
                         },
                         executor);
-
                 d8Future.join(); // Espera terminar!
                 LogUtil.d(TAG,
                         "D8 took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
@@ -301,7 +298,6 @@ public class ProjectBuilder {
                     "--output=" + yq.binDirectoryPath + File.separator + "dex",
                     proguard.isShrinkingEnabled() ? yq.proguardClassesPath : yq.compiledClassesPath
             );
-
             try {
                 LogUtil.d(TAG,
                         "Running Dx with these arguments: " + args);
@@ -329,42 +325,34 @@ public class ProjectBuilder {
         KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath,
                 yq);
         classpath.append(androidJarPath);
-
-        if (! build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
+        if (!build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
                         BuildSettings.SETTING_GENERIC_VALUE_FALSE)
                 .equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE)) {
             classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.HTTP_LEGACY_ANDROID));
         }
-
         if (settings.getMinSdkVersion() < 21) {
             classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.ANDROIDX_MULTIDEX));
         }
-
-        if (! build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
+        if (!build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
                         BuildSettings.SETTING_JAVA_VERSION_1_7)
                 .equals(BuildSettings.SETTING_JAVA_VERSION_1_7)) {
             classpath.append(":").append(new File(BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
                     "core-lambda-stubs.jar").getAbsolutePath());
         }
-
         for (Jp library : builtInLibraryManager.getLibraries()) {
             classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(library.getName()));
         }
-
         classpath.append(mll.getJarLocalLibrary());
-
-        if (! build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
+        if (!build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
                 "").isEmpty()) {
             classpath.append(":").append(build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
                     ""));
         }
-
         String path = FileUtil.getExternalStorageDir() + "/.sketchware/data/" + yq.sc_id + "/files/classpath/";
         ArrayList<String> jars = FileUtil.listFiles(path,
                 "jar");
         classpath.append(":").append(TextUtils.join(":",
                 jars));
-
         return classpath.toString();
     }
 
@@ -379,7 +367,6 @@ public class ProjectBuilder {
                 }
             }
         }
-
         String normalClasspath = getClasspath();
         StringBuilder classpath = new StringBuilder();
         normalClasspathLoop:
@@ -390,7 +377,7 @@ public class ProjectBuilder {
                     continue normalClasspathLoop;
                 }
             }
-            if (! classpathPart.equals(yq.compiledClassesPath)) {
+            if (!classpathPart.equals(yq.compiledClassesPath)) {
                 classpath.append(classpathPart).append(':');
             }
         }
@@ -400,19 +387,16 @@ public class ProjectBuilder {
 
     private Collection<File> dexLibrariesParallel(File outputDirectory, List<File> dexes) throws Exception {
         if (dexes.isEmpty()) {return new ArrayList<>();}
-
         List<CompletableFuture<File>> chunkFutures = new ArrayList<>();
         int chunkSize = Math.max(1,
                 dexes.size() / Math.max(1,
                         parallelism));
-
         for (int i = 0; i < dexes.size(); i += chunkSize) {
             int start = i;
             int end = Math.min(i + chunkSize,
                     dexes.size());
             List<File> chunk = new ArrayList<>(dexes.subList(start,
                     end));
-
             chunkFutures.add(CompletableFuture.supplyAsync(() -> {
                         try {
                             File chunkOutput = File.createTempFile("dex_chunk_",
@@ -427,10 +411,8 @@ public class ProjectBuilder {
                     },
                     executor));
         }
-
         CompletableFuture.allOf(chunkFutures.toArray(new CompletableFuture[0])).join();
         List<File> chunkResults = chunkFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
-
         return mergeFinalDexChunks(outputDirectory,
                 chunkResults);
     }
@@ -446,7 +428,6 @@ public class ProjectBuilder {
                     }
                 })
                 .toList();
-
         DexMerger merger = new DexMerger(dexes.toArray(new Dex[0]),
                 CollisionPolicy.KEEP_FIRST,
                 new DxContext());
@@ -456,7 +437,6 @@ public class ProjectBuilder {
     private Collection<File> mergeFinalDexChunks(File outputDirectory, List<File> chunks) throws Exception {
         Collection<File> result = new LinkedList<>();
         List<Dex> remaining = new ArrayList<>();
-
         for (File chunk : chunks) {
             remaining.add(new Dex(new FileInputStream(chunk)));
             if (remaining.size() >= 3) {
@@ -468,15 +448,13 @@ public class ProjectBuilder {
                 remaining.clear();
             }
         }
-
-        if (! remaining.isEmpty()) {
+        if (!remaining.isEmpty()) {
             File finalMerged = new File(outputDirectory,
                     "classes" + (result.size() + 1) + ".dex");
             mergeDexes(finalMerged,
                     remaining);
             result.add(finalMerged);
         }
-
         for (File chunk : chunks)
             chunk.delete();
         return result;
@@ -496,7 +474,6 @@ public class ProjectBuilder {
         long savedTimeMillis = System.currentTimeMillis();
         CompilerResources res = threadLocalResources.get();
         res.reset();
-
         // Limpar argumentos antigos para evitar duplicações em chamadas repetidas
         ArrayList<String> args = res.args;
         args.clear();
@@ -516,10 +493,8 @@ public class ProjectBuilder {
             args.add("--release");
             args.add("25"); // ou versão desejada moderna
         }
-
         args.add("-nowarn");
-
-        if (! BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
+        if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
                 build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS,
                         BuildSettings.SETTING_GENERIC_VALUE_TRUE))) {
             args.add("-deprecation");
@@ -531,7 +506,6 @@ public class ProjectBuilder {
         args.add("-proc:none");
         args.add(yq.javaFilesPath);
         args.add(yq.rJavaDirectoryPath);
-
         // Adicionar arquivos de forma segura e centralizada
         addIfFileExists(args,
                 fpu.getPathJava(yq.sc_id));
@@ -539,13 +513,12 @@ public class ProjectBuilder {
                 fpu.getPathBroadcast(yq.sc_id));
         addIfFileExists(args,
                 fpu.getPathService(yq.sc_id));
-
         // Deleção otimizada do arquivo R.java
         File rJavaFile = new File(yq.rJavaDirectoryPath,
                 "R.java");
         if (rJavaFile.exists()) {
             try {
-                if (! rJavaFile.delete()) {
+                if (!rJavaFile.delete()) {
                     LogUtil.w(TAG,
                             "Failed to delete R.java: " + rJavaFile.getAbsolutePath());
                 }
@@ -555,7 +528,6 @@ public class ProjectBuilder {
                         e);
             }
         }
-
         try (PrintWriter outWriter = res.outWriter; PrintWriter errWriter = res.errWriter) {
             org.eclipse.jdt.internal.compiler.batch.Main main =
                     new org.eclipse.jdt.internal.compiler.batch.Main(outWriter,
@@ -563,17 +535,13 @@ public class ProjectBuilder {
                             false,
                             null,
                             null);
-
             if (isDebugEnabled()) {
                 LogUtil.d(TAG,
                         "Compiling with args: " + args);
             }
-
             boolean success = main.compile(args.toArray(new String[0]));
-
             String stdout = res.outStream.getOut();
             String stderr = res.errStream.getOut();
-
             if (success && main.globalErrorsCount <= 0) {
                 if (isDebugEnabled()) {
                     LogUtil.d(TAG,
@@ -686,31 +654,26 @@ public class ProjectBuilder {
                     null,
                     null,
                     System.out);
-
             for (Jp library : builtInLibraryManager.getLibraries()) {
                 apkBuilder.addResourcesFromJar(BuiltInLibraries.getLibraryClassesJarPath(library.getName()));
             }
-
             for (String jarPath : mll.getJarLocalLibrary().split(":")) {
-                if (! jarPath.trim().isEmpty()) {
+                if (!jarPath.trim().isEmpty()) {
                     apkBuilder.addResourcesFromJar(new File(jarPath));
                 }
             }
-
             File nativeLibrariesDirectory = new File(fpu.getPathNativelibs(yq.sc_id));
             if (nativeLibrariesDirectory.exists()) {
                 apkBuilder.addNativeLibraries(nativeLibrariesDirectory);
             }
-
             for (String nativeLibraryDirectory : mll.getNativeLibs()) {
                 apkBuilder.addNativeLibraries(new File(nativeLibraryDirectory));
             }
-
             if (dexesToAddButNotMerge.isEmpty()) {
                 List<String> dexFiles = FileUtil.listFiles(yq.binDirectoryPath,
                         "dex");
                 for (String dexFile : dexFiles) {
-                    if (! Uri.fromFile(new File(dexFile)).getLastPathSegment().equals("classes.dex")) {
+                    if (!Uri.fromFile(new File(dexFile)).getLastPathSegment().equals("classes.dex")) {
                         apkBuilder.addFile(new File(dexFile),
                                 Uri.parse(dexFile).getLastPathSegment());
                     }
@@ -723,7 +686,6 @@ public class ProjectBuilder {
                     dexNumber++;
                 }
             }
-
             apkBuilder.setDebugMode(false);
             apkBuilder.sealApk();
         } catch (ApkCreationException | SealedApkException e) {
@@ -741,21 +703,17 @@ public class ProjectBuilder {
     public void getDexFilesReadyParallel() throws Exception {
         long savedTimeMillis = System.currentTimeMillis();
         ArrayList<File> dexes = new ArrayList<>();
-
         if (settings.getMinSdkVersion() < 21) {
             dexes.add(BuiltInLibraries.getLibraryDexFile(BuiltInLibraries.ANDROIDX_MULTIDEX));
         }
-
-        if (! build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
+        if (!build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
                         ProjectSettings.SETTING_GENERIC_VALUE_FALSE)
                 .equals(ProjectSettings.SETTING_GENERIC_VALUE_TRUE)) {
             dexes.add(BuiltInLibraries.getLibraryDexFile(BuiltInLibraries.HTTP_LEGACY_ANDROID));
         }
-
         for (Jp builtInLibrary : builtInLibraryManager.getLibraries()) {
             dexes.add(BuiltInLibraries.getLibraryDexFile(builtInLibrary.getName()));
         }
-
         ArrayList<HashMap<String, Object>> list = mll.list;
         for (int i1 = 0, listSize = list.size(); i1 < listSize; i1++) {
             HashMap<String, Object> localLibrary = list.get(i1);
@@ -763,7 +721,7 @@ public class ProjectBuilder {
             if (localLibraryName instanceof String) {
                 Object localLibraryDexPath = localLibrary.get("dexPath");
                 if (localLibraryDexPath instanceof String) {
-                    if (! proguard.libIsProguardFMEnabled((String) localLibraryName)) {
+                    if (!proguard.libIsProguardFMEnabled((String) localLibraryName)) {
                         dexes.add(new File((String) localLibraryDexPath));
                         File localLibraryDirectory = new File((String) localLibraryDexPath).getParentFile();
                         if (localLibraryDirectory != null) {
@@ -771,7 +729,7 @@ public class ProjectBuilder {
                             if (localLibraryFiles != null) {
                                 for (File localLibraryFile : localLibraryFiles) {
                                     String filename = localLibraryFile.getName();
-                                    if (! filename.equals("classes.dex") && filename.startsWith("classes") && filename.endsWith(".dex")) {
+                                    if (!filename.equals("classes.dex") && filename.startsWith("classes") && filename.endsWith(".dex")) {
                                         dexes.add(localLibraryFile);
                                     }
                                 }
@@ -787,16 +745,13 @@ public class ProjectBuilder {
                         Toast.LENGTH_LONG);
             }
         }
-
         for (String file : FileUtil.listFiles(yq.binDirectoryPath + File.separator + "dex",
                 "dex")) {
             dexes.add(new File(file));
         }
-
         LogUtil.d(TAG,
                 "Will merge these " + dexes.size() + " DEX files to classes.dex: " + dexes);
-
-        if (settings.getMinSdkVersion() < 21 || ! yq.N.isDebugBuild) {
+        if (settings.getMinSdkVersion() < 21 || !yq.N.isDebugBuild) {
             dexLibrariesParallel(new File(yq.binDirectoryPath),
                     dexes);
             LogUtil.d(TAG,
@@ -873,7 +828,6 @@ public class ProjectBuilder {
         if (yq.N.isGsonUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GSON);}
         if (yq.N.isGlideUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GLIDE);}
         if (yq.N.isHttp3Used) {builtInLibraryManager.addLibrary(BuiltInLibraries.OKHTTP_ANDROID);}
-
         KotlinCompilerBridge.maybeAddKotlinBuiltInLibraryDependenciesIfPossible(this,
                 builtInLibraryManager);
         ExtLibSelected.addUsedDependencies(yq.N.x,
@@ -885,7 +839,7 @@ public class ProjectBuilder {
     }
 
     public void signDebugApk() throws GeneralSecurityException, IOException, ClassNotFoundException,
-                                      IllegalAccessException, InstantiationException {
+            IllegalAccessException, InstantiationException {
         TestkeySignBridge.signWithTestkey(yq.unsignedUnalignedApkPath,
                 yq.finalToInstallApkPath);
     }
@@ -916,13 +870,11 @@ public class ProjectBuilder {
 
     private String getRJavaRules() {
         StringBuilder sb = new StringBuilder("# R.java rules\n");
-
         // Parte 1: builtInLibraryManager com paralelismo
         String builtInRules = builtInLibraryManager.getLibraries().parallelStream()
-                .filter(jp -> jp.hasResources() && ! jp.getPackageName().isEmpty())
+                .filter(jp -> jp.hasResources() && !jp.getPackageName().isEmpty())
                 .map(jp -> "-keep class " + jp.getPackageName() + ".** { *; }")
                 .collect(Collectors.joining("\n"));
-
         // Parte 2: mll.list com paralelismo
         String mllRules = mll.list.parallelStream()
                 .map(hashMap -> {
@@ -930,24 +882,21 @@ public class ProjectBuilder {
                             "");
                     String packageName = Objects.toString(hashMap.get("packageName"),
                             "");
-                    if (! obj.isEmpty() && ! proguard.libIsProguardFMEnabled(obj)) {
+                    if (!obj.isEmpty() && !proguard.libIsProguardFMEnabled(obj)) {
                         return "-keep class " + packageName + ".** { *; }";
                     }
                     return null;
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining("\n"));
-
         sb.append(builtInRules).append("\n")
                 .append(mllRules).append("\n")
                 .append("-keep class ").append(yq.packageName).append(".R { *; }\n");
-
         return sb.toString();
     }
 
     public void runR8Parallel() throws IOException {
         long savedTimeMillis = System.currentTimeMillis();
-
         var rules = new ArrayList<>(Arrays.asList(getRJavaRules().split("\n")));
         // Cria a lista config usando stream paralelo
         List<String> builtInRulePaths = builtInLibraryManager.getLibraries().parallelStream()
@@ -955,37 +904,32 @@ public class ProjectBuilder {
                 .filter(File::exists)
                 .map(File::getAbsolutePath)
                 .toList();
-
         ArrayList<String> config = new ArrayList<>();
         config.add(ProguardHandler.ANDROID_PROGUARD_RULES_PATH);
         config.add(yq.proguardAaptRules);
         config.add(proguard.getCustomProguardRules());
         config.addAll(builtInRulePaths);
         config.addAll(mll.getPgRules());
-
         // Paraleliza a montagem de jarPaths com stream paralelo
         List<String> jarPaths = mll.list.parallelStream()
                 .map(hashMap -> Objects.toString(hashMap.get("name"),
                         ""))
-                .filter(name -> ! name.isEmpty() && proguard.libIsProguardFMEnabled(name))
+                .filter(name -> !name.isEmpty() && proguard.libIsProguardFMEnabled(name))
                 .map(name -> Objects.toString(mll.list.stream()
                                 .filter(h -> name.equals(h.get("name")))
                                 .findFirst()
                                 .map(h -> h.get("jarPath"))
                                 .orElse(null),
                         ""))
-                .filter(jarPath -> jarPath != null && ! jarPath.isEmpty())
+                .filter(jarPath -> jarPath != null && !jarPath.isEmpty())
                 .toList();
-
         CompletableFuture<File> projectJarFuture = CompletableFuture.supplyAsync(() -> {
                     JarBuilder.INSTANCE.generateJar(new File(yq.compiledClassesPath));
                     return new File(yq.compiledClassesPath + ".jar");
                 },
                 executor);
-
         List<File> inputJars = jarPaths.stream().map(File::new).collect(Collectors.toList());
         inputJars.add(projectJarFuture.join());
-
         try {
             new R8Compiler(
                     rules,
@@ -998,7 +942,6 @@ public class ProjectBuilder {
         } catch (Exception e) {
             throw new IOException(e);
         }
-
         LogUtil.d(TAG,
                 "R8 took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
     }
@@ -1041,7 +984,6 @@ public class ProjectBuilder {
         }
         LogUtil.d(TAG,
                 "About to run ProGuard with these arguments: " + args);
-
         Configuration configuration = new Configuration();
         try {
             ConfigurationParser parser = new ConfigurationParser(args.toArray(new String[0]),
@@ -1054,13 +996,11 @@ public class ProjectBuilder {
         } catch (ParseException e) {
             throw new IOException(e);
         }
-
         try {
             new ProGuard(configuration).execute();
         } catch (Exception e) {
             throw new IOException(e);
         }
-
         LogUtil.d(TAG,
                 "ProGuard took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
     }
@@ -1115,7 +1055,6 @@ public class ProjectBuilder {
         try {
             maybeExtractAapt2();
             buildBuiltInLibraryInformation();
-
             CompletableFuture<Void> resourcesFuture = CompletableFuture.runAsync(this::compileResources,
                     executor);
             CompletableFuture<Void> javaFuture = CompletableFuture.runAsync(() -> {
@@ -1134,25 +1073,19 @@ public class ProjectBuilder {
                         }
                     },
                     executor);
-
             CompletableFuture.allOf(javaFuture,
                     bindingFuture).join();
-
             if (proguard.isShrinkingEnabled()) {
                 if (proguard.isR8Enabled()) {runR8Parallel();} else {runProguardParallel();}
                 runStringfog();
             }
-
             createDexFilesFromClasses();
             getDexFilesReadyParallel();
             resourcesFuture.join();
-
             buildApk();
             runZipalign(yq.unsignedUnalignedApkPath,
                     yq.finalToInstallApkPath);
-
             if (yq.N.isDebugBuild) {signDebugApk();}
-
             LogUtil.d(TAG,
                     "Total build time: " + (System.currentTimeMillis() - timestampResourceCompilationStarted) + " ms");
         } finally {

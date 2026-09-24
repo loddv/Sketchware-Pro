@@ -10,6 +10,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -20,9 +21,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingTop="8dp"
                 android:paddingStart="8dp"
-                android:paddingLeft="8dp" />
+                android:paddingLeft="8dp"
+                android:paddingTop="8dp" />
 
             <com.besome.sketch.lib.ui.CustomHorizontalScrollView
                 android:id="@+id/scroll_horizontal"
@@ -48,16 +49,22 @@
             android:id="@+id/search_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"
+            android:layout_marginHorizontal="4dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/rounded_bottom_sheet_slider"
+            android:backgroundTint="?attr/colorSurfaceContainerHighest"
+            android:gravity="center"
+            android:padding="7dp"
             android:paddingHorizontal="10dp"
-            android:text="@string/search_header" />
+            android:text="@string/search_in_palettes_dialog_title"
+            android:textColor="?attr/actionMenuTextColor" />
 
         <com.besome.sketch.editor.logic.PaletteSelector
             android:id="@+id/palette_selector"
             android:layout_width="120dp"
             android:layout_height="wrap_content"
             android:paddingLeft="8dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
     </LinearLayout>
 

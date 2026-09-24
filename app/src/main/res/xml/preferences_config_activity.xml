@@ -18,6 +18,12 @@
         app:summary="Every single available block will be shown. Will slow down opening palettes!"
         app:title="Show all blocks of palettes" />
 
+    <SwitchPreferenceCompat
+        app:iconSpaceReserved="false"
+        app:key="palette_on_vertical"
+        app:summary="The Palette items will be shown on vertical"
+        app:title="Show Palette on vertical" />
+
     <Preference
         app:iconSpaceReserved="false"
         app:key="backup-dir"

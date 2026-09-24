@@ -3,6 +3,7 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainerLowest"
     android:focusable="true"
     android:focusableInTouchMode="true"
     android:gravity="center"
@@ -111,6 +112,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                     android:layout_weight="1"
+                    android:maxWidth="213dp"
                     tools:text="@string/common_word_cancel" />
 
                 <Button
@@ -119,6 +121,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:maxWidth="213dp"
                     tools:text="@string/common_word_add" />
             </LinearLayout>
         </LinearLayout>

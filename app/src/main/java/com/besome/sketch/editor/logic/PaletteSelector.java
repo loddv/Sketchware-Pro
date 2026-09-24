@@ -6,11 +6,12 @@ import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
@@ -18,11 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import a.a.a.Vs;
 import mod.hey.studios.util.Helper;
 import pro.sketchware.R;
-import pro.sketchware.databinding.PalettesSearchDialogBinding;
+import pro.sketchware.databinding.BottomSheetRenameBinding;
+import pro.sketchware.databinding.PaletteBlockBinding;
 
 public class PaletteSelector extends RecyclerView {
 
@@ -64,7 +67,6 @@ public class PaletteSelector extends RecyclerView {
     private void initialize(Vs onBlockCategorySelectListener) {
         paletteAdapter = new PaletteSelectorAdapter(this, onBlockCategorySelectListener);
         setAdapter(paletteAdapter);
-
         Executors.newSingleThreadExecutor().execute(() ->
                 new Handler(Looper.getMainLooper()).post(this::initializePalettes)
         );
@@ -72,17 +74,14 @@ public class PaletteSelector extends RecyclerView {
 
     private void initializePalettes() {
         allPalettes = new ArrayList<>();
-
         for (int i = 0; i < MainCategoriesNames.length; i++) {
-            allPalettes.add(new paletteSelectorRecord(MainCategoriesIds[i], MainCategoriesNames[i], MainCategoriesColors[i]));
+            allPalettes.add(new paletteSelectorRecord(MainCategoriesIds[i], MainCategoriesNames[i],
+                    MainCategoriesColors[i]));
         }
-
         new mod.agus.jcoderz.editor.manage.block.palette.PaletteSelector()
                 .getPaletteSelector()
                 .forEach(this::addDynamicPalette);
-
         paletteAdapter.setPalettes(allPalettes);
-
         if (paletteAdapter.getItemCount() > 0) {
             paletteAdapter.selectPosition(0);
         }
@@ -106,24 +105,37 @@ public class PaletteSelector extends RecyclerView {
     }
 
     public void showSearchDialog() {
-        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(context);
-        PalettesSearchDialogBinding binding = PalettesSearchDialogBinding.inflate(((Activity) context).getLayoutInflater());
-
-        dialog.setTitle(Helper.getResString(R.string.search_in_palettes_dialog_title));
-        dialog.setPositiveButton(Helper.getResString(R.string.search), (v1, which) -> {
-            if (binding.textInputLayoutSearch.getError() == null) {
-                startSearch(v1, Helper.getText(binding.edittextSearchValue).trim());
-            }
-            v1.dismiss();
-        });
-        dialog.setNegativeButton(Helper.getResString(R.string.cancel), (v1, which) -> v1.dismiss());
-        if (!searchValue.isEmpty()) {
-            dialog.setNeutralButton(Helper.getResString(R.string.restore), (v1, which) -> startSearch(v1, ""));
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(context);
+        BottomSheetRenameBinding binding = BottomSheetRenameBinding.inflate(bottomSheetDialog.getLayoutInflater());
+        /* Activity de LogicEditor contém uma instância de PaletteBlockBinding. */
+        PaletteBlockBinding binding2 = PaletteBlockBinding.bind(((Activity) context)
+                .findViewById(R.id.palette_block));
+        bottomSheetDialog.setContentView(binding.getRoot());
+        binding.textInputLayoutLibrary.setHint(Helper.getResString(R.string.search_in_palettes_dialog_title));
+        if (binding2.searchHeader.getText() != Helper.getResString(R.string.search_in_palettes_dialog_title)) {
+            binding.textInputEditText.setText(binding2.searchHeader.getText());
+            binding.textInputEditText.setSelection(binding.textInputEditText.getText().length());
         }
-        dialog.setView(binding.getRoot());
-        binding.edittextSearchValue.setText(searchValue);
-        binding.edittextSearchValue.addTextChangedListener(new SimpleTextWatcher(s -> validateSearch(s.toString(), binding.textInputLayoutSearch)));
-        dialog.show();
+        binding.buttonRename.setText(Helper.getResString(R.string.search));
+        binding.buttonCancel.setText(Helper.getResString(R.string.cancel));
+        binding.description.setText("Type the name of the block you want");
+        // to search for");
+        binding.buttonRename.setOnClickListener(v -> {
+            String query = Helper.getText(binding.textInputEditText).trim();
+            if (canSearch(query)) {
+                startSearch(bottomSheetDialog, query);
+                binding2.searchHeader.setText(query.isEmpty() ?
+                        Helper.getResString(R.string.search_in_palettes_dialog_title) : query);
+            }
+        });
+        binding.buttonCancel.setOnClickListener(v -> {
+            startSearch(bottomSheetDialog, "");
+            binding2.searchHeader.setText(Helper.getResString(R.string.search_in_palettes_dialog_title));
+            bottomSheetDialog.dismiss();
+        });
+        binding.textInputEditText.addTextChangedListener(new SimpleTextWatcher(s -> validateSearch(s.toString(),
+                binding.textInputLayoutLibrary)));
+        bottomSheetDialog.show();
     }
 
     private boolean canSearch(String query) {
@@ -156,7 +168,12 @@ public class PaletteSelector extends RecyclerView {
     }
 
     public record SimpleTextWatcher(
-            java.util.function.Consumer<CharSequence> onTextChanged) implements android.text.TextWatcher {
+            Consumer<CharSequence> onTextChanged) implements TextWatcher {
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            onTextChanged.accept(s);
+        }
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -164,11 +181,6 @@ public class PaletteSelector extends RecyclerView {
 
         @Override
         public void afterTextChanged(Editable s) {
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            onTextChanged.accept(s);
         }
     }
 }

@@ -1,0 +1,73 @@
+name: Build APK CI
+
+on:
+  push:
+    paths:
+      #- '.github/workflows/android.yml'
+      - 'app/**'
+      - 'gradle/**'
+      - 'build.gradle'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'public-stable-ids.txt'
+      - 'settings.gradle'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APKs
+    runs-on: ubuntu-latest
+    environment: GOOGLE_SERVICES_JSON
+    outputs:
+      short_sha: ${{ steps.set_sha.outputs.short_sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          lfs: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Inject google-services.json from secret (base64-decode)
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo Repository secrets:$GOOGLE_SERVICES_JSON_BASE64 | head
+          mkdir -p app
+          if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
+            echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
+            exit 1
+          fi
+          # Decode base64 content from the secret and write to file without printing the secret
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
+          echo "Wrote app/google-services.json (base64-decoded from secret)"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build Release APK
+        env:
+          SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
+        run: |
+          ./gradlew assembleRelease -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease
+
+      - name: Set short SHA
+        id: set_sha
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Rename APK with commit hash
+        run: |
+          mv app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: apk-release-${{ steps.set_sha.outputs.short_sha }}
+          path: app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk

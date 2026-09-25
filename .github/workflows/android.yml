@@ -51,7 +51,7 @@ jobs:
       - name: Set build type
         id: set_build_type
         env:
-          INPUT_BUILD_TYPE: ${{ inputs.build_type }}
+          INPUT_BUILD_TYPE: ${{ inputs.build_type || 'release' }}
         run: |
           BUILD_TYPE="${INPUT_BUILD_TYPE:-release}"
           echo "build_type=${BUILD_TYPE}" >> $GITHUB_OUTPUT
@@ -92,7 +92,7 @@ jobs:
       - name: Build APK
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
-          BUILD_TYPE: ${{ steps.set_build_type.outputs.build_type }}
+          BUILD_TYPE: ${{ inputs.build_type || 'release' }}
         run: |
           BUILD_TASK=$(echo "$BUILD_TYPE" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
           ./gradlew "assemble${BUILD_TASK}"
@@ -103,7 +103,7 @@ jobs:
 
       - name: Rename APK with commit hash
         env:
-          BUILD_TYPE: ${{ steps.set_build_type.outputs.build_type }}
+          BUILD_TYPE: ${{ inputs.build_type || 'release' }}
           SHORT_SHA: ${{ steps.set_sha.outputs.short_sha }}
         run: |
           if [[ "$BUILD_TYPE" == "release" ]]; then

@@ -74,20 +74,7 @@ class DependencyResolver(
     )
 
     init {
-        if (Files.notExists(repositoriesJson)) {
-            Files.createDirectories(repositoriesJson.parent)
-            repositoriesJson.writeText(DEFAULT_REPOS)
-        }
-        Gson().fromJson(repositoriesJson.readText(), Helper.TYPE_MAP_LIST).forEach {
-            val url: String? = it["url"] as String?
-            if (url != null) {
-                repositories.add(object : Repository {
-                    override fun getName(): String = it["name"] as String
-                    override fun getURL(): String =
-                        if (url.endsWith("/")) url.substringBeforeLast("/") else url
-                })
-            }
-        }
+        init()
     }
 
     open class DependencyResolverCallback : EventReciever() {
@@ -110,6 +97,26 @@ class DependencyResolver(
         open fun onTaskCompleted(artifacts: List<String>) {}
         open fun dexingFailed(artifact: Artifact, e: Exception) {}
         open fun invalidPackaging(artifact: Artifact) {}
+    }
+
+    fun init() {
+        val needsInitialization =
+            Files.notExists(repositoriesJson) || Files.size(repositoriesJson) == 0L
+
+        if (needsInitialization) {
+            repositoriesJson.parent?.let { Files.createDirectories(it) }
+            repositoriesJson.writeText(DEFAULT_REPOS)
+        }
+        Gson().fromJson(repositoriesJson.readText(), Helper.TYPE_MAP_LIST).forEach {
+            val url: String? = it["url"] as String?
+            if (url != null) {
+                repositories.add(object : Repository {
+                    override fun getName(): String = it["name"] as String
+                    override fun getURL(): String =
+                        if (url.endsWith("/")) url.substringBeforeLast("/") else url
+                })
+            }
+        }
     }
 
     fun resolveDependency(callback: DependencyResolverCallback) = runBlocking {

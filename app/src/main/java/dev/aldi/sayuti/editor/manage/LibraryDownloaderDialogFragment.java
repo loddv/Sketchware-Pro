@@ -94,9 +94,9 @@ public class LibraryDownloaderDialogFragment extends BottomSheetDialogFragment {
             );
             Matcher xmlMatcher = xmlPattern.matcher(dependencyName);
             if (xmlMatcher.find()) {
-                String groupId = xmlMatcher.group(1).trim();
-                String artifactId = xmlMatcher.group(2).trim();
-                String version = xmlMatcher.group(3).trim();
+                String groupId = Objects.requireNonNull(xmlMatcher.group(1)).trim();
+                String artifactId = Objects.requireNonNull(xmlMatcher.group(2)).trim();
+                String version = Objects.requireNonNull(xmlMatcher.group(3)).trim();
                 dependencyIdentifier = groupId + ":" + artifactId + ":" + version;
             }
         }

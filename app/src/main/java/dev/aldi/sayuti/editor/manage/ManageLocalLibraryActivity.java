@@ -7,11 +7,15 @@ import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.getLocalLibFile;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.getLocalLibraries;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.renameSelectedLocalLibraryPath;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.rewriteLocalLibFile;
+import static pro.sketchware.utility.FileUtil.getFileSize;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -39,6 +43,9 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.google.gson.Gson;
 
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -270,10 +277,27 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
         });
         binding.downloadLibraryButton.setOnLongClickListener(v -> {
             Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-            vibrator.vibrate(50);
-            /*binding.downloadLibraryButton.performClick();*/
-            Intent repoManagerIntent = new Intent(this,
-                    RepoManagerActivity.class);
+            if (vibrator != null && vibrator.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    //noinspection deprecation
+                    vibrator.vibrate(50);
+                }
+            }
+            Path repositoriesJson = Paths.get(
+                    Environment.getExternalStorageDirectory().getAbsolutePath(),
+                    ".sketchware",
+                    "libs",
+                    "repositories.json"
+            );
+            // 3. Verificação correta se o arquivo NÃO existe (ou se está vazio)
+            if (Files.notExists(repositoriesJson) || getFileSize(repositoriesJson.toFile()) == 0) {
+                SketchwareUtil.toastError("Start downloading a library to unlock this menu!");
+                return true; // Retorna true para indicar que o evento de clique longo foi consumido
+            }
+            // 4. Intent e transição de Activity
+            Intent repoManagerIntent = new Intent(this, RepoManagerActivity.class);
             startActivity(repoManagerIntent);
             return true;
         });

@@ -15,16 +15,20 @@ import static mod.hey.studios.build.BuildSettings.SETTING_NO_HTTP_LEGACY;
 import static mod.hey.studios.build.BuildSettings.SETTING_NO_WARNINGS;
 import static mod.hey.studios.build.BuildSettings.SETTING_RESOURCE_PROCESSOR;
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import mod.hey.studios.build.BuildSettings;
@@ -125,6 +129,7 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
             projectSettings.setValues(views);
             dismiss();
         });
+        setEnterTransition(true);
     }
 
     @Override
@@ -180,7 +185,7 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
 
     private void setCheckboxValue(CheckBox checkBox, String key, boolean defaultValue) {
         String value = projectSettings.getValue(key,
-                defaultValue ? "true" : "false");
+                Boolean.toString(defaultValue));
         checkBox.setChecked(value.equals("true"));
         checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
@@ -189,5 +194,23 @@ public class BuildSettingsBottomSheet extends BottomSheetDialogFragment {
                 }
             }
         });
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Dialog dialog = getDialog();
+        if (dialog instanceof BottomSheetDialog) {
+            BottomSheetDialog bottomSheetDialog = (BottomSheetDialog) dialog;
+            FrameLayout bottomSheet =
+                    bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                // Expande totalmente o Bottom Sheet ao abrir
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+                // Impede que ele volte para o estado intermediário cortado
+                behavior.setSkipCollapsed(true);
+            }
+        }
     }
 }

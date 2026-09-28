@@ -1534,10 +1534,13 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
     }
         
     private void refreshPalette() {
-        m.a(); // Limpar paleta
-    
-        // Opção A: Recarregar primeira categoria (categoria 0 - Variáveis)
-        if (paletteSelector != null) {
+        if (m == null || paletteSelector == null) return;
+        m.a();
+
+        int currentPalette = paletteSelector.getSelectedPaletteId(); // ideal
+        if (currentPalette >= 0) {
+            paletteSelector.performClickPalette(currentPalette);
+        } else {
             paletteSelector.performClickPalette(0);
         }
     }

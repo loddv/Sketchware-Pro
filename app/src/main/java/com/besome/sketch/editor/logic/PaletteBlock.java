@@ -4,6 +4,7 @@ import static pro.sketchware.utility.ThemeUtils.getColor;
 import static pro.sketchware.utility.ThemeUtils.isDarkThemeEnabled;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -13,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.card.MaterialCardView;
 
@@ -29,7 +31,6 @@ public class PaletteBlock extends LinearLayout {
     private float f = 0.0F;
     private Context context;
 
-    // Um dos dois será null dependendo do modo
     @Nullable
     private PaletteBlockBinding bindingVertical;
     @Nullable
@@ -37,6 +38,16 @@ public class PaletteBlock extends LinearLayout {
 
     private boolean isHorizontalMode;
     private boolean needsReinitialization = false;
+
+    @Nullable
+    private OnPaletteModeChangedListener modeChangeListener;
+    
+    @Nullable
+    private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
+
+    public interface OnPaletteModeChangedListener {
+        void onPaletteModeChanged(boolean isHorizontalMode);
+    }
 
     public PaletteBlock(Context context) {
         super(context);
@@ -48,12 +59,23 @@ public class PaletteBlock extends LinearLayout {
         initialize(context, attrs);
     }
 
+    public void setOnPaletteModeChangedListener(@Nullable OnPaletteModeChangedListener listener) {
+        this.modeChangeListener = listener;
+    }
+
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        startMonitoringSettings();
         if (needsReinitialization) {
             reinitialize();
         }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopMonitoringSettings();
     }
 
     private void initialize(Context context, AttributeSet attrs) {
@@ -74,13 +96,51 @@ public class PaletteBlock extends LinearLayout {
             this.isHorizontalMode = newIsHorizontalMode;
             removeAllViews();
             initialize(context, null);
-            // The parent (LogicEditor) needs to re-populate this view.
-            // This can be handled by the parent noticing the change and calling its refresh method.
+            notifyModeChanged();
         }
         needsReinitialization = false;
     }
 
-    // Métodos auxiliares para acessar os containers corretos
+    /**
+     * Notifica o listener que o modo da paleta foi alterado
+     */
+    private void notifyModeChanged() {
+        if (modeChangeListener != null) {
+            modeChangeListener.onPaletteModeChanged(isHorizontalMode);
+        }
+    }
+
+    /**
+     * Inicia monitoramento das mudanças nas preferências compartilhadas
+     * Mesmo quando a activity está hidden/paused
+     */
+    private void startMonitoringSettings() {
+        if (preferenceChangeListener == null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            preferenceChangeListener = (pref, key) -> {
+                if (ConfigActivity.SETTING_PALETTE_ON_VERTICAL.equals(key)) {
+                    if (isAttachedToWindow()) {
+                        reinitialize();
+                    } else {
+                        needsReinitialization = true;
+                    }
+                }
+            };
+            prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
+        }
+    }
+
+    /**
+     * Para monitoramento das mudanças nas preferências
+     */
+    private void stopMonitoringSettings() {
+        if (preferenceChangeListener != null) {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
+            preferenceChangeListener = null;
+        }
+    }
+
     private LinearLayout getBlockBuilder() {
         return isHorizontalMode ? bindingHorizontal.blockBuilder : bindingVertical.blockBuilder;
     }
@@ -228,13 +288,6 @@ public class PaletteBlock extends LinearLayout {
         }
     }
 
-    /*public void setUseScroll(boolean useScroll) {
-        if (isHorizontalMode) {
-            if (bindingHorizontal != null) bindingHorizontal.scrollHorizontal.setUseScroll(useScroll);
-        } else {
-            if (bindingVertical != null) bindingVertical.scroll.setUseScroll(useScroll);
-        }
-    }*/
     public void setUseScroll(boolean useScroll) {
         if (isHorizontalMode) {
             assert bindingHorizontal != null;

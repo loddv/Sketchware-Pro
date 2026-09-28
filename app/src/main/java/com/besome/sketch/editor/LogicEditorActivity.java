@@ -1532,15 +1532,6 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
         objectAnimator.start();
         f(getResources().getConfiguration().orientation);
     }
-        
-    private void refreshPalette() {
-        m.a(); // Limpar paleta
-    
-        // Opção A: Recarregar primeira categoria (categoria 0 - Variáveis)
-        if (paletteSelector != null) {
-            paletteSelector.performClickPalette(0);
-        }
-    }
 
     public void f(int i) {
         LinearLayout.LayoutParams layoutParams;
@@ -1981,7 +1972,6 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
         paletteSelector = findViewById(R.id.palette_selector);
         paletteSelector.setOnBlockCategorySelectListener(this);
         m = findViewById(R.id.palette_block);
-        m.setOnPaletteModeChangedListener(isHorizontalMode -> refreshPalette());
         dummy = findViewById(R.id.dummy);
         viewLogicEditor = findViewById(R.id.editor);
         o = viewLogicEditor.getBlockPane();

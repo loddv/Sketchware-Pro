@@ -4,7 +4,6 @@ import static pro.sketchware.utility.ThemeUtils.getColor;
 import static pro.sketchware.utility.ThemeUtils.isDarkThemeEnabled;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -14,7 +13,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.preference.PreferenceManager;
 
 import com.google.android.material.card.MaterialCardView;
 
@@ -40,10 +38,6 @@ public class PaletteBlock extends LinearLayout {
     private boolean isHorizontalMode;
     private boolean needsReinitialization = false;
 
-    @Nullable
-    private OnPaletteModeChangedListener modeChangeListener;
-    private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
-
     public PaletteBlock(Context context) {
         super(context);
         initialize(context, null);
@@ -54,37 +48,12 @@ public class PaletteBlock extends LinearLayout {
         initialize(context, attrs);
     }
 
-    /**
-     * Interface para notificar quando o modo da paleta muda
-     */
-    public interface OnPaletteModeChangedListener {
-        /**
-         * Chamado quando o modo da paleta é alterado
-         * @param isHorizontalMode true se modo horizontal, false se vertical
-         */
-        void onPaletteModeChanged(boolean isHorizontalMode);
-    }
-
-    /**
-     * Define o listener que será notificado quando o modo mudar
-     */
-    public void setOnPaletteModeChangedListener(@Nullable OnPaletteModeChangedListener listener) {
-        this.modeChangeListener = listener;
-    }
-
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        startMonitoringSettings();
         if (needsReinitialization) {
             reinitialize();
         }
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        stopMonitoringSettings();
     }
 
     private void initialize(Context context, AttributeSet attrs) {
@@ -105,50 +74,10 @@ public class PaletteBlock extends LinearLayout {
             this.isHorizontalMode = newIsHorizontalMode;
             removeAllViews();
             initialize(context, null);
-            // Notificar o listener sobre a mudança de modo
-            notifyModeChanged();
-            // O parent (LogicEditor) precisa repopular a paleta com blocos
+            // The parent (LogicEditor) needs to re-populate this view.
+            // This can be handled by the parent noticing the change and calling its refresh method.
         }
         needsReinitialization = false;
-    }
-
-    /**
-     * Notifica o listener que o modo da paleta foi alterado
-     */
-    private void notifyModeChanged() {
-        if (modeChangeListener != null) {
-            modeChangeListener.onPaletteModeChanged(isHorizontalMode);
-        }
-    }
-
-    /**
-     * Inicia monitoramento das mudanças nas preferências compartilhadas
-     * Detecta automaticamente quando SETTING_PALETTE_ON_VERTICAL é alterado
-     */
-    private void startMonitoringSettings() {
-        if (preferenceChangeListener == null) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            preferenceChangeListener = (pref, key) -> {
-                if (ConfigActivity.SETTING_PALETTE_ON_VERTICAL.equals(key)) {
-                    needsReinitialization = true;
-                    if (isAttachedToWindow()) {
-                        reinitialize();
-                    }
-                }
-            };
-            prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener);
-        }
-    }
-
-    /**
-     * Para monitoramento das mudanças nas preferências
-     */
-    private void stopMonitoringSettings() {
-        if (preferenceChangeListener != null) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
-            preferenceChangeListener = null;
-        }
     }
 
     // Métodos auxiliares para acessar os containers corretos

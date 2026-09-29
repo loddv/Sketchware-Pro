@@ -2465,7 +2465,7 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
                 g(false);
             }
             if (G) {
-                triggerVibration(200L);
+                triggerVibration(50L);
             }
             isDragged = true;
             if (((Rs) currentTouchedView).getBlockType() == 0) {

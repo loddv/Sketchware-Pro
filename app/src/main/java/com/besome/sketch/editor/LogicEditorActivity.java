@@ -17,7 +17,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.os.VibratorManager;
 import android.text.Editable;
 import android.text.Html;
 import android.text.InputType;
@@ -1527,6 +1529,7 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
             g(false);
             objectAnimator = U;
         } else {
+            // m.viewChangeLayout();
             objectAnimator = V;
         }
         objectAnimator.start();
@@ -1965,7 +1968,12 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
         });
         G = new DB(getContext(), "P12").a("P12I0", true);
         minDist = ViewConfiguration.get(getContext()).getScaledTouchSlop();
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            VibratorManager vibratorManager = (VibratorManager) getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+            vibrator = vibratorManager.getDefaultVibrator();
+        } else {
+            vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        }
         String eventText = getIntent().getStringExtra("event_text");
         toolbar.setTitle(id.equals("_fab") ? "fab" : ReturnMoreblockManager.getMbName(id));
         toolbar.setSubtitle(eventText);
@@ -2425,6 +2433,16 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
     public void q() {
     }
 
+    public void triggerVibration(long duration) {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(duration); // Para API < 26
+            }
+        }
+    }
+
     private void r() {
         if (currentTouchedView != null) {
             m.setDragEnabled(false);
@@ -2434,7 +2452,7 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
                 g(false);
             }
             if (G) {
-                vibrator.vibrate(100L);
+                triggerVibration(100L);
             }
             isDragged = true;
             if (((Rs) currentTouchedView).getBlockType() == 0) {

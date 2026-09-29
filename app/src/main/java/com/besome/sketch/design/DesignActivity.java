@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -427,15 +428,30 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     }
 
     private void requestPackageInstallerInstall() {
+        // 1. Tratamento para Android 8.0 (API 26) ou superior
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!getPackageManager().canRequestPackageInstalls()) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+                return;
+            }
+        }
+        File apkFile = new File(q.finalToInstallApkPath);
         Intent intent = new Intent(Intent.ACTION_VIEW);
-        Uri apkUri = FileProvider.getUriForFile(getApplicationContext(),
-                getApplicationContext().getPackageName() + ".provider",
-                new File(q.finalToInstallApkPath));
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        intent.setDataAndType(apkUri,
-                "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        // 2. Uso do FileProvider para Android 7.0+ (API 24)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Uri apkUri = FileProvider.getUriForFile(
+                    getApplicationContext(),
+                    getPackageName() + ".provider",
+                    apkFile
+            );
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        } else {
+            intent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
+        }
         startActivity(intent);
     }
 

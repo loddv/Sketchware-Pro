@@ -31,11 +31,11 @@ public class PaletteBlock extends LinearLayout {
     private Context context;
 
     @Nullable
-    private PaletteBlockBinding bindingVertical;
+    public PaletteBlockBinding bindingVertical;
     @Nullable
-    private PaletteBlockHorizontalBinding bindingHorizontal;
+    public PaletteBlockHorizontalBinding bindingHorizontal;
 
-    private boolean isHorizontalMode;
+    public boolean isHorizontalMode;
     private boolean needsReinitialization = false;
 
     public PaletteBlock(Context context) {

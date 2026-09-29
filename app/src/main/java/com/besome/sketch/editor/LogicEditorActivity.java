@@ -1529,7 +1529,20 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
             g(false);
             objectAnimator = U;
         } else {
-            // m.viewChangeLayout();
+            m.invalidate();
+            // Change layout based on horizontal mode
+            if (m.isHorizontalMode) {
+                if (m.bindingHorizontal == null) {
+                    LayoutInflater inflater = LayoutInflater.from(this);
+                    m.bindingHorizontal = pro.sketchware.databinding.PaletteBlockHorizontalBinding.inflate(inflater,
+                            m, true);
+                }
+            } else {
+                if (m.bindingVertical == null) {
+                    LayoutInflater inflater = LayoutInflater.from(this);
+                    m.bindingVertical = pro.sketchware.databinding.PaletteBlockBinding.inflate(inflater, m, true);
+                }
+            }
             objectAnimator = V;
         }
         objectAnimator.start();

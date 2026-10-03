@@ -21,25 +21,23 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public class LocalLibrariesUtil {
     private static final String localLibsPath = getExternalStorageDir().concat("/.sketchware/libs/local_libs/");
-    private static final Comparator<File> LOCAL_LIBS_COMPARATOR = new LocalLibrariesComparator();
-    private static final Path LOCAL_LIBS_PATH = Path.of(localLibsPath); // cache se for constante
+    private static final Path LOCAL_LIBS_PATH = Path.of(localLibsPath);
 
     private static final Gson GSON = GsonHolder.INSTANCE;
     private static final Type LIST_MAP_TYPE = new TypeToken<ArrayList<HashMap<String, Object>>>() {}.getType();
 
     public static List<LocalLibrary> getAllLocalLibraries() {
         try (Stream<Path> stream = Files.list(LOCAL_LIBS_PATH)) {
-            return stream.filter(Files::isDirectory)                                      // só diretórios
-                    .map(Path::toFile)                                               // → File (se ainda precisar)
-                    .sorted(LOCAL_LIBS_COMPARATOR)                                   // ordenação uma única vez
-                    .map(LocalLibrary::fromFile)                                     // converte para LocalLibrary
-                    .collect(Collectors.toList());                                   // ou toUnmodifiableList() se
-            // não for modificar depois
+            return stream.filter(Files::isDirectory)
+                    .sorted(Comparator.comparing(Path::getFileName))
+                    .map(path -> LocalLibrary.fromFile(path.toFile()))
+                    .filter(Objects::nonNull)
+                    .toList();
         } catch (IOException | InvalidPathException e) {
             // Diretório não existe, sem permissão, etc → retorna lista vazia (comportamento seguro)
             return List.of();

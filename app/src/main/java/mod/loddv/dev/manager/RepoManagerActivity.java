@@ -58,15 +58,23 @@ public class RepoManagerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.repository_list_dialog); // novo layout
-        // Inicialização dos views
+        setContentView(R.layout.repository_list_dialog);
+        setTheme(R.style.ThemeOverlay_SketchwarePro_BottomSheetDialog);
+        initViews();
+        setupRecyclerView();
+        setupSearch();
+        setupListeners();
+        loadRepositories();
+    }
+
+    private void initViews() {
         searchEditText = findViewById(R.id.search_edit_text);
         recyclerView = findViewById(R.id.list_view);
         addFab = findViewById(R.id.add_fab);
         indexSize = findViewById(R.id.repo_index);
-        setupRecyclerView();
-        loadRepositories();
-        setupSearch();
+    }
+
+    private void setupListeners() {
         addFab.setOnClickListener(v -> showAddRepositoryDialog());
     }
 

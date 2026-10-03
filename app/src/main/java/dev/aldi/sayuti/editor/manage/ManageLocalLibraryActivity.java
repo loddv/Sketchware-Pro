@@ -2,9 +2,7 @@ package dev.aldi.sayuti.editor.manage;
 
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.createLibraryMap;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.deleteSelectedLocalLibraries;
-import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.getAllLocalLibraries;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.getLocalLibFile;
-import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.getLocalLibraries;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.renameSelectedLocalLibraryPath;
 import static dev.aldi.sayuti.editor.manage.LocalLibrariesUtil.rewriteLocalLibFile;
 import static pro.sketchware.utility.FileUtil.getFileSize;
@@ -88,88 +86,80 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ManageLocallibrariesBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        {
-            View view1 = binding.searchBar;
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view1.getLayoutParams();
-            int end = lp.getMarginEnd();
-            int start = lp.getMarginStart();
-            ViewCompat.setOnApplyWindowInsetsListener(view1,
-                    (v, i) -> {
-                        Insets insets = i.getInsets(WindowInsetsCompat.Type.displayCutout());
-                        lp.setMarginEnd(end + insets.right);
-                        lp.setMarginStart(start + insets.left);
-                        v.setLayoutParams(lp);
-                        return i;
-                    });
-        }
-        {
-            View view1 = binding.contextualToolbarContainer;
-            int left = view1.getPaddingLeft();
-            int top = view1.getPaddingTop();
-            int right = view1.getPaddingRight();
-            int bottom = view1.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(view1,
-                    (v, i) -> {
-                        Insets insets =
-                                i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-                        v.setPadding(left + insets.left,
-                                top + insets.top,
-                                right + insets.right,
-                                bottom);
-                        return i;
-                    });
-        }
-        {
-            View view1 = binding.librariesList;
-            int left = view1.getPaddingLeft();
-            int top = view1.getPaddingTop();
-            int right = view1.getPaddingRight();
-            int bottom = view1.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(view1,
-                    (v, i) -> {
-                        Insets insets =
-                                i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-                        v.setPadding(left + insets.left,
-                                top,
-                                right + insets.right,
-                                bottom + insets.bottom);
-                        return i;
-                    });
-        }
-        {
-            View view1 = binding.searchList;
-            int left = view1.getPaddingLeft();
-            int top = view1.getPaddingTop();
-            int right = view1.getPaddingRight();
-            int bottom = view1.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(view1,
-                    (v, i) -> {
-                        Insets insets =
-                                i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-                        v.setPadding(left + insets.left,
-                                top,
-                                right + insets.right,
-                                bottom + insets.bottom);
-                        return i;
-                    });
-        }
-        {
-            View view1 = binding.downloadLibraryButton;
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view1.getLayoutParams();
-            int bottom = lp.bottomMargin;
-            ViewCompat.setOnApplyWindowInsetsListener(view1,
-                    (v, i) -> {
-                        Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars());
-                        lp.bottomMargin = bottom + insets.bottom;
-                        v.setLayoutParams(lp);
-                        return i;
-                    });
-        }
+        setupWindowInsets();
+        processIntentData();
+        setupAdapters();
+        setupToolbarListeners();
+        setupDownloadButtonListeners();
+        setupSearchListener();
+        runLoadLocalLibrariesTask();
+    }
+
+    // 1. Configuração de margens e preenchimentos (Edge-to-Edge)
+    private void setupWindowInsets() {
+        // Search Bar
+        View searchBar = binding.searchBar;
+        ViewGroup.MarginLayoutParams searchLp = (ViewGroup.MarginLayoutParams) searchBar.getLayoutParams();
+        int searchEnd = searchLp.getMarginEnd();
+        int searchStart = searchLp.getMarginStart();
+        ViewCompat.setOnApplyWindowInsetsListener(searchBar, (v, i) -> {
+            Insets insets = i.getInsets(WindowInsetsCompat.Type.displayCutout());
+            searchLp.setMarginEnd(searchEnd + insets.right);
+            searchLp.setMarginStart(searchStart + insets.left);
+            v.setLayoutParams(searchLp);
+            return i;
+        });
+        // Contextual Toolbar
+        View toolbarContainer = binding.contextualToolbarContainer;
+        int tbLeft = toolbarContainer.getPaddingLeft();
+        int tbTop = toolbarContainer.getPaddingTop();
+        int tbRight = toolbarContainer.getPaddingRight();
+        int tbBottom = toolbarContainer.getPaddingBottom();
+        ViewCompat.setOnApplyWindowInsetsListener(toolbarContainer, (v, i) -> {
+            Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(tbLeft + insets.left, tbTop + insets.top, tbRight + insets.right, tbBottom);
+            return i;
+        });
+        // Libraries List
+        setupListWindowInsets(binding.librariesList);
+        // Search List
+        setupListWindowInsets(binding.searchList);
+        // Download Button
+        View downloadBtn = binding.downloadLibraryButton;
+        ViewGroup.MarginLayoutParams btnLp = (ViewGroup.MarginLayoutParams) downloadBtn.getLayoutParams();
+        int btnBottom = btnLp.bottomMargin;
+        ViewCompat.setOnApplyWindowInsetsListener(downloadBtn, (v, i) -> {
+            Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars());
+            btnLp.bottomMargin = btnBottom + insets.bottom;
+            v.setLayoutParams(btnLp);
+            return i;
+        });
+    }
+
+    // Método auxiliar para evitar repetição nas listas
+    private void setupListWindowInsets(View listView) {
+        int left = listView.getPaddingLeft();
+        int top = listView.getPaddingTop();
+        int right = listView.getPaddingRight();
+        int bottom = listView.getPaddingBottom();
+        ViewCompat.setOnApplyWindowInsetsListener(listView, (v, i) -> {
+            Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(left + insets.left, top, right + insets.right, bottom + insets.bottom);
+            return i;
+        });
+    }
+
+    // 2. Extração de dados da Intent
+    private void processIntentData() {
         if (getIntent().hasExtra("sc_id")) {
             scId = Objects.requireNonNull(getIntent().getStringExtra("sc_id"));
             buildSettings = new BuildSettings(scId);
             notAssociatedWithProject = scId.equals("system");
         }
+    }
+
+    // 3. Configuração dos Adapters do RecyclerView
+    private void setupAdapters() {
         adapter.setOnLocalLibrarySelectedStateChangedListener(item -> {
             long selectedItemCount = getSelectedLocalLibrariesCount();
             if (selectedItemCount > 0 && adapter.isSelectionModeEnabled) {
@@ -182,6 +172,10 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
         });
         binding.librariesList.setAdapter(adapter);
         binding.searchList.setAdapter(searchAdapter);
+    }
+
+    // 4. Configuração da Toolbar e seus menus
+    private void setupToolbarListeners() {
         binding.searchBar.setNavigationOnClickListener(v -> {
             if (!mB.a()) {
                 onBackPressed();
@@ -194,115 +188,121 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
                 long selectedCount = getSelectedLocalLibrariesCount();
                 boolean selectAll = selectedCount != adapter.getItemCount();
                 setLocalLibrariesSelected(selectAll);
-                /*SketchwareUtil.toast(selectAll ? "All items selected" : "All items deselected");*/
                 binding.contextualToolbar.setTitle(String.valueOf(getSelectedLocalLibrariesCount()));
                 return true;
             } else if (id == R.id.action_invert_selection) {
                 setLocalLibrariesInvertSelected();
                 binding.contextualToolbar.setTitle(String.valueOf(getSelectedLocalLibrariesCount()));
-                /*SketchwareUtil.toast("Selection inverted");*/
                 return true;
             } else if (id == R.id.action_rename_selected_local_libraries) {
-                List<LocalLibrary> selectedLibs = adapter.getLocalLibraries()
-                        .stream()
-                        .filter(LocalLibrary::isSelected)
-                        .collect(Collectors.toList());
-                if (selectedLibs.isEmpty()) {
-                    SketchwareUtil.toast("Selecione pelo menos uma biblioteca");
-                    return true;
-                }
-                showRenameBottomSheet(selectedLibs);
+                handleRenameAction();
                 return true;
             } else if (id == R.id.action_delete_selected_local_libraries) {
-                long selectedCount = getSelectedLocalLibrariesCount();
-                if (selectedCount == 0) {
-                    SketchwareUtil.toast("Please select at least one item");
-                    return true;
-                }
-                String selectedNames =
-                        adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).map(LocalLibrary::getName).collect(Collectors.joining(",\n"));
-                String message;
-                String editTextContent;
-                if (selectedCount > 1) {
-                    message =
-                            "Are you sure you want to delete these " + selectedCount + " libraries?\n" + selectedNames;
-                    editTextContent = selectedNames;
-                } else {
-                    editTextContent =
-                            adapter.getLocalLibraries().stream().filter(LocalLibrary::isSelected).findAny().map(LocalLibrary::getName).orElse("");
-                    message = "Are you sure you want to delete this library " + editTextContent + "?";
-                }
-                BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
-                View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_rename,
-                        null);
-                bottomSheetDialog.setContentView(bottomSheetView);
-                final TextView title = bottomSheetView.findViewById(R.id.title);
-                title.setText("Delete Library!");
-                final TextView description = bottomSheetView.findViewById(R.id.description);
-                final TextInputLayout textInputLayout = bottomSheetView.findViewById(R.id.text_input_layout_library);
-                final TextInputEditText editText = bottomSheetView.findViewById(R.id.textInputEditText);
-                final Button deleteAccountButton = bottomSheetView.findViewById(R.id.button_rename);
-                editText.setText(editTextContent);
-                editText.setEnabled(false);
-                textInputLayout.setHint("Selected libraries");
-                description.setText(message);
-                deleteAccountButton.setText(R.string.common_word_delete);
-                deleteAccountButton.setTextColor(ContextCompat.getColor(this,
-                        R.color.black));
-                deleteAccountButton.setBackgroundColor(ContextCompat.getColor(this,
-                        R.color.scolor_red_02));
-                bottomSheetView.findViewById(R.id.button_cancel).setOnClickListener(v -> {
-                    hideContextualToolbarAndClearSelection();
-                    bottomSheetDialog.dismiss();
-                    resetSelectionAndReload(null);
-                });
-                bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
-                bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
-                bottomSheetView.findViewById(R.id.button_rename).setOnClickListener(v -> {
-                    k();
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        deleteSelectedLocalLibraries(scId,
-                                adapter.getLocalLibraries(),
-                                projectUsedLibs);
-                        runOnUiThread(() -> {
-                            resetSelectionAndReload("Deleted successfully");
-                            h();
-                        });
-                    });
-                    bottomSheetDialog.dismiss();
-                });
-                bottomSheetDialog.show();
+                handleDeleteAction();
+                return true;
             } else if (id == R.id.action_select_update_library) {
-                Intent repoManagerIntent = new Intent(this,
-                        RepoManagerActivity.class);
-                startActivity(repoManagerIntent);
+                startActivity(new Intent(this, RepoManagerActivity.class));
             }
             return false;
         });
+    }
+
+    // 4.1. Lógica de Renomear
+    private void handleRenameAction() {
+        List<LocalLibrary> selectedLibs = adapter.getLocalLibraries()
+                .stream()
+                .filter(LocalLibrary::isSelected)
+                .collect(Collectors.toList());
+        if (selectedLibs.isEmpty()) {
+            SketchwareUtil.toast("Selecione pelo menos uma biblioteca");
+            return;
+        }
+        showRenameBottomSheet(selectedLibs);
+    }
+
+    // 4.2. Lógica de Excluir e exibição do BottomSheet
+    private void handleDeleteAction() {
+        long selectedCount = getSelectedLocalLibrariesCount();
+        if (selectedCount == 0) {
+            SketchwareUtil.toast("Please select at least one item");
+            return;
+        }
+        String selectedNames = adapter.getLocalLibraries().stream()
+                .filter(LocalLibrary::isSelected)
+                .map(LocalLibrary::getName)
+                .collect(Collectors.joining(",\n"));
+        String message;
+        String editTextContent;
+        if (selectedCount > 1) {
+            message = "Are you sure you want to delete these " + selectedCount + " libraries?\n" + selectedNames;
+            editTextContent = selectedNames;
+        } else {
+            editTextContent = adapter.getLocalLibraries().stream()
+                    .filter(LocalLibrary::isSelected)
+                    .findAny().map(LocalLibrary::getName).orElse("");
+            message = "Are you sure you want to delete this library " + editTextContent + "?";
+        }
+        showDeleteBottomSheet(message, editTextContent);
+    }
+
+    // 4.3. Construção do BottomSheet de exclusão
+    private void showDeleteBottomSheet(String message, String editTextContent) {
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+        View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_rename, null);
+        bottomSheetDialog.setContentView(bottomSheetView);
+        TextView title = bottomSheetView.findViewById(R.id.title);
+        title.setText("Delete Library!");
+        TextView description = bottomSheetView.findViewById(R.id.description);
+        description.setText(message);
+        TextInputLayout textInputLayout = bottomSheetView.findViewById(R.id.text_input_layout_library);
+        textInputLayout.setHint("Selected libraries");
+        TextInputEditText editText = bottomSheetView.findViewById(R.id.textInputEditText);
+        editText.setText(editTextContent);
+        editText.setEnabled(false);
+        Button deleteButton = bottomSheetView.findViewById(R.id.button_rename);
+        deleteButton.setText(R.string.common_word_delete);
+        deleteButton.setTextColor(ContextCompat.getColor(this, R.color.black));
+        deleteButton.setBackgroundColor(ContextCompat.getColor(this, R.color.scolor_red_02));
+        bottomSheetView.findViewById(R.id.button_cancel).setOnClickListener(v -> {
+            hideContextualToolbarAndClearSelection();
+            bottomSheetDialog.dismiss();
+            resetSelectionAndReload(null);
+        });
+        bottomSheetDialog.setOnDismissListener(v -> hideContextualToolbarAndClearSelection());
+        deleteButton.setOnClickListener(v -> {
+            k();
+            Executors.newSingleThreadExecutor().execute(() -> {
+                deleteSelectedLocalLibraries(scId, adapter.getLocalLibraries(), projectUsedLibs);
+                runOnUiThread(() -> {
+                    resetSelectionAndReload("Deleted successfully");
+                    h();
+                });
+            });
+            bottomSheetDialog.dismiss();
+        });
+        bottomSheetDialog.show();
+    }
+
+    // 5. Configuração dos botões de Download
+    private void setupDownloadButtonListeners() {
         binding.downloadLibraryButton.setOnLongClickListener(v -> {
             Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
             if (vibrator != null && vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
                 } else {
-                    //noinspection deprecation
                     vibrator.vibrate(50);
                 }
             }
             Path repositoriesJson = Paths.get(
                     Environment.getExternalStorageDirectory().getAbsolutePath(),
-                    ".sketchware",
-                    "libs",
-                    "repositories.json"
+                    ".sketchware", "libs", "repositories.json"
             );
-            // 3. Verificação correta se o arquivo NÃO existe (ou se está vazio)
             if (Files.notExists(repositoriesJson) || getFileSize(repositoriesJson.toFile()) == 0) {
                 SketchwareUtil.toastError("Start downloading a library to unlock this menu!");
-                return true; // Retorna true para indicar que o evento de clique longo foi consumido
+                return true;
             }
-            // 4. Intent e transição de Activity
-            Intent repoManagerIntent = new Intent(this, RepoManagerActivity.class);
-            startActivity(repoManagerIntent);
+            startActivity(new Intent(this, RepoManagerActivity.class));
             return true;
         });
         binding.downloadLibraryButton.setOnClickListener(v -> {
@@ -310,35 +310,31 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
                 return;
             }
             Bundle bundle = new Bundle();
-            bundle.putBoolean("notAssociatedWithProject",
-                    notAssociatedWithProject);
-            bundle.putSerializable("buildSettings",
-                    buildSettings);
-            bundle.putString("localLibFile",
-                    getLocalLibFile(scId).getAbsolutePath());
+            bundle.putBoolean("notAssociatedWithProject", notAssociatedWithProject);
+            bundle.putSerializable("buildSettings", buildSettings);
+            bundle.putString("localLibFile", getLocalLibFile(scId).getAbsolutePath());
             LibraryDownloaderDialogFragment fragment = new LibraryDownloaderDialogFragment();
             fragment.setArguments(bundle);
             fragment.setOnLibraryDownloadedTask(this::runLoadLocalLibrariesTask);
-            fragment.show(getSupportFragmentManager(),
-                    "library_downloader_dialog");
+            fragment.show(getSupportFragmentManager(), "library_downloader_dialog");
         });
+    }
+
+    // 6. Configuração da Barra de Pesquisa
+    private void setupSearchListener() {
         binding.searchView.getEditText().addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void afterTextChanged(Editable s) {
                 String value = s.toString().trim();
-                searchAdapter.filter(getAdapterLocalLibraries(),
-                        value);
+                searchAdapter.filter(getAdapterLocalLibraries(), value);
             }
 
             @Override
-            public void onTextChanged(CharSequence newText, int start, int before, int count) {
-            }
+            public void onTextChanged(CharSequence newText, int start, int before, int count) {}
         });
-        runLoadLocalLibrariesTask();
     }
 
     private void showRenameBottomSheet(List<LocalLibrary> selectedLibs) {
@@ -584,10 +580,12 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
     // This method is running from the background thread.
     // So, every UI operation must be called inside `runOnUiThread`.
     private void loadLibraries() {
-        var localLibraries = getAllLocalLibraries();
+        // 1. Executa o I/O do disco/cache diretamente na thread de background atual
+        List<LocalLibrary> localLibraries = LocalLibrariesUtil.getAllLocalLibraries();
         if (!notAssociatedWithProject) {
-            projectUsedLibs = getLocalLibraries(scId);
+            projectUsedLibs = LocalLibrariesUtil.getLocalLibraries(scId);
         }
+        // 2. Envia TUDO de uma vez para a UI Thread
         runOnUiThread(() -> {
             adapter.setLocalLibraries(localLibraries);
             binding.noContentLayout.setVisibility(localLibraries.isEmpty() ? View.VISIBLE : View.GONE);

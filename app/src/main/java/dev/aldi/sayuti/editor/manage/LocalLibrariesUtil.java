@@ -21,6 +21,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 
 public class LocalLibrariesUtil {
     private static final String localLibsPath = getExternalStorageDir().concat("/.sketchware/libs/local_libs/");
@@ -30,6 +32,12 @@ public class LocalLibrariesUtil {
     private static final Gson GSON = GsonHolder.INSTANCE;
     private static final Type LIST_MAP_TYPE = new TypeToken<ArrayList<HashMap<String, Object>>>() {}.getType();
     private static final Type LIST_LOCAL_LIB_TYPE = new TypeToken<ArrayList<LocalLibrary>>() {}.getType();
+
+    // Método na LocalLibrariesUtil
+    public static CompletableFuture<List<LocalLibrary>> getAllLocalLibrariesAsync() {
+        return CompletableFuture.supplyAsync(LocalLibrariesUtil::getAllLocalLibraries,
+                Executors.newSingleThreadExecutor());
+    }
 
     /**
      * Obtém todas as bibliotecas locais. Tenta ler primeiro do cache (cache.json).

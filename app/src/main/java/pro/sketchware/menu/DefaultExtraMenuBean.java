@@ -57,7 +57,7 @@ public class DefaultExtraMenuBean {
     }
 
     public Pair<String, ArrayList<String>> getMenu(Ss menu) {
-        var javaName = logicEditor.M.getJavaName();
+        var javaName = logicEditor.projectFileBean.getJavaName();
         var menuName = menu.getMenuName();
         ArrayList<String> menus = new ArrayList<>();
         String title;
@@ -104,7 +104,8 @@ public class DefaultExtraMenuBean {
                                 "find-replace-first",
                                 "find-replace-all"));
             }
-            // This is meant to be a built-in menu including the cases below, but Aldi implemented it as a file, which is why, in some cases, certain menus appear empty.
+            // This is meant to be a built-in menu including the cases below, but Aldi implemented it as a file,
+            // which is why, in some cases, certain menus appear empty.
             //start
             case "menu", "layout", "anim", "drawable" -> {
                 String path = getPath(sc_id, menuName);

@@ -54,13 +54,11 @@ public class ExtraPaletteBlock {
     public ExtraPaletteBlock(LogicEditorActivity logicEditorActivity, Boolean isViewBindingEnabled) {
         logicEditor = logicEditorActivity;
         eventName = logicEditorActivity.eventName;
-
-        projectFile = logicEditor.M;
+        projectFile = logicEditor.projectFileBean;
         javaName = projectFile.getJavaName();
         xmlName = projectFile.getXmlName();
         sc_id = logicEditor.scId;
         this.isViewBindingEnabled = isViewBindingEnabled;
-
         frc = new FileResConfig(sc_id);
         extraBlocks = new ExtraBlocks(logicEditor);
         clickListener = new LogicClickListener(logicEditor);
@@ -70,7 +68,6 @@ public class ExtraPaletteBlock {
         if (ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_SHOW_EVERY_SINGLE_BLOCK)) {
             return true;
         }
-
         if (mapSave.containsKey(str)) {
             Object strValueInMapSave = mapSave.get(str);
             if (strValueInMapSave instanceof Boolean) {
@@ -110,39 +107,27 @@ public class ExtraPaletteBlock {
 
     public boolean e(String str, String str2) {
         return switch (str) {
-            case "circleimageview" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_CIRCLEIMAGEVIEW, str2);
+            case "circleimageview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_CIRCLEIMAGEVIEW, str2);
             case "asynctask" -> jC.a(sc_id).d(javaName, 36, str2);
             case "otpview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_OTPVIEW, str2);
-            case "lottie" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_LOTTIEANIMATIONVIEW, str2);
-            case "phoneauth" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_PHONE, str2);
+            case "lottie" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_LOTTIEANIMATIONVIEW, str2);
+            case "phoneauth" -> jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_PHONE, str2);
             case "codeview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_CODEVIEW, str2);
-            case "recyclerview" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_RECYCLERVIEW, str2);
+            case "recyclerview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_RECYCLERVIEW, str2);
             case "googlelogin" ->
                     jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH_GOOGLE_LOGIN, str2);
-            case "youtubeview" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_YOUTUBEPLAYERVIEW, str2);
-            case "signinbutton" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_SIGNINBUTTON, str2);
+            case "youtubeview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_YOUTUBEPLAYERVIEW, str2);
+            case "signinbutton" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_SIGNINBUTTON, str2);
             case "cardview" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_CARDVIEW, str2);
-            case "radiogroup" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_RADIOGROUP, str2);
-            case "textinputlayout" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_TEXTINPUTLAYOUT, str2);
+            case "radiogroup" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_RADIOGROUP, str2);
+            case "textinputlayout" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_TEXTINPUTLAYOUT, str2);
             case "collapsingtoolbar" ->
                     jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_COLLAPSINGTOOLBARLAYOUT, str2);
-            case "cloudmessage" ->
-                    jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_CLOUD_MESSAGE, str2);
-            case "datepicker" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_DATEPICKER, str2);
+            case "cloudmessage" -> jC.a(sc_id).d(javaName, ComponentBean.COMPONENT_TYPE_FIREBASE_CLOUD_MESSAGE, str2);
+            case "datepicker" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_DATEPICKER, str2);
             case "customVar" -> jC.a(sc_id).f(xmlName, 5, str2);
-            case "timepicker" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_TIMEPICKER, str2);
-            case "swiperefreshlayout" ->
-                    jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_SWIPEREFRESHLAYOUT, str2);
+            case "timepicker" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_WIDGET_TIMEPICKER, str2);
+            case "swiperefreshlayout" -> jC.a(sc_id).g(xmlName, ViewBeans.VIEW_TYPE_LAYOUT_SWIPEREFRESHLAYOUT, str2);
             default -> true;
         };
     }
@@ -158,35 +143,26 @@ public class ExtraPaletteBlock {
         ArrayList<String> booleanVariables = jC.a(sc_id).e(javaName, 0);
         for (int i = 0; i < booleanVariables.size(); i++) {
             if (i == 0) logicEditor.a("Boolean", getTitleBgColor());
-
             logicEditor.a(booleanVariables.get(i), "b", "getVar").setTag(booleanVariables.get(i));
         }
-
         ArrayList<String> numberVariables = jC.a(sc_id).e(javaName, 1);
         for (int i = 0; i < numberVariables.size(); i++) {
             if (i == 0) logicEditor.a("Number", getTitleBgColor());
-
             logicEditor.a(numberVariables.get(i), "d", "getVar").setTag(numberVariables.get(i));
         }
-
         ArrayList<String> stringVariables = jC.a(sc_id).e(javaName, 2);
         for (int i = 0; i < stringVariables.size(); i++) {
             if (i == 0) logicEditor.a("String", getTitleBgColor());
-
             logicEditor.a(stringVariables.get(i), "s", "getVar").setTag(stringVariables.get(i));
         }
-
         ArrayList<String> mapVariables = jC.a(sc_id).e(javaName, 3);
         for (int i = 0; i < mapVariables.size(); i++) {
             if (i == 0) logicEditor.a("Map", getTitleBgColor());
-
             logicEditor.a(mapVariables.get(i), "a", "getVar").setTag(mapVariables.get(i));
         }
-
         ArrayList<String> customVariables = jC.a(sc_id).e(javaName, 5);
         for (int i = 0; i < customVariables.size(); i++) {
             if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
-
             String[] split = customVariables.get(i).split(" ");
             if (split.length > 1) {
                 logicEditor.a(split[1], "v", split[0], "getVar").setTag(customVariables.get(i));
@@ -194,11 +170,9 @@ public class ExtraPaletteBlock {
                 SketchwareUtil.toastError("Found invalid data of Custom Variable #" + (i + 1) + ": \"" + customVariables.get(i) + "\"");
             }
         }
-
         ArrayList<String> customVariables2 = jC.a(sc_id).e(javaName, 6);
         for (int i = 0; i < customVariables2.size(); i++) {
             if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
-
             String variable = customVariables2.get(i);
             String variableType = CustomVariableUtil.getVariableType(variable);
             String variableName = CustomVariableUtil.getVariableName(variable);
@@ -233,13 +207,12 @@ public class ExtraPaletteBlock {
         ArrayList<ComponentBean> components = jC.a(sc_id).e(javaName);
         for (int i = 0, componentsSize = components.size(); i < componentsSize; i++) {
             ComponentBean component = components.get(i);
-
             if (i == 0) {
                 logicEditor.a("Components", getTitleBgColor());
             }
-
             if (component.type != 27) {
-                logicEditor.a(component.componentId, "p", ComponentBean.getComponentTypeName(component.type), "getVar").setTag(component.componentId);
+                logicEditor.a(component.componentId, "p", ComponentBean.getComponentTypeName(component.type), "getVar"
+                ).setTag(component.componentId);
             }
         }
     }
@@ -258,14 +231,14 @@ public class ExtraPaletteBlock {
                 ArrayList<ViewBean> customViews = jC.a(sc_id).d(ProjectFileBean.getXmlName(viewBeanCustomView));
                 for (int i = 0, customViewsSize = customViews.size(); i < customViewsSize; i++) {
                     ViewBean customView = customViews.get(i);
-
                     if (i == 0) {
                         logicEditor.a("Custom Views", getTitleBgColor());
                     }
-
                     if (!customView.convert.equals("include")) {
-                        String typeName = customView.convert.isEmpty() ? ViewBean.getViewTypeName(customView.type) : IdGenerator.getLastPath(customView.convert);
-                        String resultId = isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(customView.id) : customView.id;
+                        String typeName = customView.convert.isEmpty() ? ViewBean.getViewTypeName(customView.type) :
+                                IdGenerator.getLastPath(customView.convert);
+                        String resultId = isViewBindingEnabled ?
+                                "binding." + ViewBindingBuilder.generateParameterFromId(customView.id) : customView.id;
                         logicEditor.a(resultId, "v", typeName, "getVar").setTag(resultId);
                     }
                 }
@@ -281,15 +254,17 @@ public class ExtraPaletteBlock {
         for (int i = 0, viewsSize = views.size(); i < viewsSize; i++) {
             ViewBean view = views.get(i);
             Set<String> toNotAdd = new Ox(new jq(), projectFile).readAttributesToReplace(view);
-
             if (i == 0) {
                 logicEditor.a("Views", getTitleBgColor());
             }
-
             if (!view.convert.equals("include")) {
                 if (!toNotAdd.contains("android:id")) {
-                    String typeName = view.convert.isEmpty() ? ViewBean.getViewTypeName(view.type) : IdGenerator.getLastPath(view.convert);
-                    logicEditor.a(isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v", typeName, "getVar").setTag(isViewBindingEnabled ? "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id);
+                    String typeName = view.convert.isEmpty() ? ViewBean.getViewTypeName(view.type) :
+                            IdGenerator.getLastPath(view.convert);
+                    logicEditor.a(isViewBindingEnabled ?
+                            "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v", typeName
+                            , "getVar").setTag(isViewBindingEnabled ?
+                            "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id);
                 }
             }
         }
@@ -301,15 +276,16 @@ public class ExtraPaletteBlock {
             if (drawerViews != null) {
                 for (int i = 0, drawerViewsSize = drawerViews.size(); i < drawerViewsSize; i++) {
                     ViewBean drawerView = drawerViews.get(i);
-
                     if (i == 0) {
                         logicEditor.a("Drawer Views", getTitleBgColor());
                     }
-
                     if (!drawerView.convert.equals("include")) {
                         String id = "_drawer_" + drawerView.id;
-                        String typeName = drawerView.convert.isEmpty() ? ViewBean.getViewTypeName(drawerView.type) : IdGenerator.getLastPath(drawerView.convert);
-                        logicEditor.a(isViewBindingEnabled ? "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id, "v", typeName, "getVar").setTag(id);
+                        String typeName = drawerView.convert.isEmpty() ? ViewBean.getViewTypeName(drawerView.type) :
+                                IdGenerator.getLastPath(drawerView.convert);
+                        logicEditor.a(isViewBindingEnabled ?
+                                "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id,
+                                "v", typeName, "getVar").setTag(id);
                     }
                 }
             }
@@ -356,7 +332,6 @@ public class ExtraPaletteBlock {
         for (Pair<Integer, String> list : jC.a(sc_id).j(javaName)) {
             int type = list.first;
             String name = list.second;
-
             switch (type) {
                 case 1, 2, 3 -> logicEditor.a(name, "l", kq.a(type), "getVar").setTag(name);
                 default -> {
@@ -369,7 +344,6 @@ public class ExtraPaletteBlock {
                 }
             }
         }
-
         BlocksHandler.primaryBlocksB(
                 logicEditor,
                 extraBlocks.isListUsed(1),
@@ -380,8 +354,7 @@ public class ExtraPaletteBlock {
 
     public void setBlock(int paletteId, int paletteColor) {
         // Remove previous palette's blocks
-        logicEditor.m.a();
-
+        logicEditor.paletteBlock.a();
         if (eventName.equals("Import")) {
             if (paletteId == 3) {
                 logicEditor.a(" ", "addSourceDirectly");
@@ -392,22 +365,19 @@ public class ExtraPaletteBlock {
             }
             return;
         }
-
         switch (paletteId) {
             case -1:
-                String filePath = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id.concat("/files/resource/values/strings.xml"));
+                String filePath = FileUtil.getExternalStorageDir().concat("/.sketchware/data/").concat(sc_id.concat(
+                        "/files/resource/values/strings.xml"));
                 ArrayList<HashMap<String, Object>> StringsListMap = new ArrayList<>();
                 StringsEditorManager stringsEditorManager = new StringsEditorManager();
                 stringsEditorManager.convertXmlStringsToListMap(FileUtil.readFileIfExist(filePath), StringsListMap);
-
                 logicEditor.b("Open Resources editor", "openResourcesEditor");
-
                 logicEditor.a("s", "getResString");
                 logicEditor.a("Saved Res Strings :", getTitleBgColor());
                 if (!stringsEditorManager.isXmlStringsExist(StringsListMap, "app_name")) {
                     logicEditor.a("app_name", "s", "getResStr").setTag("S98ZCSapp_name");
                 }
-
                 for (int i = 0; i < StringsListMap.size(); i++) {
                     String key = StringsListMap.get(i).get("key").toString();
                     logicEditor.a(key, "s", "getResStr").setTag("S98ZCS" + key);
@@ -419,22 +389,18 @@ public class ExtraPaletteBlock {
                 logicEditor.b("Remove variable", "variableRemove", clickListener);
                 variables();
                 return;
-
             case 1:
                 logicEditor.b("Add list", "listAdd");
                 logicEditor.b("Add custom List", "listAddCustom", clickListener);
                 logicEditor.b("Remove list", "listRemove", clickListener);
                 list();
                 return;
-
             case 2:
                 BlocksHandler.primaryBlocksC(logicEditor);
                 return;
-
             case 3:
                 BlocksHandler.primaryBlocksD(logicEditor);
                 return;
-
             case 4:
                 logicEditor.a("d", "mathGetDip");
                 logicEditor.a("d", "mathGetDisplayWidth");
@@ -461,7 +427,6 @@ public class ExtraPaletteBlock {
                 logicEditor.a("d", "mathToRadian");
                 logicEditor.a("d", "mathToDegree");
                 return;
-
             case 5:
                 extraBlocks.fileBlocks();
                 logicEditor.a("FileUtil Blocks", getTitleBgColor());
@@ -501,7 +466,6 @@ public class ExtraPaletteBlock {
                 logicEditor.a(" ", "setBitmapFileContrast");
                 logicEditor.a("d", "getJpegRotate");
                 return;
-
             case 6:
                 logicEditor.a(" ", "setEnable");
                 logicEditor.a("b", "getEnable");
@@ -566,12 +530,10 @@ public class ExtraPaletteBlock {
                         || extraBlocks.isCustomVarUsed("VideoView");
                 boolean webViewUsed = isWidgetUsed("WebView")
                         || extraBlocks.isCustomVarUsed("WebView");
-
                 if (textViewUsed || compoundButtonUsed || autoCompleteTextViewUsed
                         || multiAutoCompleteTextViewUsed || imageViewUsed || ratingBarUsed
                         || seekBarUsed || progressBarUsed || videoViewUsed || webViewUsed) {
                     logicEditor.a("Widgets", getTitleBgColor());
-
                     if (textViewUsed) {
                         logicEditor.a(" ", "setText");
                         logicEditor.a("s", "getText");
@@ -579,7 +541,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setTextColor");
                         logicEditor.a(" ", "setTextSize");
                     }
-
                     if (editTextUsed) {
                         logicEditor.a(" ", "setHint");
                         logicEditor.a(" ", "setHintTextColor");
@@ -593,22 +554,18 @@ public class ExtraPaletteBlock {
                         logicEditor.a("d", "EdittextGetselectionStart");
                         logicEditor.a("d", "EdittextGetselectionEnd");
                     }
-
                     if (compoundButtonUsed) {
                         logicEditor.a(" ", "setChecked");
                         logicEditor.a("b", "getChecked");
                     }
-
                     if (autoCompleteTextViewUsed) {
                         logicEditor.a(" ", "autoComSetData");
                     }
-
                     if (multiAutoCompleteTextViewUsed) {
                         logicEditor.a(" ", "multiAutoComSetData");
                         logicEditor.a(" ", "setThreshold");
                         logicEditor.a(" ", "setTokenizer");
                     }
-
                     if (imageViewUsed) {
                         logicEditor.a(" ", "setImage");
                         logicEditor.a(" ", "setImageCustomRes");
@@ -617,25 +574,21 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setImageUrl");
                         logicEditor.a(" ", "setColorFilter");
                     }
-
                     if (ratingBarUsed) {
                         logicEditor.a("d", "getRating");
                         logicEditor.a(" ", "setRating");
                         logicEditor.a(" ", "setNumStars");
                         logicEditor.a(" ", "setStepSize");
                     }
-
                     if (seekBarUsed) {
                         logicEditor.a(" ", "seekBarSetProgress");
                         logicEditor.a("d", "seekBarGetProgress");
                         logicEditor.a(" ", "seekBarSetMax");
                         logicEditor.a("d", "seekBarGetMax");
                     }
-
                     if (progressBarUsed) {
                         logicEditor.a(" ", "progressBarSetIndeterminate");
                     }
-
                     if (videoViewUsed) {
                         logicEditor.a(" ", "videoviewSetVideoUri");
                         logicEditor.a(" ", "videoviewStart");
@@ -648,7 +601,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a("d", "videoviewGetCurrentPosition");
                         logicEditor.a("d", "videoviewGetDuration");
                     }
-
                     if (webViewUsed) {
                         logicEditor.a(" ", "webViewLoadUrl");
                         logicEditor.a("s", "webViewGetUrl");
@@ -673,10 +625,8 @@ public class ExtraPaletteBlock {
                 boolean recyclerViewUsed = isWidgetUsed("RecyclerView");
                 boolean gridViewUsed = isWidgetUsed("GridView") || extraBlocks.isCustomVarUsed("GridView");
                 boolean viewPagerUsed = isWidgetUsed("ViewPager");
-
                 if (spinnerUsed || listViewUsed || recyclerViewUsed || gridViewUsed || viewPagerUsed) {
                     logicEditor.a("List", getTitleBgColor());
-
                     if (spinnerUsed) {
                         logicEditor.a(" ", "spnSetData");
                         logicEditor.a(" ", "spnSetCustomViewData");
@@ -684,7 +634,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "spnSetSelection");
                         logicEditor.a("d", "spnGetSelection");
                     }
-
                     if (!inOnBindCustomView) {
                         if (listViewUsed) {
                             logicEditor.a(" ", "listSetData");
@@ -700,7 +649,6 @@ public class ExtraPaletteBlock {
                             logicEditor.a(" ", "ListViewAddFooter");
                             logicEditor.a(" ", "listViewRemoveFooter");
                         }
-
                         if (recyclerViewUsed) {
                             logicEditor.a(" ", "recyclerSetCustomViewData");
                             logicEditor.a(" ", "recyclerSetLayoutManager");
@@ -709,7 +657,6 @@ public class ExtraPaletteBlock {
                             logicEditor.a(" ", "recyclerSmoothScrollToPosition");
                             logicEditor.a(" ", "recyclerScrollToPositionWithOffset");
                         }
-
                         if (gridViewUsed) {
                             logicEditor.a(" ", "gridSetCustomViewData");
                             logicEditor.a(" ", "gridSetNumColumns");
@@ -718,7 +665,6 @@ public class ExtraPaletteBlock {
                             logicEditor.a(" ", "gridSetHorizontalSpacing");
                             logicEditor.a(" ", "gridSetStretchMode");
                         }
-
                         if (viewPagerUsed) {
                             logicEditor.a(" ", "pagerSetCustomViewData");
                             logicEditor.a(" ", "pagerSetFragmentAdapter");
@@ -740,32 +686,27 @@ public class ExtraPaletteBlock {
                 boolean swipeRefreshLayoutUsed = isWidgetUsed("SwipeRefreshLayout");
                 boolean cardViewUsed = isWidgetUsed("CardView");
                 boolean tabLayoutUsed = isWidgetUsed("TabLayout");
-                boolean textInputLayoutUsed = isWidgetUsed("TextInputLayout") || extraBlocks.isCustomVarUsed("TextInputLayout");
-
+                boolean textInputLayoutUsed = isWidgetUsed("TextInputLayout") || extraBlocks.isCustomVarUsed(
+                        "TextInputLayout");
                 if (drawerUsed || fabUsed || bottomNavigationViewUsed || swipeRefreshLayoutUsed || cardViewUsed || tabLayoutUsed || textInputLayoutUsed) {
                     logicEditor.a("AndroidX components", getTitleBgColor());
-
                     if (drawerUsed) {
                         logicEditor.a("b", "isDrawerOpen");
                         logicEditor.a(" ", "openDrawer");
                         logicEditor.a(" ", "closeDrawer");
                     }
-
                     if (fabUsed) {
                         logicEditor.a(" ", "fabIcon");
                         logicEditor.a(" ", "fabSize");
                         logicEditor.a(" ", "fabVisibility");
                     }
-
                     if (bottomNavigationViewUsed) {
                         logicEditor.a(" ", "bottomMenuAddItem");
                     }
-
                     if (swipeRefreshLayoutUsed) {
                         logicEditor.a("c", "onSwipeRefreshLayout");
                         logicEditor.a(" ", "setRefreshing");
                     }
-
                     if (cardViewUsed) {
                         logicEditor.a(" ", "setCardBackgroundColor");
                         logicEditor.a(" ", "setCardRadius");
@@ -773,7 +714,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setPreventCornerOverlap");
                         logicEditor.a(" ", "setUseCompatPadding");
                     }
-
                     if (tabLayoutUsed) {
                         logicEditor.a(" ", "addTab");
                         logicEditor.a(" ", "setupWithViewPager");
@@ -783,7 +723,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setSelectedTabIndicatorColor");
                         logicEditor.a(" ", "setSelectedTabIndicatorHeight");
                     }
-
                     if (textInputLayoutUsed) {
                         logicEditor.a(" ", "tilSetBoxBgColor");
                         logicEditor.a(" ", "tilSetBoxStrokeColor");
@@ -805,21 +744,17 @@ public class ExtraPaletteBlock {
                 boolean codeViewUsed = isWidgetUsed("CodeView");
                 boolean lottieAnimationViewUsed = isWidgetUsed("LottieAnimationView");
                 boolean otpViewUsed = isWidgetUsed("OTPView");
-
                 if (waveSideBarUsed || badgeViewUsed || bubbleLayoutUsed || patternLockViewUsed || codeViewUsed || lottieAnimationViewUsed) {
                     logicEditor.a("Library", getTitleBgColor());
-
                     if (otpViewUsed) {
                         logicEditor.a(" ", "otpViewSetFieldCount");
                         logicEditor.a(" ", "otpViewSetOTPText");
                         logicEditor.a("s", "otpViewGetOTPText");
                         logicEditor.a("c", "otpViewSetOTPListener");
                     }
-
                     if (waveSideBarUsed) {
                         logicEditor.a(" ", "setCustomLetter");
                     }
-
                     if (badgeViewUsed) {
                         logicEditor.a("d", "getBadgeCount");
                         logicEditor.a(" ", "setBadgeNumber");
@@ -828,7 +763,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setBadgeTextColor");
                         logicEditor.a(" ", "setBadgeTextSize");
                     }
-
                     if (bubbleLayoutUsed) {
                         logicEditor.a(" ", "setBubbleColor");
                         logicEditor.a(" ", "setBubbleStrokeColor");
@@ -838,7 +772,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "setBubbleArrowWidth");
                         logicEditor.a(" ", "setBubbleArrowPosition");
                     }
-
                     if (patternLockViewUsed) {
                         logicEditor.a("s", "patternToString");
                         logicEditor.a("s", "patternToMD5");
@@ -850,14 +783,12 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "patternSetViewMode");
                         logicEditor.a(" ", "patternLockClear");
                     }
-
                     if (codeViewUsed) {
                         logicEditor.a(" ", "codeviewSetCode");
                         logicEditor.a(" ", "codeviewSetLanguage");
                         logicEditor.a(" ", "codeviewSetTheme");
                         logicEditor.a(" ", "codeviewApply");
                     }
-
                     if (lottieAnimationViewUsed) {
                         logicEditor.a(" ", "lottieSetAnimationFromAsset");
                         logicEditor.a(" ", "lottieSetAnimationFromJson");
@@ -872,24 +803,19 @@ public class ExtraPaletteBlock {
                 boolean youtubePlayerViewUsed = isWidgetUsed("YoutubePlayerView");
                 boolean adMobUsed = "Y".equals(jC.c(sc_id).b().useYn);
                 boolean mapViewUsed = isWidgetUsed("MapView");
-
                 if (signInButtonUsed || youtubePlayerViewUsed || adMobUsed || mapViewUsed) {
                     logicEditor.a("Google", getTitleBgColor());
-
                     if (signInButtonUsed) {
                         logicEditor.a(" ", "signInButtonSetColorScheme");
                         logicEditor.a(" ", "signInButtonSetSize");
                     }
-
                     if (youtubePlayerViewUsed) {
                         logicEditor.a(" ", "YTPVLifecycle");
                         logicEditor.a("c", "YTPVSetListener");
                     }
-
                     if (adMobUsed) {
                         logicEditor.a(" ", "bannerAdViewLoadAd");
                     }
-
                     if (mapViewUsed) {
                         logicEditor.a(" ", "mapViewSetMapType");
                         logicEditor.a(" ", "mapViewMoveCamera");
@@ -908,10 +834,8 @@ public class ExtraPaletteBlock {
             {
                 boolean timePickerUsed = isWidgetUsed("TimePicker");
                 boolean calendarViewUsed = isWidgetUsed("CalendarView");
-
                 if (timePickerUsed || calendarViewUsed) {
                     logicEditor.a("Date & Time", getTitleBgColor());
-
                     if (timePickerUsed) {
                         logicEditor.a(" ", "timepickerSetHour");
                         logicEditor.a(" ", "timepickerSetMinute");
@@ -919,7 +843,6 @@ public class ExtraPaletteBlock {
                         logicEditor.a(" ", "timepickerSetCurrentMinute");
                         logicEditor.a(" ", "timepickerSetIs24Hour");
                     }
-
                     if (calendarViewUsed) {
                         logicEditor.a(" ", "calendarViewSetDate");
                         logicEditor.a(" ", "calendarViewSetMinDate");
@@ -934,7 +857,6 @@ public class ExtraPaletteBlock {
             logicEditor.a("c", "viewOnTouch");
             logicEditor.a("c", "showSnackbar");
             return;
-
             case 7:
                 logicEditor.b("Add component", "componentAdd");
                 logicEditor.a(" ", "changeStatebarColour");
@@ -1169,7 +1091,6 @@ public class ExtraPaletteBlock {
                     return;
                 }
                 return;
-
             case 8:
                 logicEditor.b("Create", "blockAdd");
                 logicEditor.b("Import From Collection", "blockImport");
@@ -1191,23 +1112,18 @@ public class ExtraPaletteBlock {
                     return;
                 }
                 return;
-
             default:
                 int paletteIndex = -1, paletteBlocks = 0;
                 ArrayList<HashMap<String, Object>> extraBlockData = ExtraBlockFile.getExtraBlockData();
                 for (int i = 0, extraBlockDataSize = extraBlockData.size(); i < extraBlockDataSize; i++) {
                     HashMap<String, Object> map = extraBlockData.get(i);
-
                     Object palette = map.get("palette");
                     if (palette instanceof String paletteString) {
-
                         if (paletteString.equals(String.valueOf(paletteId))) {
                             if (paletteIndex == -1) paletteIndex = Integer.parseInt(paletteString);
                             paletteBlocks++;
-
                             Object type = map.get("type");
                             if (type instanceof String typeString) {
-
                                 if (typeString.equals("h")) {
                                     Object spec = map.get("spec");
                                     if (spec instanceof String specString) {
@@ -1219,10 +1135,8 @@ public class ExtraPaletteBlock {
                                 } else {
                                     Object name = map.get("name");
                                     if (name instanceof String nameString) {
-
                                         Object typeName = map.get("typeName");
                                         if (typeName instanceof String typeNameString) {
-
                                             logicEditor.a("", typeString, typeNameString, nameString);
                                         } else {
                                             logicEditor.a("", typeString, "", nameString);
@@ -1247,6 +1161,7 @@ public class ExtraPaletteBlock {
     }
 
     private @ColorInt int getTitleBgColor() {
-        return getColor(logicEditor, isDarkThemeEnabled(logicEditor) ? R.attr.colorSurfaceContainerHigh : R.attr.colorSurfaceInverse);
+        return getColor(logicEditor, isDarkThemeEnabled(logicEditor) ? R.attr.colorSurfaceContainerHigh :
+                R.attr.colorSurfaceInverse);
     }
 }

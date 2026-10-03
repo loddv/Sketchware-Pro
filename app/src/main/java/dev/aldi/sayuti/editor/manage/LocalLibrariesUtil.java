@@ -13,37 +13,79 @@ import com.google.gson.Gson;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class LocalLibrariesUtil {
     private static final String localLibsPath = getExternalStorageDir().concat("/.sketchware/libs/local_libs/");
-    private static final Comparator<File> LOCAL_LIBS_COMPARATOR = new LocalLibrariesComparator();
-    private static final Path LOCAL_LIBS_PATH = Path.of(localLibsPath); // cache se for constante
+    private static final Path LOCAL_LIBS_PATH = Path.of(localLibsPath);
+    private static final String CACHE_FILE_PATH = localLibsPath.concat("cache.json");
 
     private static final Gson GSON = GsonHolder.INSTANCE;
     private static final Type LIST_MAP_TYPE = new TypeToken<ArrayList<HashMap<String, Object>>>() {}.getType();
+    private static final Type LIST_LOCAL_LIB_TYPE = new TypeToken<ArrayList<LocalLibrary>>() {}.getType();
 
+    /**
+     * Obtém todas as bibliotecas locais. Tenta ler primeiro do cache (cache.json).
+     * Se não existir ou falhar, realiza a varredura no sistema de arquivos e gera o cache.
+     */
     public static List<LocalLibrary> getAllLocalLibraries() {
-        try (Stream<Path> stream = Files.list(LOCAL_LIBS_PATH)) {
-            return stream.filter(Files::isDirectory)                                      // só diretórios
-                    .map(Path::toFile)                                               // → File (se ainda precisar)
-                    .sorted(LOCAL_LIBS_COMPARATOR)                                   // ordenação uma única vez
-                    .map(LocalLibrary::fromFile)                                     // converte para LocalLibrary
-                    .collect(Collectors.toList());                                   // ou toUnmodifiableList() se
-            // não for modificar depois
-        } catch (IOException | InvalidPathException e) {
-            // Diretório não existe, sem permissão, etc → retorna lista vazia (comportamento seguro)
+        // 1. Tentar ler do Cache JSON
+        if (isExistFile(CACHE_FILE_PATH)) {
+            String cacheContent = readFile(CACHE_FILE_PATH);
+            if (cacheContent != null && !cacheContent.isBlank()) {
+                try {
+                    List<LocalLibrary> cachedList = GSON.fromJson(cacheContent, LIST_LOCAL_LIB_TYPE);
+                    if (cachedList != null) {
+                        return cachedList;
+                    }
+                } catch (Exception ignored) {
+                    // Cache corrompido: ignora e reconstrói via I/O
+                }
+            }
+        }
+        // 2. Cache Miss: Fazer varredura no disco usando DirectoryStream (mais rápido que Files.list)
+        List<LocalLibrary> libraries = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(LOCAL_LIBS_PATH, Files::isDirectory)) {
+            for (Path path : stream) {
+                LocalLibrary lib = LocalLibrary.fromFile(path.toFile());
+                if (lib != null) {
+                    libraries.add(lib);
+                }
+            }
+            libraries.sort(Comparator.comparing(LocalLibrary::getName, String.CASE_INSENSITIVE_ORDER));
+            // 3. Salvar o resultado no cache JSON para as próximas requisições
+            saveCacheAsync(libraries);
+
+        } catch (IOException e) {
             return List.of();
         }
+        return libraries;
+    }
+
+    /**
+     * Salva a lista tratada em formato JSON de maneira assíncrona para não travar a UI.
+     */
+    private static void saveCacheAsync(List<LocalLibrary> libraries) {
+        new Thread(() -> {
+            try {
+                String json = GSON.toJson(libraries);
+                writeFile(CACHE_FILE_PATH, json);
+            } catch (Exception ignored) {}
+        }).start();
+    }
+
+    /**
+     * Invalida ou remove o arquivo de cache ao modificar as bibliotecas.
+     */
+    public static void invalidateCache() {
+        deleteFile(CACHE_FILE_PATH);
     }
 
     public static ArrayList<HashMap<String, Object>> getLocalLibraries(String scId) {
@@ -67,7 +109,9 @@ public class LocalLibrariesUtil {
                                                     ArrayList<HashMap<String, Object>> projectUsedLibs) {
         List<LocalLibrary> toRemove = new ArrayList<>();
         for (LocalLibrary library : localLibraries) {
-            if (library.isSelected()) {toRemove.add(library);}
+            if (library.isSelected()) {
+                toRemove.add(library);
+            }
         }
         for (LocalLibrary library : toRemove) {
             deleteFile(localLibsPath.concat(library.getName()));
@@ -75,51 +119,43 @@ public class LocalLibrariesUtil {
                 projectUsedLibs.removeIf(lib -> library.getName().equals(String.valueOf(lib.get("name"))));
             }
         }
-        // Using removeAll is much more efficient than using removeIf with a nested loop
-        // or removing elements while iterating.
         localLibraries.removeAll(toRemove);
-        // Write to the file only ONCE, after all removals are done.
         if (projectUsedLibs != null) {
-            rewriteLocalLibFile(scId, new Gson().toJson(projectUsedLibs));
+            rewriteLocalLibFile(scId, GSON.toJson(projectUsedLibs));
         }
+        // Invalida o cache após remoção para forçar nova sincronização no próximo carregamento
+        invalidateCache();
     }
 
     public static void renameSelectedLocalLibraryPath(String scId, String newName, String oldName,
-                                                      List<LocalLibrary> localLibraries, ArrayList<HashMap<String,
-                    Object>> projectUsedLibs) {
+                                                      List<LocalLibrary> localLibraries,
+                                                      ArrayList<HashMap<String, Object>> projectUsedLibs) {
         File oldPath = new File(localLibsPath, oldName);
         File newPath = new File(localLibsPath, newName);
-        // Only proceed if the file rename is successful
         if (!renameFile(oldPath.toString(), newPath.toString())) {
-            // Optional: Add logging here to indicate the failure
-            // Log.e("LibraryRename", "Failed to rename file from " + oldName + " to " + newName);
-            return; // Exit if the core file operation failed
+            return;
         }
         boolean hasChanges = false;
-        // Update the project-specific library list
         if (projectUsedLibs != null) {
             for (Map<String, Object> libraryMap : projectUsedLibs) {
-                // Use String.valueOf() for null-safety
                 if (oldName.equals(String.valueOf(libraryMap.get("name")))) {
                     libraryMap.put("name", newName);
                     hasChanges = true;
-                    // The break should be INSIDE the if-block to stop after finding the match
                     break;
                 }
             }
         }
-        // Update the global list of local libraries
         for (LocalLibrary library : localLibraries) {
             if (library.getName().equals(oldName)) {
                 library.setName(newName);
-                // No need to set hasChanges here, as this is an in-memory object update
-                break; // Stop after finding and updating the library
+                break;
             }
         }
-        // Write to the file only ONCE, and only if changes were made to the list that gets serialized.
         if (hasChanges) {
-            rewriteLocalLibFile(scId, new Gson().toJson(projectUsedLibs));
+            rewriteLocalLibFile(scId, GSON.toJson(projectUsedLibs));
         }
+        // Atualiza ou limpa o cache após renomear
+        saveCacheAsync(localLibraries);
     }
 
     public static File getLocalLibFile(String scId) {
@@ -171,7 +207,6 @@ public class LocalLibrariesUtil {
         return localLibrary;
     }
 
-    // Gson thread-safe e inicializado apenas uma vez
     private static final class GsonHolder {
         static final Gson INSTANCE = new Gson();
     }

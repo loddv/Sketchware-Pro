@@ -1265,8 +1265,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
             activity.runOnUiThread(() -> {
-                updateRunButton(true);
                 updateRunOptions(true);
+                updateRunButton(true);
                 activity.r.a("P1I10",
                         true);
                 activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -1468,8 +1468,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                         notificationManager.cancel(notificationId);
                         isShowingNotification = false;
                     }
-                    updateRunButton(false);
                     updateRunOptions(false);
+                    updateRunButton(false);
                     activity.updateBottomMenu();
                     activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
@@ -1560,10 +1560,6 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         private void updateRunButton(boolean isRunning) {
             var context = getActivity();
             if (context == null) return;
-            // 1. Atualizar Visibilidade do Botão de Opções
-            btnOptions.setVisibility(isRunning ? View.GONE : View.VISIBLE);
-            btnOptions.setEnabled(!isRunning);
-            // 2. Cores, Ícones e Textos (Material 3)
             int backgroundAttr = isRunning ? R.attr.colorErrorContainer : R.attr.colorPrimary;
             int tintAttr = isRunning ? R.attr.colorOnErrorContainer : R.attr.colorOnPrimary;
             int iconRes = isRunning ? R.drawable.ic_mtrl_stop : R.drawable.ic_mtrl_run;
@@ -1583,18 +1579,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     isRunning ? LinearLayout.LayoutParams.MATCH_PARENT : 0,
                     btnRun.getLayoutParams().height
             );
-            // Se não estiver rodando, usa weight = 1f para dividir espaço suavemente no LinearLayout
-            params.weight = isRunning ? 0f : 1f;
-            int marginPx = dpToPx(context, 16);
-            if (isRunning) {
-                params.setMargins(marginPx, 6, marginPx, 6);
-            } else {
-                params.setMargins(0, 0, 0, 0);
-            }
-            btnRun.setLayoutParams(params);
-            // 5. Ajuste das Bordas (Rounded Corners em DP)
-            float cornerRadiusPx = dpToPx(context, 24); // 24dp gera bordas totalmente arredondadas (pílula)
             ShapeAppearanceModel.Builder shapeBuilder = btnRun.getShapeAppearanceModel().toBuilder();
+            float cornerRadiusPx = dpToPx(context, 24); // 24dp gera bordas totalmente arredondadas (pílula)
             if (isRunning) {
                 // Rodando: Todas as bordas arredondadas (com btnOptions em GONE)
                 shapeBuilder.setAllCorners(CornerFamily.ROUNDED, cornerRadiusPx);
@@ -1608,13 +1594,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         }
 
         private void updateRunOptions(boolean isRunning) {
-            var context = getActivity();
-            btnOptions.setBackgroundTintList(ColorStateList.valueOf(ThemeUtils.getColor(context,
-                    isRunning ? R.attr.colorErrorContainer : R.attr.colorPrimary)));
-            btnOptions.setIconTint(ColorStateList.valueOf(ThemeUtils.getColor(context,
-                    isRunning ? R.attr.colorOnErrorContainer : R.attr.colorSurfaceContainerLowest)));
-            btnOptions.setEnabled(!isRunning);
             btnOptions.setVisibility(!isRunning ? View.VISIBLE : View.GONE);
+            btnOptions.setEnabled(!isRunning);
         }
     }
 

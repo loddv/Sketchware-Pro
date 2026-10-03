@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,7 +37,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,15 +45,18 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class RepoManagerActivity extends AppCompatActivity {
 
+    private static final String TAG = "RepoManagerActivity";
+
     public static final File CONFIGURED_REPOSITORIES_FILE = new File(Environment.getExternalStorageDirectory(),
             ".sketchware/libs/repositories.json");
-    private final ArrayList<HashMap<String, Object>> filteredList = new ArrayList<>();
-    private ArrayList<HashMap<String, Object>> REPOSITORY_LIST = new ArrayList<>();
+    private final ArrayList<Repository> filteredList = new ArrayList<>();
+    private ArrayList<Repository> REPOSITORY_LIST = new ArrayList<>();
     private RepositoryAdapter adapter;
     private TextInputEditText searchEditText;
     private TextView indexSize;
     private FloatingActionButton addFab;
     private RecyclerView recyclerView;
+    private final Gson gson = new Gson();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,10 +90,12 @@ public class RepoManagerActivity extends AppCompatActivity {
     private void setupSearch() {
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @Override
             public void afterTextChanged(Editable s) {
@@ -105,15 +110,15 @@ public class RepoManagerActivity extends AppCompatActivity {
             filteredList.addAll(REPOSITORY_LIST);
         } else {
             String lowerQuery = query.toLowerCase();
-            for (HashMap<String, Object> repo : REPOSITORY_LIST) {
-                String name = (String) repo.get("name");
-                String url = (String) repo.get("url");
-                if ((name != null && name.toLowerCase().contains(lowerQuery)) || (url != null && url.toLowerCase().contains(lowerQuery))) {
+            for (Repository repo : REPOSITORY_LIST) {
+                String name = repo.getName();
+                String url = repo.getUrl();
+                if ((name != null && name.toLowerCase().contains(lowerQuery)) ||
+                        (url != null && url.toLowerCase().contains(lowerQuery))) {
                     filteredList.add(repo);
                 }
             }
         }
-        //adapter.notifyDataSetChanged();
         updateIndex();
     }
 
@@ -163,11 +168,11 @@ public class RepoManagerActivity extends AppCompatActivity {
                 urlInputLayout.setError("Invalid URL format");
                 return;
             }
-            if (REPOSITORY_LIST.stream().anyMatch(repo -> Objects.equals(repo.get("name"), name))) {
+            if (REPOSITORY_LIST.stream().anyMatch(repo -> Objects.equals(repo.getName(), name))) {
                 nameInputLayout.setError("A repository with this name already exists");
                 return;
             }
-            if (REPOSITORY_LIST.stream().anyMatch(repo -> Objects.equals(repo.get("url"), url))) {
+            if (REPOSITORY_LIST.stream().anyMatch(repo -> Objects.equals(repo.getUrl(), url))) {
                 urlInputLayout.setError("A repository with this URL already exists");
                 return;
             }
@@ -175,13 +180,8 @@ public class RepoManagerActivity extends AppCompatActivity {
                 nameInputLayout.setError("Name cannot be longer than 20 characters");
                 return;
             }
-            HashMap<String, Object> repo = new HashMap<>();
-            repo.put("name",
-                    name);
-            repo.put("url",
-                    url);
-            repo.put("menu_expanded",
-                    View.GONE);
+            Repository repo = new Repository(name, url);
+            repo.setMenuExpanded(View.GONE);
             REPOSITORY_LIST.add(repo);
             applyFilter(Objects.requireNonNull(searchEditText.getText()).toString());
             saveRepositories();
@@ -200,16 +200,9 @@ public class RepoManagerActivity extends AppCompatActivity {
             parentDir.mkdirs();
         }
         try (FileWriter writer = new FileWriter(CONFIGURED_REPOSITORIES_FILE)) {
-            List<HashMap<String, Object>> cleanList = new ArrayList<>();
-            for (HashMap<String, Object> repo : REPOSITORY_LIST) {
-                HashMap<String, Object> clean = new HashMap<>(repo);
-                clean.remove("menu_expanded");
-                cleanList.add(clean);
-            }
-            new Gson().toJson(cleanList,
-                    writer);
+            gson.toJson(REPOSITORY_LIST, writer);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error saving repositories", e);
             SketchwareUtil.showMessage(getApplicationContext(),
                     "Error saving repositories: " + e.getMessage());
         }
@@ -220,23 +213,24 @@ public class RepoManagerActivity extends AppCompatActivity {
         if (!CONFIGURED_REPOSITORIES_FILE.exists()) {
             REPOSITORY_LIST = new ArrayList<>();
             saveRepositories();
-        } else {
-            try (FileReader reader = new FileReader(CONFIGURED_REPOSITORIES_FILE)) {
-                REPOSITORY_LIST = new Gson().fromJson(reader,
-                        new TypeToken<ArrayList<HashMap<String, Object>>>() {}.getType());
-            } catch (IOException e) {
-                REPOSITORY_LIST = new ArrayList<>();
-                e.printStackTrace();
-            }
+            return;
         }
-        if (REPOSITORY_LIST == null) {REPOSITORY_LIST = new ArrayList<>();}
-        for (HashMap<String, Object> repo : REPOSITORY_LIST) {
-            repo.put("menu_expanded",
-                    View.GONE);
+
+        try (FileReader reader = new FileReader(CONFIGURED_REPOSITORIES_FILE)) {
+            REPOSITORY_LIST = gson.fromJson(reader,
+                    new TypeToken<ArrayList<Repository>>() {}.getType());
+        } catch (IOException | com.google.gson.JsonSyntaxException e) {
+            Log.e(TAG, "Failed to load repositories", e);
+            REPOSITORY_LIST = new ArrayList<>();
         }
+
+        // Initialize menu_expanded for UI state
+        for (Repository repo : REPOSITORY_LIST) {
+            repo.setMenuExpanded(View.GONE);
+        }
+
         filteredList.clear();
         filteredList.addAll(REPOSITORY_LIST);
-        adapter.notifyDataSetChanged();
         updateIndex();
     }
 
@@ -252,12 +246,12 @@ public class RepoManagerActivity extends AppCompatActivity {
         return typedValue.data;
     }
 
-    // ========= ADAPTER =========
+    /// ========= ADAPTER =========
     private class RepositoryAdapter extends RecyclerView.Adapter<RepositoryAdapter.ViewHolder> {
 
-        private final List<HashMap<String, Object>> data;
+        private final List<Repository> data;
 
-        public RepositoryAdapter(List<HashMap<String, Object>> data) {
+        public RepositoryAdapter(List<Repository> data) {
             this.data = data;
         }
 
@@ -271,7 +265,7 @@ public class RepoManagerActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            HashMap<String, Object> repo = data.get(position);
+            Repository repo = data.get(position);
             holder.bind(repo,
                     position);
         }
@@ -297,13 +291,13 @@ public class RepoManagerActivity extends AppCompatActivity {
                 editBtn = itemView.findViewById(R.id.expand_options_view_edit);
             }
 
-            void bind(HashMap<String, Object> repo, int position) {
-                String name = (String) repo.get("name");
-                String url = (String) repo.get("url");
-                int visibility = (int) repo.get("menu_expanded");
+            void bind(Repository repo, int position) {
+                String name = repo.getName();
+                String url = repo.getUrl();
+                int visibility = repo.getMenuExpanded();
                 nameTv.setText(name);
                 urlTv.setText(url);
-                optionsLayout.setVisibility(visibility);
+                optionsLayout.setVisibility(visibility == View.GONE ? View.GONE : (visibility == View.INVISIBLE ? View.INVISIBLE : View.VISIBLE));
                 expandBtn.setImageResource(visibility == View.GONE ? R.drawable.selector_ic_expand_more_24 :
                         R.drawable.selector_ic_expand_less_24);
                 expandBtn.setOnClickListener(v -> toggleExpand(repo,
@@ -315,11 +309,10 @@ public class RepoManagerActivity extends AppCompatActivity {
                         position));
             }
 
-            private void toggleExpand(HashMap<String, Object> repo, LinearLayout options, ImageButton btn) {
+            private void toggleExpand(Repository repo, LinearLayout options, ImageButton btn) {
                 final boolean isExpanded = options.getVisibility() == View.VISIBLE;
                 final int targetVisibility = isExpanded ? View.GONE : View.VISIBLE;
-                repo.put("menu_expanded",
-                        targetVisibility);
+                repo.setMenuExpanded(targetVisibility);
                 // Animate button rotation
                 ObjectAnimator.ofFloat(btn,
                         "rotation",
@@ -379,7 +372,9 @@ public class RepoManagerActivity extends AppCompatActivity {
                         R.drawable.selector_ic_expand_more_24);
             }
 
-            private void showDeleteDialog(HashMap<String, Object> repo, int position) {
+            private void showDeleteDialog(Repository repo, int position) {
+                @SuppressWarnings("unused")
+                int pos = position; // Used for notifyItemChanged in future enhancements
                 BottomSheetDialog dialog = new BottomSheetDialog(RepoManagerActivity.this);
                 View view = getLayoutInflater().inflate(R.layout.bottom_sheet_rename,
                         null,
@@ -391,7 +386,7 @@ public class RepoManagerActivity extends AppCompatActivity {
                 MaterialButton cancelBtn = view.findViewById(R.id.button_cancel);
                 title.setText("Delete Repository");
                 inputLayout.setHint("This repository will be permanently removed!");
-                nameEt.setText((String) repo.get("name"));
+                nameEt.setText(repo.getName());
                 nameEt.setEnabled(false);
                 deleteBtn.setText("Delete");
                 deleteBtn.setBackgroundColor(getResources().getColor(R.color.scolor_red_02));
@@ -399,7 +394,6 @@ public class RepoManagerActivity extends AppCompatActivity {
                     REPOSITORY_LIST.remove(repo);
                     applyFilter(Objects.requireNonNull(searchEditText.getText()).toString());
                     saveRepositories();
-                    adapter.notifyItemChanged(position);
                     dialog.dismiss();
                     SketchwareUtil.showMessage(getApplicationContext(),
                             "Removed successfully!");
@@ -409,7 +403,7 @@ public class RepoManagerActivity extends AppCompatActivity {
                 dialog.show();
             }
 
-            private void showEditDialog(HashMap<String, Object> repo, int position) {
+            private void showEditDialog(Repository repo, int position) {
                 BottomSheetDialog dialog = new BottomSheetDialog(RepoManagerActivity.this);
                 Context context = RepoManagerActivity.this;
                 View view = getLayoutInflater().inflate(R.layout.bottom_sheet_rename,
@@ -426,7 +420,7 @@ public class RepoManagerActivity extends AppCompatActivity {
                 title.setText("Edit Repository");
                 nameInputLayout.setHint("Local library name");
                 // Preenche com o nome atual
-                String currentName = (String) repo.get("name");
+                String currentName = repo.getName();
                 if (currentName != null) {
                     nameEditText.setText(currentName);
                     nameEditText.setSelection(currentName.length());
@@ -434,7 +428,7 @@ public class RepoManagerActivity extends AppCompatActivity {
                 urlInputLayout.setVisibility(View.VISIBLE);
                 urlInputLayout.setHint("Repository URL");
                 // Preenche com a URL atual
-                String currentUrl = (String) repo.get("url");
+                String currentUrl = repo.getUrl();
                 if (currentUrl != null) {
                     urlEditText.setText(currentUrl);
                 }
@@ -444,28 +438,24 @@ public class RepoManagerActivity extends AppCompatActivity {
                 buttonSave.setOnClickListener(v -> {
                     String newName = Objects.requireNonNull(nameEditText.getText()).toString().trim();
                     String newUrl = Objects.requireNonNull(urlEditText.getText()).toString().trim();
-                    boolean hasError = false;
                     if (newName.isEmpty()) {
                         nameInputLayout.setError("Name is required");
-                        hasError = true;
-                    } else {
-                        nameInputLayout.setError(null);
+                        urlInputLayout.setError(null);
+                        return;
                     }
+                    nameInputLayout.setError(null);
                     if (newUrl.isEmpty()) {
                         urlInputLayout.setError("URL is required");
-                        hasError = true;
-                    } else if (!android.util.Patterns.WEB_URL.matcher(newUrl).matches()) {
-                        urlInputLayout.setError("Enter a valid URL");
-                        hasError = true;
-                    } else {
-                        urlInputLayout.setError(null);
+                        return;
                     }
-                    if (hasError) {return;}
+                    if (!android.util.Patterns.WEB_URL.matcher(newUrl).matches()) {
+                        urlInputLayout.setError("Enter a valid URL");
+                        return;
+                    }
+                    urlInputLayout.setError(null);
                     // Atualiza o repo
-                    repo.put("name",
-                            newName);
-                    repo.put("url",
-                            newUrl);
+                    repo.setName(newName);
+                    repo.setUrl(newUrl);
                     saveRepositories();
                     adapter.notifyItemChanged(position);
                     dialog.dismiss();

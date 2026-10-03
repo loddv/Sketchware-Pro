@@ -10,8 +10,7 @@
         android:id="@+id/tv_preview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="#11000000"
+        android:layout_marginTop="2dp"
         android:fontFamily="monospace"
         android:padding="12dp"
         android:text="Preview:\nprivate int count = 0;"
@@ -23,16 +22,19 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/modifierLayout"
+        style="@style/Widget.SketchwarePro.TextInputLayout.ExposedDropdownMenu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginVertical="4dp">
 
-        <com.google.android.material.textfield.TextInputEditText
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/modifier"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="private, public or public static (optional)"
+            android:hint="private, public ou public static (opcional)"
+            android:inputType="text"
             android:singleLine="true" />
+
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout

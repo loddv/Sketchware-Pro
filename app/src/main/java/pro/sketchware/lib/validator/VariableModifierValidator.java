@@ -23,17 +23,25 @@ public class VariableModifierValidator extends MB {
     public void onTextChanged(CharSequence charSequence, int n, int n2, int n3) {
         String input = charSequence.toString();
         String trimmedInput = input.trim();
+        // Se o campo estiver vazio ou tiver apenas espaços
+        if (trimmedInput.isEmpty()) {
+            b.setError(null);
+            d = true;
+            return;
+        }
         String[] words = trimmedInput.split("\\s+");
         String reconsInput = String.join(" ", words);
-
-        if (!input.equals(reconsInput)) {
-            b.setError("Extra spaces between words or at the end are not allowed.");
+        // Permite um espaço único no final enquanto o usuário digita,
+        // mas bloqueia múltiplos espaços consecutivos ou espaços no meio das palavras.
+        boolean hasSingleTrailingSpace = input.endsWith(" ") && !input.endsWith("  ");
+        String expectedInput = reconsInput + (hasSingleTrailingSpace ? " " : "");
+        if (!input.equals(expectedInput)) {
+            b.setError("Extra spaces between words are not allowed.");
             d = false;
             return;
         }
         Set<String> usedModifiers = new HashSet<>();
         boolean hasAccessModifier = false;
-
         for (String word : words) {
             if (!PATTERN_MODIFIER.matcher(word).matches()) {
                 b.setError("Invalid modifier: " + word);

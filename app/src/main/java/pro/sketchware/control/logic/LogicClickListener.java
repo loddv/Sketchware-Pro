@@ -12,6 +12,7 @@ import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
@@ -98,6 +99,24 @@ public class LogicClickListener implements View.OnClickListener {
         AddCustomVariableBinding binding = AddCustomVariableBinding.inflate(logicEditor.getLayoutInflater());
         binding.modifierLayout.setHelperText("Enter modifier e.g. private, public, public static, or empty (package " +
                 "private).");
+        // 1. Definição das sugestões de modificadores
+        String[] suggestions = new String[]{
+                "public",
+                "private",
+                "protected",
+                "public static",
+                "private static",
+                "protected static",
+                "public static final",
+                "private static final"
+        };
+        // 2. Configuração e aplicação do Adapter ANTES de exibir o diálogo
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                getContext(),
+                R.layout.dropdown_item,
+                suggestions
+        );
+        binding.modifier.setAdapter(adapter);
         VariableModifierValidator modifiersValidator = new VariableModifierValidator(getContext(),
                 binding.modifierLayout);
         binding.modifier.addTextChangedListener(modifiersValidator);
@@ -109,8 +128,7 @@ public class LogicClickListener implements View.OnClickListener {
         // TextWatcher compartilhado para atualizar o preview
         TextWatcher previewWatcher = new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -118,8 +136,7 @@ public class LogicClickListener implements View.OnClickListener {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-            }
+            public void afterTextChanged(Editable s) {}
 
             private void updatePreview() {
                 String modifier = Helper.getText(binding.modifier).trim();
@@ -185,7 +202,7 @@ public class LogicClickListener implements View.OnClickListener {
             if (!variableInitializer.isEmpty()) {
                 variable += " = " + variableInitializer;
             }
-            logicEditor.b(6, variable.trim() + ";");
+            logicEditor.b(6, variable.trim());
             v.dismiss();
         });
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);

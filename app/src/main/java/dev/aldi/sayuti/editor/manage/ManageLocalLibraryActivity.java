@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.text.Editable;
@@ -68,6 +69,9 @@ import pro.sketchware.databinding.ViewItemLocalLibSearchBinding;
 import pro.sketchware.utility.SketchwareUtil;
 
 public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
+    private static final long LOAD_DELAY_MS = 500L;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Runnable loadLibrariesRunnable;
     private final LibraryAdapter adapter = new LibraryAdapter();
     private final SearchAdapter searchAdapter = new SearchAdapter();
     private ArrayList<HashMap<String, Object>> projectUsedLibs;
@@ -486,8 +490,23 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 
     private void runLoadLocalLibrariesTask() {
         k();
-        new Handler().postDelayed(() -> new LoadLocalLibrariesTask(this).execute(),
-                500L);
+        if (loadLibrariesRunnable != null) {
+            mainHandler.removeCallbacks(loadLibrariesRunnable);
+        }
+        loadLibrariesRunnable = () -> {
+            if (!isFinishing() && !isDestroyed()) {
+                new LoadLocalLibrariesTask(this).execute();
+            }
+        };
+        mainHandler.postDelayed(loadLibrariesRunnable, LOAD_DELAY_MS);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (loadLibrariesRunnable != null) {
+            mainHandler.removeCallbacks(loadLibrariesRunnable);
+        }
     }
 
     private List<LocalLibrary> getAdapterLocalLibraries() {
@@ -601,23 +620,32 @@ public class ManageLocalLibraryActivity extends BaseAppCompatActivity {
 
         @Override
         public void a() {
-            activity.get().h();
+            ManageLocalLibraryActivity act = activity.get();
+            if (act != null && !act.isFinishing() && !act.isDestroyed()) {
+                act.h();
+            }
         }
 
         @Override
         public void a(String idk) {
-            activity.get().h();
+            ManageLocalLibraryActivity act = activity.get();
+            if (act != null && !act.isFinishing() && !act.isDestroyed()) {
+                act.h();
+            }
         }
 
         @Override
         public void b() {
-            try {
-                activity.get().loadLibraries();
-            } catch (Exception e) {
-                Log.e("LoadLocalLibrariesTask",
-                        "Error loading libraries",
-                        e);
-                e.printStackTrace();
+            ManageLocalLibraryActivity act = activity.get();
+            if (act != null && !act.isFinishing() && !act.isDestroyed()) {
+                try {
+                    act.loadLibraries();
+                } catch (Exception e) {
+                    Log.e("LoadLocalLibrariesTask",
+                            "Error loading libraries",
+                            e);
+                    e.printStackTrace();
+                }
             }
         }
     }

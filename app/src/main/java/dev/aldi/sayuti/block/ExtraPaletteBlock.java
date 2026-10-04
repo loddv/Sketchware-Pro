@@ -15,6 +15,7 @@ import com.besome.sketch.editor.LogicEditorActivity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 
 import a.a.a.Ox;
@@ -262,7 +263,8 @@ public class ExtraPaletteBlock {
                     String typeName = view.convert.isEmpty() ? ViewBean.getViewTypeName(view.type) :
                             IdGenerator.getLastPath(view.convert);
                     logicEditor.a(isViewBindingEnabled ?
-                            "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v", typeName
+                                    "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v",
+                            typeName
                             , "getVar").setTag(isViewBindingEnabled ?
                             "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id);
                 }
@@ -284,7 +286,7 @@ public class ExtraPaletteBlock {
                         String typeName = drawerView.convert.isEmpty() ? ViewBean.getViewTypeName(drawerView.type) :
                                 IdGenerator.getLastPath(drawerView.convert);
                         logicEditor.a(isViewBindingEnabled ?
-                                "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id,
+                                        "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id,
                                 "v", typeName, "getVar").setTag(id);
                     }
                 }
@@ -379,7 +381,7 @@ public class ExtraPaletteBlock {
                     logicEditor.a("app_name", "s", "getResStr").setTag("S98ZCSapp_name");
                 }
                 for (int i = 0; i < StringsListMap.size(); i++) {
-                    String key = StringsListMap.get(i).get("key").toString();
+                    String key = Objects.requireNonNull(StringsListMap.get(i).get("key")).toString();
                     logicEditor.a(key, "s", "getResStr").setTag("S98ZCS" + key);
                 }
                 return;
@@ -387,6 +389,7 @@ public class ExtraPaletteBlock {
                 logicEditor.b("Add variable", "variableAdd");
                 logicEditor.b("Add custom variable", "variableAddNew", clickListener);
                 logicEditor.b("Remove variable", "variableRemove", clickListener);
+                logicEditor.b("Edit variable", "variableEdit", clickListener);
                 variables();
                 return;
             case 1:

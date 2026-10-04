@@ -15,8 +15,11 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
@@ -27,6 +30,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.besome.sketch.beans.ProjectFileBean;
 import com.besome.sketch.editor.LogicEditorActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -38,6 +43,7 @@ import a.a.a.bB;
 import a.a.a.eC;
 import a.a.a.jC;
 import a.a.a.uq;
+import a.a.a.wB;
 import mod.hey.studios.util.Helper;
 import pro.sketchware.R;
 import pro.sketchware.databinding.AddCustomListBinding;
@@ -89,7 +95,195 @@ public class LogicClickListener implements View.OnClickListener {
                 case "listRemove":
                     removeList();
                     break;
+                case "variableEdit":
+                    showEditVariableDialog();
+                    break;
             }
+        }
+    }
+
+    // 1. Inicia o fluxo mostrando o diálogo de seleção categorizado
+    public void showEditVariableDialog() {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(logicEditor);
+        dialog.setTitle("Edit Variable");
+        View containerView = wB.a(logicEditor, R.layout.property_popup_selector_single);
+        ViewGroup radioGroup = containerView.findViewById(R.id.rg_content);
+        // Definição das categorias e tipos, igual ao removeVariable
+        List<Pair<List<Integer>, String>> variableTypes = List.of(
+                new Pair<>(List.of(ExtraMenuBean.VARIABLE_TYPE_BOOLEAN), "Boolean (%d)"),
+                new Pair<>(List.of(ExtraMenuBean.VARIABLE_TYPE_NUMBER), "Number (%d)"),
+                new Pair<>(List.of(ExtraMenuBean.VARIABLE_TYPE_STRING), "String (%d)"),
+                new Pair<>(List.of(ExtraMenuBean.VARIABLE_TYPE_MAP), "Map (%d)"),
+                new Pair<>(List.of(5, 6), "Custom Variable (%d)")
+        );
+        int totalVariables = 0;
+        int padding = SketchwareUtil.dpToPx(8f);
+        // Percorre as categorias
+        for (Pair<List<Integer>, String> variableType : variableTypes) {
+            List<String> variableTypeInstances = new LinkedList<>();
+            List<Integer> typesList = variableType.first;
+            // Junta todas as variáveis desta categoria
+            for (int i = 0; i < typesList.size(); i++) {
+                Integer type = typesList.get(i);
+                if (i == 0) {
+                    variableTypeInstances = getUsedVariable(type); // ou apenas getUsedVariable(type)
+                    // dependendo de onde o código está
+                } else {
+                    variableTypeInstances.addAll(getUsedVariable(type));
+                }
+            }
+            int size = variableTypeInstances.size();
+            // Só adiciona a categoria na tela se ela tiver variáveis
+            if (size > 0) {
+                totalVariables += size;
+                // 1. Cria e adiciona o Cabeçalho (Header) da categoria
+                TextView header = new TextView(logicEditor);
+                header.setText(String.format(variableType.second, size));
+                header.setTextSize(14f);
+                header.setTypeface(null, android.graphics.Typeface.BOLD);
+                header.setPadding(padding, padding * 2, padding, padding / 2); // Espaço maior em cima
+                // header.setTextColor(0xFF333333); // Opcional: ajustar cor
+                radioGroup.addView(header);
+                // 2. Adiciona os RadioButtons das variáveis logo abaixo do cabeçalho
+                for (String instanceName : variableTypeInstances) {
+                    RadioButton radioButton = new RadioButton(logicEditor);
+                    radioButton.setText(instanceName);
+                    radioButton.setPadding(padding, padding, padding, padding);
+                    // Salva o tipo (usando o primeiro da lista como referência) e o nome exato
+                    int primaryType = typesList.get(0);
+                    radioButton.setTag(new Pair<>(primaryType, instanceName));
+                    radioGroup.addView(radioButton);
+                }
+            }
+        }
+        // Se nenhuma variável foi encontrada em nenhuma categoria
+        if (totalVariables == 0) {
+            Toast.makeText(logicEditor, "No variables available to edit", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        dialog.setView(containerView);
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_edit), (d, which) -> {
+            RadioButton selectedRadio = getSelectedRadioButton(radioGroup);
+            if (selectedRadio != null) {
+                // Recupera os dados salvos no Tag
+                Pair<Integer, String> tagPair = (Pair<Integer, String>) selectedRadio.getTag();
+                int varType = tagPair.first;
+                String currentName = tagPair.second; // Nome limpo, já que não alteramos o setText()
+                showRenameInputDialog(currentName, varType);
+            } else {
+                Toast.makeText(logicEditor, "Please select a variable first", Toast.LENGTH_SHORT).show();
+            }
+        });
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+        dialog.show();
+    }
+
+    // Método auxiliar inalterado, funciona perfeitamente ignorando os TextViews(Headers)
+    private RadioButton getSelectedRadioButton(ViewGroup container) {
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View child = container.getChildAt(i);
+            if (child instanceof RadioButton) {
+                RadioButton rb = (RadioButton) child;
+                if (rb.isChecked()) {
+                    return rb;
+                }
+            }
+        }
+        return null;
+    }
+
+    // Método auxiliar para converter o ID numérico no nome do tipo da variável
+    private String getVariableTypeName(int type) {
+        if (type == ExtraMenuBean.VARIABLE_TYPE_BOOLEAN) {
+            return "Boolean";
+        } else if (type == ExtraMenuBean.VARIABLE_TYPE_NUMBER) {
+            return "Number";
+        } else if (type == ExtraMenuBean.VARIABLE_TYPE_STRING) {
+            return "String";
+        } else if (type == ExtraMenuBean.VARIABLE_TYPE_MAP) {
+            return "Map";
+        } else if (type == 5 || type == 6) {
+            return "Custom Variable";
+        }
+        return "Unknown";
+    }
+
+    // 2. Diálogo com campo de texto para digitar o novo nome
+    private void showRenameInputDialog(String oldName, int varType) {
+        MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(logicEditor);
+        dialog.setTitle("Rename variable: " + oldName);
+        // Criação do layout com margens usando SketchwareUtil
+        FrameLayout container = new FrameLayout(logicEditor);
+        int horizontalPadding = SketchwareUtil.dpToPx(16f);
+        int verticalPadding = SketchwareUtil.dpToPx(8f);
+        container.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+        TextInputLayout inputLayout = new TextInputLayout(logicEditor);
+        TextInputEditText inputEditText = new TextInputEditText(logicEditor);
+        inputEditText.setHint("New variable name");
+        inputEditText.setText(oldName);
+        inputEditText.setSelection(oldName.length()); // Posiciona cursor no final
+        inputLayout.addView(inputEditText);
+        container.addView(inputLayout);
+        dialog.setView(container);
+        // Instancia o validador nativo ZB seguindo o modelo do addCustomVariable
+        //        ZB validator = new ZB(logicEditor, inputLayout, uq.b, uq.a(), projectDataManager.a(projectFile));
+        dialog.setPositiveButton(Helper.getResString(R.string.assets_manager_rename), (v, which) -> {
+            String newName = Helper.getText(inputEditText).trim();
+            // Usando o validador para garantir nomes válidos
+            //            boolean isValidName = validator.b();
+            boolean isValidName = true;
+            if (!isValidName) {
+                inputLayout.setError("Invalid or existing name");
+                inputLayout.setErrorEnabled(true);
+                inputLayout.requestFocus();
+                return;
+            } else {
+                inputLayout.setError(null);
+                inputLayout.setErrorEnabled(false);
+            }
+            if (newName.equals(oldName)) {
+                v.dismiss();
+                return; // Sem alterações
+            }
+            // Verifica se a variável está em uso usando a mesma lógica completa do removeVariable
+            boolean isCurrentlyUsed = logicEditor.blockPane.c(oldName) || projectDataManager.c
+                    (javaName, oldName,
+                            eventName);
+            if (isCurrentlyUsed) {
+                Toast.makeText(logicEditor,
+                        Helper.getResString(R.string.logic_editor_message_currently_used_variable),
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Executa a renomeação
+            performVariableRename(oldName, newName, varType);
+            v.dismiss();
+        });
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
+        dialog.show();
+    }
+
+    // 3. Aplicação das alterações no projeto e na UI
+    private void performVariableRename(String oldName, String newName, int varType) {
+        // 1. REMOVE a variável antiga.
+        // NOTA: 'e' (ou às vezes 'c') é o metodo padrão no ProjectDataManager (jC) para remover variáveis.
+        // A assinatura geralmente é (String activityName, int type, String variableName).
+        // jC.a(scId).e(javaName, varType, oldName);
+        // 2. ADICIONA a nova variável.
+        // A assinatura geralmente é (String activityName, int type, String variableName).
+        // NOTA: 'a' é o metodo padrão do jC para adicionar novas variáveis.
+        // jC.a(scId).a(javaName, varType, newName);
+        // Atualiza o painel de blocos para mostrar a variável com o novo nome
+        try {
+            logicEditor.m(oldName);
+            logicEditor.b(varType, newName.trim());
+            if (logicEditor.blockPane != null) {
+                logicEditor.blockPane.a();
+            }
+            Toast.makeText(logicEditor, "Variable renamed successfully", Toast.LENGTH_SHORT).show();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Toast.makeText(logicEditor, "Failed to rename variable", Toast.LENGTH_SHORT).show();
         }
     }
 

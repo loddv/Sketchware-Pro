@@ -13,11 +13,20 @@ on:
       - 'public-stable-ids.txt'
       - 'settings.gradle'
   workflow_dispatch:
+    inputs:
+      build_os_version:
+        type: choice
+        description: 'Choice a os build version machine: '
+        options:
+          - 'ubuntu-latest'
+          - 'ubuntu-24.04'
+          - 'ubuntu-22.04'
+        default: 'ubuntu-latest'
 
 jobs:
   build:
     name: Build APKs
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.build_os_version || 'ubuntu-latest' }}
     environment: GOOGLE_SERVICES_JSON
     outputs:
       short_sha: ${{ steps.set_sha.outputs.short_sha }}

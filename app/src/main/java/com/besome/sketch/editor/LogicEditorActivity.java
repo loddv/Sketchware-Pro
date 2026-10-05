@@ -2548,10 +2548,17 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
 
     public void z() {
         editorRightDrawer.a();
-        for (BlockCollectionBean next : Mp.h().f()) {
-            editorRightDrawer.a(next.name, next.blocks).setOnTouchListener(this);
-        }
-    }
+        Executors.newSingleThreadExecutor().execute(() -> {
+            ArrayList<BlockCollectionBean> collections = Mp.h().f();
+            runOnUiThread(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    for (BlockCollectionBean next : collections) {
+                        editorRightDrawer.a(next.name, next.blocks).setOnTouchListener(this);
+                    }
+                }
+            });
+        });
+    } 
 
     private static class ProjectSaver extends MA {
         private final WeakReference<LogicEditorActivity> activity;

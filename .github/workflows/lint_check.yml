@@ -19,6 +19,7 @@ on:
 jobs:
   lint:
     name: Lint Code
+    environment: GOOGLE_SERVICES_JSON
     runs-on: ubuntu-latest
 
     steps:
@@ -32,6 +33,23 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          
+      - name: Inject google-services.json from secret (base64-decode)
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo Repository secrets:$GOOGLE_SERVICES_JSON_BASE64 | head
+          mkdir -p app
+          if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
+            echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
+            exit 1
+          fi
+          # Decode base64 content from the secret and write to file without printing the secret
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
+          echo "Wrote app/google-services.json (base64-decoded from secret)"
+
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5

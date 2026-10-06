@@ -43,7 +43,7 @@ public class ManageFontActivity extends BaseAppCompatActivity {
                 h();
             }
         }
-
+        super.onBackPressed();
     }
 
     @Override

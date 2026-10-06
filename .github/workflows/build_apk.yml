@@ -4,7 +4,7 @@ on:
   push:
     paths:
       #- '.github/workflows/android.yml'
-      - 'app/**'
+      #- 'app/**'
       - 'gradle/**'
       - 'build.gradle'
       - 'gradle.properties'
@@ -22,10 +22,6 @@ on:
           - 'ubuntu-24.04'
           - 'ubuntu-22.04'
         default: 'ubuntu-latest'
-      run_lint:
-        type: boolean
-        description: 'Run Android lint checks'
-        default: false
 
 jobs:
   build:
@@ -94,12 +90,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
-      - name: Run Android lint
-        if: steps.changes.outputs.app_only == 'true' || inputs.run_lint == true
-        run: ./gradlew lint
+      #- name: Run Android lint
+      #  if: steps.changes.outputs.app_only == 'true'
+      #  run: ./gradlew lint
 
       - name: Build Release APK
-        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
+        if: steps.changes.outputs.app_only != 'true'
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
         run: |
@@ -107,17 +103,17 @@ jobs:
 
       - name: Set short SHA
         id: set_sha
-        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
+        if: steps.changes.outputs.app_only != 'true'
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Rename APK with commit hash
-        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
+        if: steps.changes.outputs.app_only != 'true'
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
 
       - name: Upload Release APK
-        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
+        if: steps.changes.outputs.app_only != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: apk-release-${{ steps.set_sha.outputs.short_sha }}

@@ -34,6 +34,39 @@ jobs:
       - uses: actions/checkout@v6
         with:
           lfs: true
+          fetch-depth: 0
+
+      - name: Detect app-only changes
+        id: changes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          app_only=false
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            if [[ "$PUSH_BEFORE" =~ ^0+$ ]]; then
+              echo "::notice::Initial push has no base commit; retaining APK build."
+            else
+              if changed_files=$(git diff --no-renames --name-only "$PUSH_BEFORE" "$GITHUB_SHA"); then
+                if [[ -n "$changed_files" ]]; then
+                  app_only=true
+                  while IFS= read -r changed_file; do
+                    if [[ "$changed_file" != app/* ]]; then
+                      app_only=false
+                      break
+                    fi
+                  done <<< "$changed_files"
+                fi
+              else
+                echo "::warning::Could not compare push commits; retaining APK build."
+              fi
+            fi
+          fi
+
+          echo "app_only=$app_only" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -47,20 +80,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo Repository secrets:$GOOGLE_SERVICES_JSON_BASE64 | head
           mkdir -p app
           if [[ -z "${GOOGLE_SERVICES_JSON_BASE64:-}" ]]; then
             echo "ERROR: secrets.GOOGLE_SERVICES_JSON is empty or not set" >&2
             exit 1
           fi
-          # Decode base64 content from the secret and write to file without printing the secret
           printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > app/google-services.json
-          echo "Wrote app/google-services.json (base64-decoded from secret)"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
 
+      - name: Run Android lint
+        if: steps.changes.outputs.app_only == 'true'
+        run: ./gradlew lint
+
       - name: Build Release APK
+        if: steps.changes.outputs.app_only != 'true'
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
         run: |
@@ -68,14 +103,17 @@ jobs:
 
       - name: Set short SHA
         id: set_sha
+        if: steps.changes.outputs.app_only != 'true'
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Rename APK with commit hash
+        if: steps.changes.outputs.app_only != 'true'
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
 
       - name: Upload Release APK
+        if: steps.changes.outputs.app_only != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: apk-release-${{ steps.set_sha.outputs.short_sha }}

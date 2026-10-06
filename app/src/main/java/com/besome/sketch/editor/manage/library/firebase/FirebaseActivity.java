@@ -147,6 +147,7 @@ public class FirebaseActivity extends BaseAppCompatActivity implements View.OnCl
             setResult(Activity.RESULT_CANCELED);
             finish();
         }
+        super.onBackPressed();
     }
 
     @Override

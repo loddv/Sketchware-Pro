@@ -256,6 +256,11 @@ public class LibraryDownloaderDialogFragment extends BottomSheetDialogFragment {
                                     .toList());
                             FileUtil.writeFile(localLibFile, gson.toJson(enabledLibs));
                         }
+                        // Invalida o cache de bibliotecas locais para forçar o
+                        // recarregamento da lista no próximo carregamento, incluindo
+                        // a biblioteca baixada (cache.json é apagado e reescaneado).
+                        LocalLibrariesUtil.invalidateCache();
+                        setDownloadState(false);
                         if (getActivity() == null) return;
                         dismiss();
                         if (onLibraryDownloadedTask != null) onLibraryDownloadedTask.invoke();
@@ -267,11 +272,12 @@ public class LibraryDownloaderDialogFragment extends BottomSheetDialogFragment {
     }
 
     private void setDownloadState(boolean downloading) {
+        final boolean enabled = !downloading;
         binding.btnCancel.setVisibility(downloading ? View.GONE : View.VISIBLE);
-        binding.btnDownload.setEnabled(!downloading);
-        binding.dependencyInput.setEnabled(!downloading);
-        binding.cbSkipSubdependencies.setEnabled(!downloading);
-        setCancelable(!downloading);
+        binding.btnDownload.setEnabled(enabled);
+        binding.dependencyInput.setEnabled(enabled);
+        binding.cbSkipSubdependencies.setEnabled(enabled);
+        setCancelable(!downloading); // bloqueia o back/dismiss durante o download
         if (!downloading) {
             binding.dependencyInfo.setText(R.string.local_library_manager_dependency_info);
         }

@@ -25,10 +25,12 @@ import pro.sketchware.R;
 public class AddCustomViewActivity extends BaseDialogActivity implements View.OnClickListener {
 
     public static final int REQ_CD_PRESET_ACTIVITY = 277;
+    public static final String EXTRA_SCREEN_NAMES = "screen_names";
     private TextInputEditText customViewName;
     private YB viewNameValidator;
     private String presetName;
 
+    @SuppressLint("MissingSuperCall")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,12 +39,11 @@ public class AddCustomViewActivity extends BaseDialogActivity implements View.On
         f(R.drawable.ic_mtrl_add);
         d(Helper.getResString(R.string.common_word_add));
         b(Helper.getResString(R.string.common_word_cancel));
-
-        ArrayList<String> alreadyInUseNames = getIntent().getStringArrayListExtra("screen_names");
+        final ArrayList<String> alreadyInUseNames = Objects.requireNonNullElse(
+                getIntent().getStringArrayListExtra(EXTRA_SCREEN_NAMES), new ArrayList<>());
         customViewName = findViewById(R.id.ed_input);
         ((TextInputLayout) findViewById(R.id.ti_input)).setHint(Helper.getResString(R.string.design_manager_view_hint_enter_view_name));
-        TextView description = findViewById(R.id.tv_desc);
-        description.setText(Helper.getResString(R.string.design_manager_view_description_guide_use_custom_view));
+        ((TextView) findViewById(R.id.tv_desc)).setText(Helper.getResString(R.string.design_manager_view_description_guide_use_custom_view));
         viewNameValidator = new YB(this, findViewById(R.id.ti_input), uq.b, alreadyInUseNames);
         super.r.setOnClickListener(this);
         super.s.setOnClickListener(this);
@@ -63,13 +64,12 @@ public class AddCustomViewActivity extends BaseDialogActivity implements View.On
             if (!viewNameValidator.b()) {
                 return;
             }
-
             Intent intent = new Intent();
-            intent.putExtra("project_file", new ProjectFileBean(ProjectFileBean.PROJECT_FILE_TYPE_CUSTOM_VIEW, Helper.getText(customViewName)));
+            intent.putExtra("project_file", new ProjectFileBean(ProjectFileBean.PROJECT_FILE_TYPE_CUSTOM_VIEW,
+                    Helper.getText(customViewName)));
             if (presetName != null) {
                 intent.putExtra("preset_views", getPresetData(presetName));
             }
-
             setResult(RESULT_OK, intent);
             bB.a(getApplicationContext(), Helper.getResString(R.string.design_manager_message_add_complete), 0).show();
             finish();
@@ -84,5 +84,13 @@ public class AddCustomViewActivity extends BaseDialogActivity implements View.On
 
     private ArrayList<ViewBean> getPresetData(String presetName) {
         return rq.b(presetName);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (viewNameValidator != null && viewNameValidator.c != null) {
+            viewNameValidator.c.removeTextChangedListener(viewNameValidator);
+        }
     }
 }

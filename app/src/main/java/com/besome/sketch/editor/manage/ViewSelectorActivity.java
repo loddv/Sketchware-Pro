@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -45,7 +46,8 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
 
     private int getViewIcon(int i) {
         String replace = String.format("%4s", Integer.toBinaryString(i)).replace(' ', '0');
-        return getApplicationContext().getResources().getIdentifier("activity_" + replace, "drawable", getApplicationContext().getPackageName());
+        return getApplicationContext().getResources().getIdentifier("activity_" + replace, "drawable",
+                getApplicationContext().getPackageName());
     }
 
     @Override
@@ -168,7 +170,6 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = FileSelectorPopupSelectXmlBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         if (savedInstanceState == null) {
             Intent intent = getIntent();
             sc_id = intent.getStringExtra("sc_id");
@@ -179,18 +180,17 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
             currentXml = savedInstanceState.getString("current_xml");
             isCustomView = savedInstanceState.getBoolean("is_custom_view");
         }
-
         if (isCustomView) {
             selectedTab = TAB_CUSTOM_VIEW;
         } else {
             selectedTab = TAB_ACTIVITY;
         }
-
         binding.optionsSelector.check(selectedTab == TAB_ACTIVITY ? R.id.option_view : R.id.option_custom_view);
         binding.emptyMessage.setText(R.string.design_manager_view_message_no_view);
         viewSelectorAdapter = new ViewSelectorAdapter();
         binding.listXml.setHasFixedSize(true);
         binding.listXml.setAdapter(viewSelectorAdapter);
+        //resetRecyclerViewPositionAndFocus();
         binding.listXml.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -229,9 +229,22 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
         });
         binding.container.setOnClickListener(v -> finish());
         overridePendingTransition(R.anim.ani_fade_in, R.anim.ani_fade_out);
-
         UI.addSystemWindowInsetToPadding(binding.container, true, true, true, false);
         UI.addSystemWindowInsetToMargin(binding.createNewView, false, false, false, true);
+    }
+
+    private void resetRecyclerViewPositionAndFocus() {
+        if (viewSelectorAdapter != null && viewSelectorAdapter.getItemCount() > 0) {
+            binding.listXml.scrollToPosition(0);
+            binding.listXml.post(() -> {
+                RecyclerView.ViewHolder holder = binding.listXml.findViewHolderForAdapterPosition(0);
+                if (holder != null) {
+                    holder.itemView.requestFocus();
+                } else {
+                    binding.listXml.requestFocus();
+                }
+            });
+        }
     }
 
     @Override
@@ -365,7 +378,8 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
         @NonNull
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-            FileSelectorPopupSelectXmlActivityItemBinding binding = FileSelectorPopupSelectXmlActivityItemBinding.inflate(inflater, parent, false);
+            FileSelectorPopupSelectXmlActivityItemBinding binding =
+                    FileSelectorPopupSelectXmlActivityItemBinding.inflate(inflater, parent, false);
             return new ViewHolder(binding);
         }
 
@@ -388,12 +402,15 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
         private class ViewHolder extends RecyclerView.ViewHolder {
             private final FileSelectorPopupSelectXmlActivityItemBinding itemBinding;
 
-            public ViewHolder(@NonNull FileSelectorPopupSelectXmlActivityItemBinding binding) {
-                super(binding.getRoot());
-                itemBinding = binding;
+            public ViewHolder(@NonNull FileSelectorPopupSelectXmlActivityItemBinding binding2) {
+                super(binding2.getRoot());
+                itemBinding = binding2;
+                // Clique normal (selecionar item)
                 itemBinding.cardView.setOnClickListener(v -> {
                     if (!mB.a()) {
-                        selectedItem = getLayoutPosition();
+                        int position = getLayoutPosition();
+                        if (position == RecyclerView.NO_POSITION) return;
+                        selectedItem = position;
                         hC hC = jC.b(sc_id);
                         ArrayList<ProjectFileBean> list = switch (selectedTab) {
                             case TAB_ACTIVITY -> hC.b();
@@ -408,6 +425,79 @@ public class ViewSelectorActivity extends BaseAppCompatActivity {
                         setResult(RESULT_OK, intent);
                         finish();
                     }
+                });
+                itemBinding.cardView.setOnLongClickListener(v -> {
+                    if (!mB.a()) {
+                        int position = getLayoutPosition();
+                        if (position == RecyclerView.NO_POSITION) return true;
+                        if (position == 0) {
+                            SketchwareUtil.toast("Main activity cannot be removed", Toast.LENGTH_SHORT);
+                            return true;
+                        }
+                        binding.createNewView.setVisibility(View.GONE);
+                        binding.removeView.setVisibility(View.VISIBLE);
+                        //binding.createNewView.setText(R.string.common_word_remove);
+                        //binding.createNewView.setIcon(AppCompatResources.getDrawable(getApplicationContext(),
+                        //        R.drawable.icon_delete_active));
+                        final int adapterPosition = position;
+                        binding.removeView.setOnClickListener(v3 -> {
+                            if (!mB.a()) {
+                                new com.google.android.material.dialog.MaterialAlertDialogBuilder(v.getContext())
+                                        .setTitle(R.string.title_remove_activity)
+                                        .setMessage(R.string.msg_remove_item)
+                                        .setPositiveButton(R.string.common_word_remove, (dialog, which) -> {
+                                            hC fileStorage = jC.b(sc_id);
+                                            if (selectedTab == TAB_ACTIVITY) {
+                                                if (fileStorage.b() != null && adapterPosition < fileStorage.b().size()) {
+                                                    fileStorage.b().remove(adapterPosition);
+                                                }
+                                            } else if (selectedTab == TAB_CUSTOM_VIEW) {
+                                                if (fileStorage.c() != null && adapterPosition < fileStorage.c().size()) {
+                                                    fileStorage.c().remove(adapterPosition);
+                                                }
+                                            }
+                                            fileStorage.j();
+                                            fileStorage.l();
+                                            notifyItemRemoved(adapterPosition);
+                                            if (adapterPosition < getItemCount()) {
+                                                notifyItemRangeChanged(adapterPosition,
+                                                        getItemCount() - adapterPosition);
+                                            }
+                                            SketchwareUtil.toast(getString(R.string.common_message_complete_delete));
+                                            hC updatedFileStorage = jC.b(sc_id);
+                                            ArrayList<ProjectFileBean> list = switch (selectedTab) {
+                                                case TAB_ACTIVITY -> updatedFileStorage.b();
+                                                case TAB_CUSTOM_VIEW -> updatedFileStorage.c();
+                                                default -> null;
+                                            };
+                                            if (list != null && !list.isEmpty()) {
+                                                projectFile = list.get(Math.min(adapterPosition, list.size() - 1));
+                                            }
+                                            Intent intent = new Intent();
+                                            intent.putExtra("project_file", projectFile);
+                                            setResult(RESULT_OK, intent);
+                                            dialog.dismiss();
+                                            binding.createNewView.setVisibility(View.VISIBLE);
+                                            binding.removeView.setVisibility(View.GONE);
+                                            //finish();
+                                        })
+                                        .setNegativeButton(R.string.common_word_cancel, (dialog, which) -> {
+                                            binding.createNewView.setVisibility(View.VISIBLE);
+                                            binding.removeView.setVisibility(View.GONE);
+                                            // TODO FIX
+                                            //binding.createNewView.setText("Create new view");
+                                            //binding.createNewView.setIcon(AppCompatResources.getDrawable
+                                            // (getApplicationContext(),
+                                            //       R.drawable.ic_mtrl_add));
+                                            dialog.dismiss();
+                                            //finish();
+                                        })
+                                        .show();
+                            }
+                        });
+                        return true;
+                    }
+                    return false;
                 });
                 itemBinding.actionContainer.setOnClickListener(v -> {
                     if (selectedTab == TAB_ACTIVITY && !mB.a()) {

@@ -67,9 +67,19 @@
             android:id="@+id/createNewView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="8dp"
             android:text="Create new view"
             app:icon="@drawable/ic_add_white_24dp" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/removeView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:text="Remove view"
+            android:layout_alignParentBottom="true"
+            app:icon="@drawable/icon_delete_active"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

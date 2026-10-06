@@ -22,6 +22,10 @@ on:
           - 'ubuntu-24.04'
           - 'ubuntu-22.04'
         default: 'ubuntu-latest'
+      run_lint:
+        type: boolean
+        description: 'Run Android lint checks'
+        default: false
 
 jobs:
   build:
@@ -59,9 +63,9 @@ jobs:
                       break
                     fi
                   done <<< "$changed_files"
+                else
+                  echo "::warning::Could not compare push commits; retaining APK build."
                 fi
-              else
-                echo "::warning::Could not compare push commits; retaining APK build."
               fi
             fi
           fi
@@ -91,11 +95,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
 
       - name: Run Android lint
-        if: steps.changes.outputs.app_only == 'true'
+        if: steps.changes.outputs.app_only == 'true' || inputs.run_lint == true
         run: ./gradlew lint
 
       - name: Build Release APK
-        if: steps.changes.outputs.app_only != 'true'
+        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
         env:
           SKETCHUB_API_KEY: ${{ secrets.SKETCHUB_API_KEY }}
         run: |
@@ -103,17 +107,17 @@ jobs:
 
       - name: Set short SHA
         id: set_sha
-        if: steps.changes.outputs.app_only != 'true'
+        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
       - name: Rename APK with commit hash
-        if: steps.changes.outputs.app_only != 'true'
+        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/app-release-${{ steps.set_sha.outputs.short_sha }}.apk
 
       - name: Upload Release APK
-        if: steps.changes.outputs.app_only != 'true'
+        if: steps.changes.outputs.app_only != 'true' && inputs.run_lint != true
         uses: actions/upload-artifact@v7
         with:
           name: apk-release-${{ steps.set_sha.outputs.short_sha }}

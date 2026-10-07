@@ -81,6 +81,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 import a.a.a.DB;
 import a.a.a.GB;
@@ -220,13 +221,14 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                             refresh();
                         }
                     });
-    private BuildTask currentBuildTask;
+    private final AtomicReference<BuildTask> currentBuildTask = new AtomicReference<>();
     private final BroadcastReceiver buildCancelReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (BuildTask.ACTION_CANCEL_BUILD.equals(intent.getAction())) {
-                if (currentBuildTask != null) {
-                    currentBuildTask.cancelBuild();
+                BuildTask task = currentBuildTask.get();
+                if (task != null) {
+                    task.cancelBuild();
                 }
             }
         }
@@ -520,13 +522,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         findViewById(R.id.file_name_container).setOnClickListener(this);
         btnRun = findViewById(R.id.btn_run);
         btnRun.setOnClickListener(v -> {
-            if (currentBuildTask != null && !currentBuildTask.canceled && !currentBuildTask.isBuildFinished) {
-                currentBuildTask.cancelBuild();
-                return;
-            }
-            BuildTask buildTask = new BuildTask(this);
-            currentBuildTask = buildTask;
-            buildTask.execute();
+            startOrCancelBuild();
         });
         btnOptions = findViewById(R.id.btn_options);
         bottomSheetDialog = new BottomSheetDialog(this);
@@ -668,6 +664,22 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     filter);
         }
 
+    }
+
+    private void startOrCancelBuild() {
+        BuildTask existing = currentBuildTask.get();
+        if (existing != null && !existing.canceled && !existing.isBuildFinished) {
+            existing.cancelBuild();
+            return;
+        }
+
+        BuildTask newTask = new BuildTask(this);
+        if (currentBuildTask.compareAndSet(existing, newTask)) {
+            newTask.execute();
+        } else {
+            // Another thread won the race, cancel the task we just created
+            newTask.cancelBuild();
+        }
     }
 
     private View addOptionItem(LinearLayout container, String title, int iconResId, View.OnClickListener listener) {

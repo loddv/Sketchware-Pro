@@ -18,6 +18,7 @@ import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -45,6 +46,7 @@ import a.a.a.jC;
 import a.a.a.uq;
 import a.a.a.wB;
 import mod.hey.studios.util.Helper;
+import mod.jbk.util.LogUtil;
 import pro.sketchware.R;
 import pro.sketchware.databinding.AddCustomListBinding;
 import pro.sketchware.databinding.AddCustomVariableBinding;
@@ -126,8 +128,7 @@ public class LogicClickListener implements View.OnClickListener {
             for (int i = 0; i < typesList.size(); i++) {
                 Integer type = typesList.get(i);
                 if (i == 0) {
-                    variableTypeInstances = getUsedVariable(type); // ou apenas getUsedVariable(type)
-                    // dependendo de onde o código está
+                    variableTypeInstances = getUsedVariable(type);
                 } else {
                     variableTypeInstances.addAll(getUsedVariable(type));
                 }
@@ -142,36 +143,48 @@ public class LogicClickListener implements View.OnClickListener {
                 header.setTextSize(14f);
                 header.setTypeface(null, android.graphics.Typeface.BOLD);
                 header.setPadding(padding, padding * 2, padding, padding / 2); // Espaço maior em cima
-                // header.setTextColor(0xFF333333); // Opcional: ajustar cor
                 radioGroup.addView(header);
                 // 2. Adiciona os RadioButtons das variáveis logo abaixo do cabeçalho
                 for (String instanceName : variableTypeInstances) {
                     RadioButton radioButton = new RadioButton(logicEditor);
+                    radioButton.setId(View.generateViewId());
                     radioButton.setText(instanceName);
                     radioButton.setPadding(padding, padding, padding, padding);
                     // Salva o tipo (usando o primeiro da lista como referência) e o nome exato
                     int primaryType = typesList.get(0);
                     radioButton.setTag(new Pair<>(primaryType, instanceName));
+                    // Ao selecionar o item, verifica se já está sendo usado
+                    radioButton.setOnClickListener(v -> {
+                        boolean isCurrentlyUsed = logicEditor.blockPane.c(instanceName)
+                                || projectDataManager.c(javaName, instanceName, eventName);
+                        if (isCurrentlyUsed) {
+                            SketchwareUtil.toastError(Helper.getResString(R.string.logic_editor_message_currently_used_variable));
+                            radioButton.setChecked(false);
+                            if (radioGroup instanceof RadioGroup) {
+                                ((RadioGroup) radioGroup).clearCheck();
+                            }
+                        }
+                    });
                     radioGroup.addView(radioButton);
                 }
             }
         }
         // Se nenhuma variável foi encontrada em nenhuma categoria
         if (totalVariables == 0) {
-            Toast.makeText(logicEditor, "No variables available to edit", Toast.LENGTH_SHORT).show();
+            SketchwareUtil.toastError("No variables available to edit");
             return;
         }
         dialog.setView(containerView);
         dialog.setPositiveButton(Helper.getResString(R.string.common_word_edit), (d, which) -> {
             RadioButton selectedRadio = getSelectedRadioButton(radioGroup);
-            if (selectedRadio != null) {
+            if (selectedRadio != null && selectedRadio.isChecked()) {
                 // Recupera os dados salvos no Tag
                 Pair<Integer, String> tagPair = (Pair<Integer, String>) selectedRadio.getTag();
                 int varType = tagPair.first;
-                String currentName = tagPair.second; // Nome limpo, já que não alteramos o setText()
+                String currentName = tagPair.second;
                 showRenameInputDialog(currentName, varType);
             } else {
-                Toast.makeText(logicEditor, "Please select a variable first", Toast.LENGTH_SHORT).show();
+                SketchwareUtil.toast("Please select a variable first");
             }
         });
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
@@ -263,27 +276,47 @@ public class LogicClickListener implements View.OnClickListener {
         dialog.show();
     }
 
-    // 3. Aplicação das alterações no projeto e na UI
+    /**
+     * Renames an existing variable in the logic editor by removing the old entry
+     * and adding the new entry, then refreshing the block pane UI.
+     *
+     * @param oldName The current variable name to be replaced.
+     * @param newName The new variable name.
+     * @param varType The integer code representing the variable's type.
+     */
     private void performVariableRename(String oldName, String newName, int varType) {
-        // 1. REMOVE a variável antiga.
-        // NOTA: 'e' (ou às vezes 'c') é o metodo padrão no ProjectDataManager (jC) para remover variáveis.
-        // A assinatura geralmente é (String activityName, int type, String variableName).
-        // jC.a(scId).e(javaName, varType, oldName);
-        // 2. ADICIONA a nova variável.
-        // A assinatura geralmente é (String activityName, int type, String variableName).
-        // NOTA: 'a' é o metodo padrão do jC para adicionar novas variáveis.
-        // jC.a(scId).a(javaName, varType, newName);
-        // Atualiza o painel de blocos para mostrar a variável com o novo nome
+        if (oldName == null || oldName.trim().isEmpty()) {
+            SketchwareUtil.toastError("Invalid original variable name");
+            return;
+        }
+        if (newName == null || newName.trim().isEmpty()) {
+            SketchwareUtil.toastError("Variable name cannot be empty");
+            return;
+        }
+        String sanitizedOldName = oldName.trim();
+        String sanitizedNewName = newName.trim();
+        // No-op if the name didn't change
+        if (sanitizedOldName.equals(sanitizedNewName)) {
+            return;
+        }
         try {
-            logicEditor.m(oldName);
-            logicEditor.b(varType, newName.trim());
-            if (logicEditor.blockPane != null) {
-                logicEditor.blockPane.a();
+            // Step 1: Remove the old variable
+            logicEditor.m(sanitizedOldName);
+            try {
+                // Step 2: Add the variable with the new name
+                logicEditor.b(varType, sanitizedNewName);
+            } catch (Exception ex) {
+                // Rollback: Restore the old variable if adding the new one failed
+                LogUtil.e("LogicClickListener",
+                        "Failed to add renamed variable; rolling back removal of: " + sanitizedOldName, ex);
+                logicEditor.b(varType, sanitizedOldName);
+                throw ex; // Re-throw to be caught by the outer block
             }
-            Toast.makeText(logicEditor, "Variable renamed successfully", Toast.LENGTH_SHORT).show();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Toast.makeText(logicEditor, "Failed to rename variable", Toast.LENGTH_SHORT).show();
+            SketchwareUtil.toast("Variable renamed successfully");
+        } catch (Throwable ex) {
+            LogUtil.e("LogicClickListener", "Failed to rename variable from '" + oldName + "' to '" + newName + "'",
+                    ex);
+            SketchwareUtil.toastError("Failed to rename variable");
         }
     }
 

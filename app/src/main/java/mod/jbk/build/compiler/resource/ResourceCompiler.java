@@ -225,6 +225,9 @@ public class ResourceCompiler {
             if (! log.isEmpty()) {
                 LogUtil.e(TAG + ":aapt1",
                         log);
+                if (log.contains("CANNOT LINK EXECUTABLE")) {
+                    throw new zy(log + "\n\nDica: O AAPT1 é incompatível com esta versão do Android. Ative o AAPT2 nas Configurações de Build (Build Settings).");
+                }
                 throw new zy(log);
             }
 

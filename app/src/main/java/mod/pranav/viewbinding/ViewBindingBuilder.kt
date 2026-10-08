@@ -25,7 +25,6 @@ class ViewBindingBuilder(
 // Generated file. Do not modify.
 package $packageName;
 
-import $packageName.R;
 ${generateImports(views, rootView)}
 
 public final class $name {

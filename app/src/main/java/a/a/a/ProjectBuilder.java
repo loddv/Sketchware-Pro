@@ -106,7 +106,7 @@ public class ProjectBuilder {
     public String androidJarPath;
     public ProguardHandler proguard;
     public ProjectSettings settings;
-    private Boolean usingAapt2 = false;
+    private boolean usingAapt2 = false;
     private BuildProgressReceiver progressReceiver;
     private boolean buildAppBundle = false;
     private ArrayList<File> dexesToAddButNotMerge = new ArrayList<>();
@@ -137,12 +137,12 @@ public class ProjectBuilder {
                     "Somehow failed to get package info about us!",
                     e);
         }
-        usingAapt2 = isAAPT2Enabled(yqVar.sc_id);
         aaptBinary = new File(context.getCacheDir(),
                 "aapt");
         aapt2Binary = new File(context.getCacheDir(),
                 "aapt2");
         build_settings = new BuildSettings(yqVar.sc_id);
+        usingAapt2 = isAAPT2Enabled();
         this.context = context;
         yq = yqVar;
         fpu = new FilePathUtil();
@@ -247,18 +247,14 @@ public class ProjectBuilder {
 
     }
 
-    public boolean isAAPT2Enabled(String yqVar) {
-        /*return build_settings.getValue(BuildSettings.SETTING_RESOURCE_PROCESSOR,
-                        BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT)
-                .equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);*/
-        return new BuildSettings(yqVar).getValue(
-                BuildSettings.SETTING_RESOURCE_PROCESSOR,
-                BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT
-        ).equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);
+    public boolean isAAPT2Enabled() {
+        return build_settings.getValue(BuildSettings.SETTING_RESOURCE_PROCESSOR,
+                        BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2)
+                .equals(BuildSettings.SETTING_RESOURCE_PROCESSOR_AAPT2);
     }
 
     public String getAaptRunningText() {
-        return (usingAapt2 ? "Aapt" : "Aapt2") + " is running...";
+        return (usingAapt2 ? "Aapt2" : "Aapt") + " is running...";
     }
 
     public String getDxRunningText() {
@@ -477,21 +473,21 @@ public class ProjectBuilder {
         // Limpar argumentos antigos para evitar duplicações em chamadas repetidas
         ArrayList<String> args = res.args;
         args.clear();
-        String javaVersion = System.getProperty("java.version");
-        assert javaVersion != null;
-        if (javaVersion.startsWith("1.") || javaVersion.compareTo("9") < 0) {
+        int javaMajorVersion = getJavaMajorVersion();
+        if (javaMajorVersion <= 8) {
             // JDK 8 ou anterior
+            String targetVersion = build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
+                    BuildSettings.SETTING_JAVA_VERSION_1_7);
             args.add("-source");
-            args.add(build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
-                    BuildSettings.SETTING_JAVA_VERSION_1_7)); // ou outra versão suportada
+            args.add(targetVersion);
             args.add("-target");
-            args.add(build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
-                    BuildSettings.SETTING_JAVA_VERSION_1_7));
+            args.add(targetVersion);
         } else {
-            // Adicionar versão Java atualizada para Java 25
-            // JDK 9 ou superior
+            // JDK 9 ou superior - usa --release
+            String releaseVersion = build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
+                    "17"); // Default to Java 17 LTS
             args.add("--release");
-            args.add("25"); // ou versão desejada moderna
+            args.add(releaseVersion);
         }
         args.add("-nowarn");
         if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
@@ -507,12 +503,9 @@ public class ProjectBuilder {
         args.add(yq.javaFilesPath);
         args.add(yq.rJavaDirectoryPath);
         // Adicionar arquivos de forma segura e centralizada
-        addIfFileExists(args,
-                fpu.getPathJava(yq.sc_id));
-        addIfFileExists(args,
-                fpu.getPathBroadcast(yq.sc_id));
-        addIfFileExists(args,
-                fpu.getPathService(yq.sc_id));
+        addIfFileExists(args, fpu.getPathJava(yq.sc_id));
+        addIfFileExists(args, fpu.getPathBroadcast(yq.sc_id));
+        addIfFileExists(args, fpu.getPathService(yq.sc_id));
         // Deleção otimizada do arquivo R.java
         File rJavaFile = new File(yq.rJavaDirectoryPath,
                 "R.java");
@@ -562,7 +555,21 @@ public class ProjectBuilder {
         }
     }
 
-    // Método auxiliar para adicionar argumento se arquivo existir
+    private static int getJavaMajorVersion() {
+        String version = System.getProperty("java.version");
+        if (version != null && version.startsWith("1.")) {
+            // JDK 8 or earlier: 1.8.0_xxx
+            String[] parts = version.split("\\.");
+            return parts.length > 1 ? Integer.parseInt(parts[1]) : 8;
+        }
+        if (version != null) {
+            // JDK 9+: 9, 11, 17, 21, etc.
+            String[] parts = version.split("\\.");
+            return Integer.parseInt(parts[0]);
+        }
+        return 8;
+    }
+
     private void addIfFileExists(ArrayList<String> args, String filePath) {
         if (FileUtil.isExistFile(filePath)) {
             args.add(filePath);
@@ -764,52 +771,28 @@ public class ProjectBuilder {
     }
 
     public void maybeExtractAapt2() throws By {
-        var abi = Build.SUPPORTED_ABIS[0];
-        /*String aaptPathInAssets = "aapt/aapt/";
-        String aapt2PathInAssets = "aapt/aapt2/";
-        if (abi.contains("64")) {
-            if (abi.contains("x86")) {
-                aaptPathInAssets += "aapt-x86_64";
-                aapt2PathInAssets += "aapt2-x86_64";
-            } else {
-                aaptPathInAssets += "aapt-arm64";
-                aapt2PathInAssets += "aapt2-arm64";
-            }
-        } else {
-            if (abi.contains("x86")) {
-                aaptPathInAssets += "aapt-x86";
-                aapt2PathInAssets += "aapt2-x86";
-            } else {
-                aaptPathInAssets += "aapt-arm";
-                aapt2PathInAssets += "aapt2-arm";
-            }
-        }*/
-        /*if (hasFileChanged(aaptPathInAssets,
-                    aaptBinary.getAbsolutePath())) {
-                Os.chmod(aaptBinary.getAbsolutePath(),
-                        S_IRUSR | S_IWUSR | S_IXUSR);
-            }
-            if (hasFileChanged(aapt2PathInAssets,
-                    aapt2Binary.getAbsolutePath())) {
-                Os.chmod(aapt2Binary.getAbsolutePath(),
-                        S_IRUSR | S_IWUSR | S_IXUSR);
-            }*/
+        if (Build.SUPPORTED_ABIS == null || Build.SUPPORTED_ABIS.length == 0) {
+            throw new By("Couldn't extract AAPT2 binaries: No supported ABIs found on this device.");
+        }
+        String abi = Build.SUPPORTED_ABIS[0];
         try {
-            if (hasFileChanged("aapt/aapt2/aapt2-" + abi,
-                    aapt2Binary.getAbsolutePath())) {
-                Os.chmod(aapt2Binary.getAbsolutePath(),
-                        S_IRUSR | S_IWUSR | S_IXUSR);
-            }
-            if (hasFileChanged("aapt/aapt/aapt-" + abi,
-                    aaptBinary.getAbsolutePath())) {
-                Os.chmod(aaptBinary.getAbsolutePath(),
-                        S_IRUSR | S_IWUSR | S_IXUSR);
-            }
+            extractBinaryAndSetExecutable("aapt/aapt2/aapt2-" + abi, aapt2Binary);
+            extractBinaryAndSetExecutable("aapt/aapt/aapt-" + abi, aaptBinary);
         } catch (Exception e) {
-            LogUtil.e(TAG,
-                    "Failed to extract AAPT2 binaries",
-                    e);
-            throw new By("Couldn't extract AAPT2 binaries! Message: " + e.getMessage());
+            LogUtil.e(TAG, "Failed to extract AAPT/AAPT2 binaries", e);
+            By exception = new By("Couldn't extract AAPT2 binaries! Message: " + e.getMessage());
+            exception.initCause(e);
+            throw exception;
+        }
+    }
+
+    /**
+     * Extracts an asset file if missing or updated, and ensures user executable permissions.
+     */
+    private void extractBinaryAndSetExecutable(String assetPath, File targetBinary) throws Exception {
+        boolean extracted = hasFileChanged(assetPath, targetBinary.getAbsolutePath());
+        if (extracted || !targetBinary.canExecute()) {
+            Os.chmod(targetBinary.getAbsolutePath(), S_IRUSR | S_IWUSR | S_IXUSR);
         }
     }
 

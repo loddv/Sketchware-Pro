@@ -176,7 +176,7 @@ public class DesignDrawer extends LinearLayout {
 				content);
         // if you want to show text "Global", uncomment next line
         addDrawerSubheaderItem(R.string.design_drawer_menu_bottom_title, this);
-        addDrawerDivider(this);
+        // addDrawerDivider(this);
         addDrawerItem(R.id.item_collection_manager, R.drawable.ic_mtrl_bookmark,
 				R.string.design_drawer_menu_title_collection, R.string.design_drawer_menu_description_collection,
 				this);

@@ -376,13 +376,13 @@ public class ResourceCompiler {
             private final File aapt;
             private final File inputPng;
             private final File outputPng;
-
+        
             CrunchTask(File aapt, File inputPng, File outputPng) {
                 this.aapt = aapt;
                 this.inputPng = inputPng;
                 this.outputPng = outputPng;
             }
-
+        
             @Override
             public String call() {
                 ArrayList<String> commands = new ArrayList<>();
@@ -392,14 +392,18 @@ public class ResourceCompiler {
                 commands.add(inputPng.getAbsolutePath());
                 commands.add("-o");
                 commands.add(outputPng.getAbsolutePath());
-
+        
                 BinaryExecutor executor = new BinaryExecutor();
                 executor.setCommands(commands);
                 String log = executor.execute(15000);
-                if (!log.isEmpty()) {
+        
+                // Se o arquivo final não foi criado ou ficou com 0 bytes, ocorreu uma falha real
+                if (!outputPng.exists() || outputPng.length() == 0) {
                     LogUtil.e(TAG + ":aapt1Crunch", "Failed to crunch " + inputPng.getName() + ":\n" + log);
-                    return log;
+                    return log.isEmpty() ? "Erro ao gerar arquivo de saída para: " + inputPng.getName() : log;
                 }
+        
+                // Se o arquivo existe, o crunching foi bem-sucedido (ignora logs informativos do AAPT)
                 return null;
             }
         }

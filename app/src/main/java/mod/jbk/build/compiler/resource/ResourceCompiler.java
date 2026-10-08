@@ -278,16 +278,23 @@ public class ResourceCompiler {
                 List<File> pngFiles = new ArrayList<>();
                 findPngFilesRecursively(resDir, pngFiles);
 
-                for (File pngFile : pngFiles) {
-                    String relativePath = resDir.toURI().relativize(pngFile.toURI()).getPath();
-                    File outputFile = new File(crunchedOutputDir, relativePath);
-
-                    if (!outputFile.getParentFile().exists()) {
-                        outputFile.getParentFile().mkdirs();
+                for (File inputPng : pngFiles) {
+                    File outputPng = new File(outputDir, inputPng.getName());
+                
+                    // CORREÇÃO: Arquivos .9.png de AARs modernos são copiados diretamente
+                    if (inputPng.getName().endsWith(".9.png")) {
+                        try {
+                            FileUtil.copyFile(inputPng.getAbsolutePath(), outputPng.getAbsolutePath());
+                        } catch (IOException e) {
+                            LogUtil.e(TAG, "Erro ao copiar 9-patch: " + inputPng.getName(), e);
+                        }
+                        continue; // Pula a execução do AAPT1 para este arquivo
                     }
-
-                    tasks.add(new CrunchTask(aapt, pngFile, outputFile));
+                
+                    // Executa o AAPT1 normalmente para PNGs convencionais
+                    tasks.add(new CrunchTask(aapt, inputPng, outputPng));
                 }
+
             }
 
             if (tasks.isEmpty()) {

@@ -566,7 +566,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     bottomSheetDialog.dismiss();
                 }));
         options.add(new GridOptionAdapter.Option("Tree source code",
-                R.drawable.ic_mtrl_code,
+                R.drawable.ic_mtrl_frame_source,
                 v -> {
                     launchActivity(SrcViewerActivity.class,
                         null,

@@ -279,22 +279,28 @@ public class ResourceCompiler {
                 findPngFilesRecursively(resDir, pngFiles);
 
                 for (File inputPng : pngFiles) {
-                    File outputPng = new File(outputDir, inputPng.getName());
-                
-                    // CORREÇÃO: Arquivos .9.png de AARs modernos são copiados diretamente
+                    // Preserva a estrutura de subpastas (ex: drawable-xhdpi/imagem.png)
+                    String relativePath = resDir.toURI().relativize(inputPng.toURI()).getPath();
+                    File outputPng = new File(crunchedOutputDir, relativePath);
+
+                    // Garante que a subpasta de destino exista antes de copiar ou processar
+                    if (!outputPng.getParentFile().exists()) {
+                        outputPng.getParentFile().mkdirs();
+                    }
+
+                    // CORREÇÃO: Arquivos .9.png de AARs modernos são copiados diretamente para evitar erros no AAPT1
                     if (inputPng.getName().endsWith(".9.png")) {
                         try {
                             FileUtil.copyFile(inputPng.getAbsolutePath(), outputPng.getAbsolutePath());
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             LogUtil.e(TAG, "Erro ao copiar 9-patch: " + inputPng.getName(), e);
                         }
                         continue; // Pula a execução do AAPT1 para este arquivo
                     }
-                
+
                     // Executa o AAPT1 normalmente para PNGs convencionais
                     tasks.add(new CrunchTask(aapt, inputPng, outputPng));
                 }
-
             }
 
             if (tasks.isEmpty()) {
@@ -302,7 +308,7 @@ public class ResourceCompiler {
             }
 
             int totalTasks = tasks.size();
-            LogUtil.d(TAG + ":aapt1Crunch", "Crunching " + totalTasks + " PNGs in parallel...");
+            LogUtil.d(TAG + ":aapt1Crunch", "Crunching " + totalTasks + " PNGs em paralelo...");
 
             int threadCount = Math.max(1, Runtime.getRuntime().availableProcessors());
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -342,6 +348,7 @@ public class ResourceCompiler {
                 Thread.currentThread().interrupt();
             }
         }
+
 
         private void findPngFilesRecursively(File dir, List<File> pngList) {
             File[] files = dir.listFiles();

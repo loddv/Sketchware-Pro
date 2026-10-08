@@ -565,6 +565,15 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     showCurrentActivitySrcCode();
                     bottomSheetDialog.dismiss();
                 }));
+        options.add(new GridOptionAdapter.Option("Tree source code",
+                R.drawable.ic_mtrl_code,
+                v -> {
+                    launchActivity(SrcViewerActivity.class,
+                        null,
+                        new Pair<>("current",
+                                Helper.getText(fileName)));
+                    bottomSheetDialog.dismiss();
+                }));
         options.add(new GridOptionAdapter.Option("Install last APK",
                 R.drawable.ic_mtrl_android,
                 v -> {

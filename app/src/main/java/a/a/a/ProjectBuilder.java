@@ -262,125 +262,235 @@ public class ProjectBuilder {
     }
 
     public void createDexFilesFromClasses() throws Exception {
-        FileUtil.makeDir(yq.binDirectoryPath + File.separator + "dex");
-        if (proguard.isShrinkingEnabled() && proguard.isR8Enabled()) {return;}
+        File dexOutputDirectory = new File(
+                yq.binDirectoryPath,
+                "dex"
+        );
+    
+        FileUtil.makeDir(dexOutputDirectory.getAbsolutePath());
+    
+        if (proguard.isShrinkingEnabled() && proguard.isR8Enabled()) {
+            return;
+        }
+    
+        long startedAt = System.currentTimeMillis();
+    
         if (isD8Enabled()) {
-            long savedTimeMillis = System.currentTimeMillis();
             try {
-                // D8 já é multithreaded internamente
                 CompletableFuture<Void> d8Future = CompletableFuture.runAsync(() -> {
-                            try {
-                                DexCompiler.compileDexFiles(this);
-                            } catch (CompilationFailedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        },
-                        executor);
-                d8Future.join(); // Espera terminar!
+                    try {
+                        DexCompiler.compileDexFiles(this);
+                    } catch (CompilationFailedException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executor);
+    
+                d8Future.join();
+    
                 LogUtil.d(TAG,
-                        "D8 took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
+                        "D8 took "
+                                + (System.currentTimeMillis() - startedAt)
+                                + " ms");
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+    
+                LogUtil.e(TAG, "D8 failed", cause != null ? cause : e);
+    
+                if (cause instanceof Exception exception) {
+                    throw exception;
+                }
+    
+                throw e;
             } catch (Exception e) {
-                LogUtil.e(TAG,
-                        "D8 failed",
-                        e);
+                LogUtil.e(TAG, "D8 failed", e);
                 throw e;
             }
-        } else {
-            long savedTimeMillis = System.currentTimeMillis();
-            List<String> args = Arrays.asList(
-                    "--debug",
-                    "--verbose",
-                    "--multi-dex",
-                    "--output=" + yq.binDirectoryPath + File.separator + "dex",
-                    proguard.isShrinkingEnabled() ? yq.proguardClassesPath : yq.compiledClassesPath
+    
+            return;
+        }
+    
+        List<String> args = Arrays.asList(
+                "--debug",
+                "--verbose",
+                "--multi-dex",
+                "--output=" + dexOutputDirectory.getAbsolutePath(),
+                proguard.isShrinkingEnabled()
+                        ? yq.proguardClassesPath
+                        : yq.compiledClassesPath
+        );
+    
+        try {
+            LogUtil.d(TAG, "Running Dx with these arguments: " + args);
+    
+            Main.clearInternTables();
+    
+            Main.Arguments arguments = new Main.Arguments();
+            Method parseMethod = Main.Arguments.class.getDeclaredMethod(
+                    "parse",
+                    String[].class
             );
-            try {
-                LogUtil.d(TAG,
-                        "Running Dx with these arguments: " + args);
-                Main.clearInternTables();
-                Main.Arguments arguments = new Main.Arguments();
-                Method parseMethod = Main.Arguments.class.getDeclaredMethod("parse",
-                        String[].class);
-                parseMethod.setAccessible(true);
-                parseMethod.invoke(arguments,
-                        (Object) args.toArray(new String[0]));
-                Main.run(arguments);
-                LogUtil.d(TAG,
-                        "Dx took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-            } catch (Exception e) {
-                LogUtil.e(TAG,
-                        "Dx failed to process .class files",
-                        e);
-                throw e;
+            parseMethod.setAccessible(true);
+            parseMethod.invoke(arguments, (Object) args.toArray(new String[0]));
+    
+            Main.run(arguments);
+    
+            LogUtil.d(TAG,
+                    "Dx took "
+                            + (System.currentTimeMillis() - startedAt)
+                            + " ms");
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+    
+            LogUtil.e(TAG, "Dx failed to process .class files",
+                    cause != null ? cause : e);
+    
+            if (cause instanceof Exception exception) {
+                throw exception;
             }
+    
+            throw e;
+        } catch (Exception e) {
+            LogUtil.e(TAG, "Dx failed to process .class files", e);
+            throw e;
         }
     }
 
     public String getClasspath() {
         StringBuilder classpath = new StringBuilder();
-        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath,
-                yq);
-        classpath.append(androidJarPath);
-        if (!build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
-                        BuildSettings.SETTING_GENERIC_VALUE_FALSE)
-                .equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE)) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.HTTP_LEGACY_ANDROID));
+    
+        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath, yq);
+        appendClasspathEntry(classpath, androidJarPath);
+    
+        if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
+                build_settings.getValue(
+                        BuildSettings.SETTING_NO_HTTP_LEGACY,
+                        BuildSettings.SETTING_GENERIC_VALUE_FALSE
+                ))) {
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            BuiltInLibraries.HTTP_LEGACY_ANDROID
+                    )
+            );
         }
+    
         if (settings.getMinSdkVersion() < 21) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.ANDROIDX_MULTIDEX));
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            BuiltInLibraries.ANDROIDX_MULTIDEX
+                    )
+            );
         }
-        if (!build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
-                        BuildSettings.SETTING_JAVA_VERSION_1_7)
-                .equals(BuildSettings.SETTING_JAVA_VERSION_1_7)) {
-            classpath.append(":").append(new File(BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
-                    "core-lambda-stubs.jar").getAbsolutePath());
+    
+        if (!BuildSettings.SETTING_JAVA_VERSION_1_7.equals(
+                build_settings.getValue(
+                        BuildSettings.SETTING_JAVA_VERSION,
+                        BuildSettings.SETTING_JAVA_VERSION_1_7
+                ))) {
+            appendClasspathEntry(
+                    classpath,
+                    new File(
+                            BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
+                            "core-lambda-stubs.jar"
+                    ).getAbsolutePath()
+            );
         }
+    
         for (Jp library : builtInLibraryManager.getLibraries()) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(library.getName()));
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            library.getName()
+                    )
+            );
         }
-        classpath.append(mll.getJarLocalLibrary());
-        if (!build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
-                "").isEmpty()) {
-            classpath.append(":").append(build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
-                    ""));
+    
+        appendClasspathEntry(classpath, mll.getJarLocalLibrary());
+    
+        String configuredClasspath = build_settings.getValue(
+                BuildSettings.SETTING_CLASSPATH,
+                ""
+        );
+    
+        if (configuredClasspath != null && !configuredClasspath.isEmpty()) {
+            appendClasspathEntry(classpath, configuredClasspath);
         }
-        String path = FileUtil.getExternalStorageDir() + "/.sketchware/data/" + yq.sc_id + "/files/classpath/";
-        ArrayList<String> jars = FileUtil.listFiles(path,
-                "jar");
-        classpath.append(":").append(TextUtils.join(":",
-                jars));
+    
+        String localClasspathDirectory =
+                FileUtil.getExternalStorageDir()
+                        + "/.sketchware/data/"
+                        + yq.sc_id
+                        + "/files/classpath/";
+    
+        ArrayList<String> jars = FileUtil.listFiles(localClasspathDirectory, "jar");
+    
+        if (jars != null) {
+            for (String jar : jars) {
+                appendClasspathEntry(classpath, jar);
+            }
+        }
+    
         return classpath.toString();
     }
 
     public String getProguardClasspath() {
-        Collection<String> localLibraryJarsWithFullModeOn = new LinkedList<>();
+        Set<String> localLibraryJarsWithFullModeOn = new HashSet<>();
+    
         for (HashMap<String, Object> localLibrary : mll.list) {
             Object nameObject = localLibrary.get("name");
             Object jarPathObject = localLibrary.get("jarPath");
-            if (nameObject instanceof String name && jarPathObject instanceof String jarPath) {
-                if (localLibrary.containsKey("jarPath") && proguard.libIsProguardFMEnabled(name)) {
-                    localLibraryJarsWithFullModeOn.add(jarPath);
-                }
+    
+            if (nameObject instanceof String name
+                    && jarPathObject instanceof String jarPath
+                    && proguard.libIsProguardFMEnabled(name)) {
+                localLibraryJarsWithFullModeOn.add(jarPath);
             }
         }
+    
         String normalClasspath = getClasspath();
-        StringBuilder classpath = new StringBuilder();
-        normalClasspathLoop:
-        for (String classpathPart : normalClasspath.split(":")) {
-            for (String jarPathToExclude : localLibraryJarsWithFullModeOn) {
-                if (classpathPart.equals(jarPathToExclude)) {
-                    localLibraryJarsWithFullModeOn.remove(jarPathToExclude);
-                    continue normalClasspathLoop;
-                }
-            }
-            if (!classpathPart.equals(yq.compiledClassesPath)) {
-                classpath.append(classpathPart).append(':');
-            }
+        if (normalClasspath == null || normalClasspath.isEmpty()) {
+            return "";
         }
-        classpath.deleteCharAt(classpath.length() - 1);
+    
+        StringBuilder classpath = new StringBuilder();
+    
+        for (String entry : normalClasspath.split(
+                Pattern.quote(File.pathSeparator)
+        )) {
+            if (entry.isEmpty()) {
+                continue;
+            }
+    
+            if (entry.equals(yq.compiledClassesPath)) {
+                continue;
+            }
+    
+            if (localLibraryJarsWithFullModeOn.contains(entry)) {
+                continue;
+            }
+    
+            appendClasspathEntry(classpath, entry);
+        }
+    
         return classpath.toString();
     }
-
+    
+    private static void appendClasspathEntry(
+            StringBuilder classpath,
+            String entry
+    ) {
+        if (entry == null || entry.isEmpty()) {
+            return;
+        }
+    
+        if (classpath.length() > 0) {
+            classpath.append(File.pathSeparator);
+        }
+    
+        classpath.append(entry);
+    }
+    
     private Collection<File> dexLibrariesParallel(File outputDirectory, List<File> dexes) throws Exception {
         if (dexes.isEmpty()) {return new ArrayList<>();}
         List<CompletableFuture<File>> chunkFutures = new ArrayList<>();

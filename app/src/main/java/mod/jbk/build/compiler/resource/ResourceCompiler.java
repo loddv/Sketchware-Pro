@@ -6,11 +6,16 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -433,6 +438,10 @@ public class ResourceCompiler {
         private final File compiledBuiltInLibraryResourcesDirectory;
         private ProgressListener progressListener;
 
+        // Cache em memória para evitar checagens repetidas de I/O no disco durante a compilação
+        private final Set<String> validatedDirectories = ConcurrentHashMap.newKeySet();
+        private final Set<String> validatedFiles = ConcurrentHashMap.newKeySet();
+
         public Aapt2Compiler(ProjectBuilder buildHelper, File aapt2, boolean buildAppBundle) {
             this.buildHelper = buildHelper;
             this.aapt2 = aapt2;
@@ -553,8 +562,7 @@ public class ResourceCompiler {
 
             try {
                 executor.shutdown();
-                if (! executor.awaitTermination(30,
-                        TimeUnit.SECONDS)) {
+                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                     executor.shutdownNow();
                 }
             } catch (InterruptedException e) {
@@ -574,8 +582,7 @@ public class ResourceCompiler {
             commands.add("-o");
             commands.add(outputPath + File.separator + "project.zip");
 
-            executeAndCheck(commands,
-                    "project resources");
+            executeAndCheck(commands, "project resources");
         }
 
         private void compileImportedResources(String outputPath) throws zy {
@@ -588,20 +595,17 @@ public class ResourceCompiler {
                 commands.add(importedResPath);
                 commands.add("-o");
                 commands.add(outputPath + File.separator + "project-imported.zip");
-                executeAndCheck(commands,
-                        "imported resources");
+                executeAndCheck(commands, "imported resources");
             }
         }
 
         private void executeAndCheck(ArrayList<String> commands, String context) throws zy {
-            LogUtil.d(TAG + ":c",
-                    "Executing: " + commands);
+            LogUtil.d(TAG + ":c", "Executing: " + commands);
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(commands);
             String log = executor.execute(20000);
-            if (! log.isEmpty()) {
-                LogUtil.e(TAG,
-                        "Failed to compile " + context + ":\n" + log);
+            if (!log.isEmpty()) {
+                LogUtil.e(TAG, "Failed to compile " + context + ":\n" + log);
                 throw new zy(log);
             }
         }
@@ -609,14 +613,15 @@ public class ResourceCompiler {
         private void link() throws zy, MissingFileException {
             String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
             if (progressListener != null) {
-                progressListener.onProgressUpdate("Linking resources with AAPT2...",
-                        10);
+                progressListener.onProgressUpdate("Linking resources with AAPT2...", 10);
             }
 
             ArrayList<String> args = new ArrayList<>();
             args.add(aapt2.getAbsolutePath());
             args.add("link");
-            if (buildAppBundle) {args.add("--proto-format");}
+            if (buildAppBundle) {
+                args.add("--proto-format");
+            }
             args.add("--allow-reserved-package-id");
             args.add("--auto-add-overlay");
             args.add("--no-version-vectors");
@@ -636,8 +641,7 @@ public class ResourceCompiler {
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
 
             args.add("-I");
-            String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH,
-                    "");
+            String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             if (customAndroidSdk.isEmpty()) {
                 args.add(buildHelper.androidJarPath);
             } else {
@@ -682,25 +686,22 @@ public class ResourceCompiler {
 
             File[] localCompiled = new File(resourcesPath).listFiles();
             if (localCompiled != null) {
+                // Removido .parallel() para evitar race conditions em args.add() e overhead de threads
                 Arrays.stream(localCompiled)
-                        .parallel()
-                        .filter(f -> f.isFile() && ! f.getName().equals("project.zip") && ! f.getName().equals(
-                                "project-imported.zip"))
+                        .filter(f -> f.isFile() && !f.getName().equals("project.zip") && !f.getName().equals("project-imported.zip"))
                         .forEach(f -> {
                             args.add("-R");
                             args.add(f.getAbsolutePath());
                         });
             }
 
-            File projectZip = new File(resourcesPath,
-                    "project.zip");
+            File projectZip = new File(resourcesPath, "project.zip");
             if (projectZip.exists()) {
                 args.add("-R");
                 args.add(projectZip.getAbsolutePath());
             }
 
-            File importedZip = new File(resourcesPath,
-                    "project-imported.zip");
+            File importedZip = new File(resourcesPath, "project-imported.zip");
             if (importedZip.exists()) {
                 args.add("-R");
                 args.add(importedZip.getAbsolutePath());
@@ -718,7 +719,7 @@ public class ResourceCompiler {
             args.add(buildHelper.yq.androidManifestPath);
 
             String extraPackages = buildHelper.getLibraryPackageNames();
-            if (! extraPackages.isEmpty()) {
+            if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
                 args.add(extraPackages);
             }
@@ -726,15 +727,13 @@ public class ResourceCompiler {
             args.add("-o");
             args.add(buildHelper.yq.resourcesApkPath);
 
-            LogUtil.d(TAG + ":l",
-                    args.toString());
+            LogUtil.d(TAG + ":l", args.toString());
 
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args);
             String log = executor.execute(20000);
-            if (! log.isEmpty()) {
-                LogUtil.e(TAG + ":l",
-                        log);
+            if (!log.isEmpty()) {
+                LogUtil.e(TAG + ":l", log);
                 throw new zy(log);
             }
         }
@@ -743,52 +742,67 @@ public class ResourceCompiler {
             if (cached.exists()) {
                 try {
                     Context ctx = SketchApplication.getContext();
-                    return ctx.getPackageManager().getPackageInfo(ctx.getPackageName(),
-                            0)
+                    return ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0)
                             .lastUpdateTime > cached.lastModified();
                 } catch (PackageManager.NameNotFoundException e) {
-                    LogUtil.e(TAG + ":iBILRN",
-                            "Package info error: " + e.getMessage(),
-                            e);
+                    LogUtil.e(TAG + ":iBILRN", "Package info error: " + e.getMessage(), e);
                 }
             }
             return true;
         }
 
         private void emptyOrCreateDirectory(String path) {
-            if (FileUtil.isExistFile(path)) {FileUtil.deleteFile(path);}
+            if (FileUtil.isExistFile(path)) {
+                FileUtil.deleteFile(path);
+            }
             FileUtil.makeDir(path);
         }
 
+        // --- MÉTODOS OTIMIZADOS DE VALIDAÇÃO DE DISCO (I/O) ---
+
         private void compilingAssertDirectoryExists(String path) throws MissingFileException {
-            File dir = new File(path);
-            if (! dir.exists()) {
-                throw new MissingFileException(dir,
+            if (path == null || validatedDirectories.contains(path)) {
+                return;
+            }
+
+            Path nioPath = Paths.get(path);
+            if (!Files.isDirectory(nioPath)) {
+                throw new MissingFileException(nioPath.toFile(),
                         MissingFileException.STEP_RESOURCE_COMPILING,
                         true);
             }
+
+            validatedDirectories.add(path);
         }
 
         private void linkingAssertFileExists(String path) throws MissingFileException {
-            File f = new File(path);
-            if (! f.exists()) {
-                throw new MissingFileException(f,
+            if (path == null || validatedFiles.contains(path)) {
+                return;
+            }
+
+            Path nioPath = Paths.get(path);
+            if (!Files.isRegularFile(nioPath)) {
+                throw new MissingFileException(nioPath.toFile(),
                         MissingFileException.STEP_RESOURCE_LINKING,
                         false);
             }
+
+            validatedFiles.add(path);
         }
 
         private void linkingAssertDirectoryExists(String path) {
-            try {
-                File f = new File(path);
-                if (! f.exists()) {
-                    throw new MissingFileException(f,
-                            MissingFileException.STEP_RESOURCE_LINKING,
-                            true);
-                }
-            } catch (MissingFileException e) {
-                throw new RuntimeException(e);
+            if (path == null || validatedDirectories.contains(path)) {
+                return;
             }
+
+            Path nioPath = Paths.get(path);
+            if (!Files.isDirectory(nioPath)) {
+                throw new RuntimeException(new MissingFileException(nioPath.toFile(),
+                        MissingFileException.STEP_RESOURCE_LINKING,
+                        true));
+            }
+
+            validatedDirectories.add(path);
         }
 
         @Override
@@ -819,15 +833,13 @@ public class ResourceCompiler {
                 commands.add("-o");
                 commands.add(outputPath);
 
-                LogUtil.d(TAG + ":cTASK",
-                        "Compiling " + description + " -> " + outputPath);
+                LogUtil.d(TAG + ":cTASK", "Compiling " + description + " -> " + outputPath);
 
                 BinaryExecutor executor = new BinaryExecutor();
                 executor.setCommands(commands);
                 String log = executor.execute(20000);
-                if (! log.isEmpty()) {
-                    LogUtil.e(TAG + ":cTASK",
-                            "Failed: " + description + "\n" + log);
+                if (!log.isEmpty()) {
+                    LogUtil.e(TAG + ":cTASK", "Failed: " + description + "\n" + log);
                     return log;
                 }
                 return null;

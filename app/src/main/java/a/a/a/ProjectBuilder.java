@@ -95,7 +95,7 @@ public class ProjectBuilder {
     private final File aapt2Binary;
     private final File aaptBinary;
     private final Context context;
-    private final int parallelism = Runtime.getRuntime().availableProcessors();
+    private final int parallelism = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
     // Variáveis de instância (reutilizáveis por thread)
     private final ThreadLocal<CompilerResources> threadLocalResources = ThreadLocal.withInitial(CompilerResources::new);
     public BuildSettings build_settings;
@@ -187,7 +187,7 @@ public class ProjectBuilder {
     private void initExecutor() {
         this.executor = Executors.newFixedThreadPool(parallelism);
         LogUtil.d(TAG,
-                "Multithreading enabled with " + parallelism + " threads");
+                "Multithreading enabled with " + parallelism + " threads (Android-safe cap to reduce OOM risk)");
     }
 
     private void shutdownExecutor() {
@@ -489,6 +489,9 @@ public class ProjectBuilder {
             args.add("--release");
             args.add(releaseVersion);
         }
+        int compilerThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
+        args.add("-threads");
+        args.add(String.valueOf(compilerThreads));
         args.add("-nowarn");
         if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
                 build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS,
@@ -575,81 +578,6 @@ public class ProjectBuilder {
             args.add(filePath);
         }
     }
-
-/*	public void compileJavaCode() throws zy, IOException {
-		long savedTimeMillis = System.currentTimeMillis();
-		CompilerResources res = threadLocalResources.get();
-		res.reset();
-
-		try (PrintWriter outWriter = res.outWriter; PrintWriter errWriter = res.errWriter) {
-
-			// === Montagem eficiente de argumentos ===
-			ArrayList<String> args = res.args;
-			args.add("-" + build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION, BuildSettings
-			.SETTING_JAVA_VERSION_1_7));
-			args.add("-nowarn");
-			if (! BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
-					build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS, BuildSettings
-					.SETTING_GENERIC_VALUE_TRUE))) {
-				args.add("-deprecation");
-			}
-			args.add("-d");
-			args.add(yq.compiledClassesPath);
-			args.add("-cp");
-			args.add(getClasspath());
-			args.add("-proc:none");
-			args.add(yq.javaFilesPath);
-			args.add(yq.rJavaDirectoryPath);
-
-			String pathJava = fpu.getPathJava(yq.sc_id);
-			if (FileUtil.isExistFile(pathJava)) args.add(pathJava);
-			String pathBroadcast = fpu.getPathBroadcast(yq.sc_id);
-			if (FileUtil.isExistFile(pathBroadcast)) args.add(pathBroadcast);
-			String pathService = fpu.getPathService(yq.sc_id);
-			if (FileUtil.isExistFile(pathService)) args.add(pathService);
-
-			// === Deleção de R.java (otimizada) ===
-			File rJavaFile = new File(yq.rJavaDirectoryPath, "R.java");
-			if (rJavaFile.exists()) {
-				try {
-					if (! rJavaFile.delete()) {
-						LogUtil.w(TAG, "Failed to delete R.java: " + rJavaFile.getAbsolutePath());
-					}
-				} catch (SecurityException e) {
-					LogUtil.w(TAG, "Permission denied deleting R.java", e);
-				}
-			}
-
-			// === Compilação ===
-			org.eclipse.jdt.internal.compiler.batch.Main main =
-					new org.eclipse.jdt.internal.compiler.batch.Main(outWriter, errWriter, false, null, null);
-
-			if (isDebugEnabled()) {
-				LogUtil.d(TAG, "Compiling with args: " + args);
-			}
-
-			boolean success = main.compile(args.toArray(new String[args.size()]));
-
-			String stdout = res.outStream.getOut();
-			String stderr = res.errStream.getOut();
-
-			if (success && main.globalErrorsCount <= 0) {
-				if (isDebugEnabled()) {
-					LogUtil.d(TAG, "Compiler stdout: " + stdout);
-					LogUtil.d(TAG, "Compiler stderr: " + stderr);
-					LogUtil.d(TAG, "Compile time: " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-				}
-			} else {
-				LogUtil.e(TAG, "Compile failed. Stderr: " + stderr);
-				throw new zy(stderr.isEmpty() ? "Unknown compilation error" : stderr);
-			}
-
-		} finally {
-			// Garante limpeza mesmo em caso de exceção
-			res.outWriter.flush();
-			res.errWriter.flush();
-		}
-	}*/
 
     public void buildApk() throws By {
         String firstDexPath = dexesToAddButNotMerge.isEmpty() ? yq.classesDexPath :

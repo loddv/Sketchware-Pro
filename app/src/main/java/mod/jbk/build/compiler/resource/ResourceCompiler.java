@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -615,8 +617,8 @@ public class ResourceCompiler {
                 progressListener.onProgressUpdate("Linking resources with AAPT2...", 10);
             }
         
-            // Capacidade inicial para evitar re-arranjos de memória no ArrayList
-            List<String> args = new ArrayList<>(64);
+            // Usa ArrayList<String> explicitamente para ser compatível com setCommands()
+            ArrayList<String> args = new ArrayList<>(64);
             args.add(aapt2.getAbsolutePath());
             args.add("link");
             if (buildAppBundle) {
@@ -641,7 +643,6 @@ public class ResourceCompiler {
             String versionName = buildHelper.yq.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
         
-            // Configuração do Android SDK Jar
             args.add("-I");
             String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             if (customAndroidSdk.isEmpty()) {
@@ -651,30 +652,23 @@ public class ResourceCompiler {
                 args.add(customAndroidSdk);
             }
         
-            // Processamento otimizado de Assets
             addAssetsArguments(args);
-        
-            // Processamento otimizado de Recursos Compilados (.zip)
             addCompiledResourcesArguments(args);
         
-            // Diretório R.java
             linkingAssertDirectoryExists(buildHelper.yq.rJavaDirectoryPath);
             args.add("--java");
             args.add(buildHelper.yq.rJavaDirectoryPath);
         
-            // Proguard
             String proguardRules = buildHelper.yq.proguardAaptRules;
             if (proguardRules != null && !proguardRules.isEmpty()) {
                 args.add("--proguard");
                 args.add(proguardRules);
             }
         
-            // Manifest
             linkingAssertFileExists(buildHelper.yq.androidManifestPath);
             args.add("--manifest");
             args.add(buildHelper.yq.androidManifestPath);
         
-            // Pacotes extras
             String extraPackages = buildHelper.getLibraryPackageNames();
             if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
@@ -687,13 +681,79 @@ public class ResourceCompiler {
             LogUtil.d(TAG + ":l", args.toString());
         
             BinaryExecutor executor = new BinaryExecutor();
-            executor.setCommands(args);
-            
-            // Execução do binário (Timeout ajustado para evitar erros em projetos maiores)
+            executor.setCommands(args); // Agora é compatível com ArrayList<String>
             String log = executor.execute(30000);
             if (!log.isEmpty()) {
                 LogUtil.e(TAG + ":l", log);
                 throw new zy(log);
+            }
+        }
+        
+        private void addAssetsArguments(ArrayList<String> args) {
+            String mainAssets = buildHelper.yq.assetsPath;
+            if (FileUtil.isExistFile(mainAssets)) {
+                args.add("-A");
+                args.add(mainAssets);
+            }
+        
+            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
+            if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
+                args.add("-A");
+                args.add(importedAssets);
+            }
+        
+            for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
+                if (lib.hasAssets()) {
+                    String path = BuiltInLibraries.getLibraryAssetsPath(lib.getName());
+                    linkingAssertDirectoryExists(path);
+                    args.add("-A");
+                    args.add(path);
+                }
+            }
+        
+            List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
+            for (String path : localAssets) {
+                linkingAssertDirectoryExists(path);
+                args.add("-A");
+                args.add(path);
+            }
+        }
+        
+        private void addCompiledResourcesArguments(ArrayList<String> args) {
+            String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
+        
+            for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
+                if (lib.hasResources()) {
+                    args.add("-R");
+                    args.add(new File(compiledBuiltInLibraryResourcesDirectory, lib.getName() + ".zip").getAbsolutePath());
+                }
+            }
+        
+            Path resDir = Paths.get(resourcesPath);
+            if (Files.exists(resDir)) {
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(resDir, "*.zip")) {
+                    for (Path entry : stream) {
+                        String fileName = entry.getFileName().toString();
+                        if (!fileName.equals("project.zip") && !fileName.equals("project-imported.zip")) {
+                            args.add("-R");
+                            args.add(entry.toAbsolutePath().toString());
+                        }
+                    }
+                } catch (IOException e) {
+                    LogUtil.e(TAG, "Erro ao listar recursos compilados: " + e.getMessage());
+                }
+            }
+        
+            Path projectZip = resDir.resolve("project.zip");
+            if (Files.exists(projectZip)) {
+                args.add("-R");
+                args.add(projectZip.toAbsolutePath().toString());
+            }
+        
+            Path importedZip = resDir.resolve("project-imported.zip");
+            if (Files.exists(importedZip)) {
+                args.add("-R");
+                args.add(importedZip.toAbsolutePath().toString());
             }
         }
         

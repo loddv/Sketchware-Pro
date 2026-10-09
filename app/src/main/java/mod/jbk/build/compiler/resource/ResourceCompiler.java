@@ -611,12 +611,12 @@ public class ResourceCompiler {
         }
 
         private void link() throws zy, MissingFileException {
-            String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Linking resources with AAPT2...", 10);
             }
-
-            ArrayList<String> args = new ArrayList<>();
+        
+            // Capacidade inicial para evitar re-arranjos de memória no ArrayList
+            List<String> args = new ArrayList<>(64);
             args.add(aapt2.getAbsolutePath());
             args.add("link");
             if (buildAppBundle) {
@@ -626,20 +626,22 @@ public class ResourceCompiler {
             args.add("--auto-add-overlay");
             args.add("--no-version-vectors");
             args.add("--no-version-transitions");
-
+        
             args.add("--min-sdk-version");
             args.add(String.valueOf(buildHelper.settings.getMinSdkVersion()));
             args.add("--target-sdk-version");
             args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
                     String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
-
+        
             args.add("--version-code");
             String versionCode = buildHelper.yq.versionCode;
             args.add((versionCode == null || versionCode.isEmpty()) ? "1" : versionCode);
+        
             args.add("--version-name");
             String versionName = buildHelper.yq.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
-
+        
+            // Configuração do Android SDK Jar
             args.add("-I");
             String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             if (customAndroidSdk.isEmpty()) {
@@ -648,95 +650,133 @@ public class ResourceCompiler {
                 linkingAssertFileExists(customAndroidSdk);
                 args.add(customAndroidSdk);
             }
-
-            // Assets
-            List<String> assetsPaths = Stream.concat(
-                    Stream.of(buildHelper.yq.assetsPath),
-                    Stream.of(buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id))
-            ).filter(FileUtil::isExistFile).distinct().toList();
-
-            List<String> libraryAssets = buildHelper.builtInLibraryManager.getLibraries().parallelStream()
-                    .filter(Jp::hasAssets)
-                    .map(lib -> BuiltInLibraries.getLibraryAssetsPath(lib.getName()))
-                    .peek(this::linkingAssertDirectoryExists)
-                    .toList();
-
-            List<String> localLibraryAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets().parallelStream()
-                    .peek(this::linkingAssertDirectoryExists)
-                    .toList();
-
-            synchronized (args) {
-                Stream.concat(Stream.concat(assetsPaths.stream(),
-                                        libraryAssets.stream()),
-                                localLibraryAssets.stream())
-                        .forEach(path -> {
-                            args.add("-A");
-                            args.add(path);
-                        });
-            }
-
-            // Compiled resources
-            buildHelper.builtInLibraryManager.getLibraries().stream()
-                    .filter(Jp::hasResources)
-                    .forEach(lib -> {
-                        args.add("-R");
-                        args.add(new File(compiledBuiltInLibraryResourcesDirectory,
-                                lib.getName() + ".zip").getAbsolutePath());
-                    });
-
-            File[] localCompiled = new File(resourcesPath).listFiles();
-            if (localCompiled != null) {
-                // Removido .parallel() para evitar race conditions em args.add() e overhead de threads
-                Arrays.stream(localCompiled)
-                        .filter(f -> f.isFile() && !f.getName().equals("project.zip") && !f.getName().equals("project-imported.zip"))
-                        .forEach(f -> {
-                            args.add("-R");
-                            args.add(f.getAbsolutePath());
-                        });
-            }
-
-            File projectZip = new File(resourcesPath, "project.zip");
-            if (projectZip.exists()) {
-                args.add("-R");
-                args.add(projectZip.getAbsolutePath());
-            }
-
-            File importedZip = new File(resourcesPath, "project-imported.zip");
-            if (importedZip.exists()) {
-                args.add("-R");
-                args.add(importedZip.getAbsolutePath());
-            }
-
+        
+            // Processamento otimizado de Assets
+            addAssetsArguments(args);
+        
+            // Processamento otimizado de Recursos Compilados (.zip)
+            addCompiledResourcesArguments(args);
+        
+            // Diretório R.java
             linkingAssertDirectoryExists(buildHelper.yq.rJavaDirectoryPath);
             args.add("--java");
             args.add(buildHelper.yq.rJavaDirectoryPath);
-
-            args.add("--proguard");
-            args.add(buildHelper.yq.proguardAaptRules);
-
+        
+            // Proguard
+            String proguardRules = buildHelper.yq.proguardAaptRules;
+            if (proguardRules != null && !proguardRules.isEmpty()) {
+                args.add("--proguard");
+                args.add(proguardRules);
+            }
+        
+            // Manifest
             linkingAssertFileExists(buildHelper.yq.androidManifestPath);
             args.add("--manifest");
             args.add(buildHelper.yq.androidManifestPath);
-
+        
+            // Pacotes extras
             String extraPackages = buildHelper.getLibraryPackageNames();
             if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
                 args.add(extraPackages);
             }
-
+        
             args.add("-o");
             args.add(buildHelper.yq.resourcesApkPath);
-
+        
             LogUtil.d(TAG + ":l", args.toString());
-
+        
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args);
-            String log = executor.execute(20000);
+            
+            // Execução do binário (Timeout ajustado para evitar erros em projetos maiores)
+            String log = executor.execute(30000);
             if (!log.isEmpty()) {
                 LogUtil.e(TAG + ":l", log);
                 throw new zy(log);
             }
         }
+        
+        /**
+         * Adiciona caminhos de assets evitando parallelStreams e locks de CPU.
+         */
+        private void addAssetsArguments(List<String> args) {
+            // 1. Main & Imported Assets
+            String mainAssets = buildHelper.yq.assetsPath;
+            if (FileUtil.isExistFile(mainAssets)) {
+                args.add("-A");
+                args.add(mainAssets);
+            }
+            
+            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
+            if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
+                args.add("-A");
+                args.add(importedAssets);
+            }
+        
+            // 2. Built-in Libraries Assets
+            for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
+                if (lib.hasAssets()) {
+                    String path = BuiltInLibraries.getLibraryAssetsPath(lib.getName());
+                    linkingAssertDirectoryExists(path);
+                    args.add("-A");
+                    args.add(path);
+                }
+            }
+        
+            // 3. Local Libraries Assets
+            List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
+            for (String path : localAssets) {
+                linkingAssertDirectoryExists(path);
+                args.add("-A");
+                args.add(path);
+            }
+        }
+        
+        /**
+         * Varre arquivos compilados utilizando NIO DirectoryStream para consumo mínimo de I/O e RAM.
+         */
+        private void addCompiledResourcesArguments(List<String> args) {
+            String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
+        
+            // Resources de Bibliotecas Built-in
+            for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
+                if (lib.hasResources()) {
+                    args.add("-R");
+                    args.add(new File(compiledBuiltInLibraryResourcesDirectory, lib.getName() + ".zip").getAbsolutePath());
+                }
+            }
+        
+            // Iteração leve via NIO2 DirectoryStream filtrando apenas .zip
+            Path resDir = Paths.get(resourcesPath);
+            if (Files.exists(resDir)) {
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(resDir, "*.zip")) {
+                    for (Path entry : stream) {
+                        String fileName = entry.getFileName().toString();
+                        if (!fileName.equals("project.zip") && !fileName.equals("project-imported.zip")) {
+                            args.add("-R");
+                            args.add(entry.toAbsolutePath().toString());
+                        }
+                    }
+                } catch (IOException e) {
+                    LogUtil.e(TAG, "Erro ao listar recursos compilados: " + e.getMessage());
+                }
+            }
+        
+            // Resources do projeto
+            Path projectZip = resDir.resolve("project.zip");
+            if (Files.exists(projectZip)) {
+                args.add("-R");
+                args.add(projectZip.toAbsolutePath().toString());
+            }
+        
+            Path importedZip = resDir.resolve("project-imported.zip");
+            if (Files.exists(importedZip)) {
+                args.add("-R");
+                args.add(importedZip.toAbsolutePath().toString());
+            }
+        }
+
 
         private boolean isBuiltInLibraryRecompilingNeeded(File cached) {
             if (cached.exists()) {

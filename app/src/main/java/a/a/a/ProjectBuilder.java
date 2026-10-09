@@ -1038,13 +1038,15 @@ public class ProjectBuilder {
         }
 
         void reset() {
+            outWriter.flush();
+            errWriter.flush();
+        
             outBuffer.setLength(0);
             errBuffer.setLength(0);
             args.clear();
+        
             outStream.reset(outBuffer);
             errStream.reset(errBuffer);
-            outWriter.flush();
-            errWriter.flush();
         }
     }
 

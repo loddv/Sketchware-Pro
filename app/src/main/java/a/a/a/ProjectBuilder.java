@@ -489,9 +489,9 @@ public class ProjectBuilder {
             args.add("--release");
             args.add(releaseVersion);
         }
-        int compilerThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
-        args.add("-threads");
-        args.add(String.valueOf(compilerThreads));
+        // int compilerThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
+        // args.add("-threads");
+        // args.add(String.valueOf(compilerThreads));
         args.add("-nowarn");
         if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
                 build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS,

@@ -25,6 +25,18 @@ public class BuiltInLibraryManager {
         excludedLibraries = ExcludeBuiltInLibrariesActivity.getExcludedLibraries(projectId);
     }
 
+    private boolean isValidLibrary(String libraryName, Optional<BuiltInLibraries.BuiltInLibrary> library) {
+        return library.isPresent() && !excludedLibraries.contains(library.get());
+    }
+
+    private void logLibraryAdded(String libraryName) {
+        Log.d(ProjectBuilder.TAG, "Added built-in library \"" + libraryName + "\" to project's dependencies");
+    }
+
+    private void logLibrarySkipped(String libraryName, String reason) {
+        Log.v(ProjectBuilder.TAG, "Skipped library \"" + libraryName + "\": " + reason);
+    }
+
     /**
      * Add a built-in library to the project libraries list.
      * Won't add a library if it's in the list already,
@@ -33,21 +45,27 @@ public class BuiltInLibraryManager {
      * @param libraryName The built-in library's name, e.g. material-1.0.0
      */
     public void addLibrary(String libraryName) {
+        if (libraryName == null) {
+            logLibrarySkipped("null", "null library name provided");
+            return;
+        }
         Optional<BuiltInLibraries.BuiltInLibrary> library = BuiltInLibraries.BuiltInLibrary.ofName(libraryName);
-        //noinspection SimplifyOptionalCallChains because #isEmpty() isn't available on Android.
-        if (!library.isPresent() || !excludedLibraries.contains(library.get())) {
-            if (!libraryNames.contains(libraryName)) {
-                Log.d(ProjectBuilder.TAG, "Added built-in library \"" + libraryName + "\" to project's dependencies");
-                libraryNames.add(libraryName);
-                libraries.add(new Jp(libraryName));
-                addDependencies(libraryName);
-            } else {
-                Log.v(ProjectBuilder.TAG, "Didn't add built-in library \"" + libraryName + "\" to project's dependencies again");
-            }
-        } else {
-            Log.v(ProjectBuilder.TAG, "Didn't add built-in library \"" + libraryName + "\" to project's dependencies as it's excluded");
-            Log.v(ProjectBuilder.TAG, "Adding its dependencies though");
+        if (library.isEmpty()) {
+            logLibrarySkipped(libraryName, "library not found");
+            return;
+        }
+        if (excludedLibraries.contains(library.get())) {
+            logLibrarySkipped(libraryName, "library is excluded");
             addDependencies(libraryName);
+            return;
+        }
+        if (!libraryNames.contains(libraryName)) {
+            logLibraryAdded(libraryName);
+            libraryNames.add(libraryName);
+            libraries.add(new Jp(libraryName));
+            addDependencies(libraryName);
+        } else {
+            logLibrarySkipped(libraryName, "already added");
         }
     }
 
@@ -59,11 +77,7 @@ public class BuiltInLibraryManager {
 
     public boolean containsLibrary(String libraryName) {
         Optional<BuiltInLibraries.BuiltInLibrary> library = BuiltInLibraries.BuiltInLibrary.ofName(libraryName);
-        //noinspection SimplifyOptionalCallChains because #isEmpty() isn't available on Android.
-        if (!library.isPresent()) {
-            return false;
-        }
-        return libraries.contains(new Jp(library.get().getName()));
+        return library.filter(builtInLibrary -> libraries.contains(new Jp(builtInLibrary.getName()))).isPresent();
     }
 
     /**

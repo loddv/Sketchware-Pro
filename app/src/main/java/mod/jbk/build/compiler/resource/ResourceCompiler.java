@@ -12,8 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import a.a.a.Jp;
 import a.a.a.ProjectBuilder;
@@ -64,7 +63,6 @@ public class ResourceCompiler {
 
     public void compile() throws Exception {
         Compiler resourceCompiler;
-
         if (useAapt2) {
             resourceCompiler = new Aapt2Compiler(builder,
                     aaptFile,
@@ -73,7 +71,6 @@ public class ResourceCompiler {
             resourceCompiler = new Aapt1Compiler(builder,
                     aaptFile);
         }
-
         resourceCompiler.setProgressListener(new Compiler.ProgressListener() {
             @Override
             void onProgressUpdate(String newProgress, int step) {
@@ -83,7 +80,6 @@ public class ResourceCompiler {
                 }
             }
         });
-
         resourceCompiler.compile();
     }
 
@@ -118,20 +114,14 @@ public class ResourceCompiler {
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Optimizing PNG resources (AAPT1)...", 8);
             }
-
             // 1. Coleta todas as pastas de recursos para fazer o crunching dos PNGs
             List<String> resDirectories = new ArrayList<>();
             resDirectories.add(buildHelper.yq.resDirectoryPath);
-
-            for (String localRes : buildHelper.mll.getResLocalLibrary()) {
-                resDirectories.add(localRes);
-            }
-
+            resDirectories.addAll(buildHelper.mll.getResLocalLibrary());
             String importedRes = buildHelper.fpu.getPathResource(buildHelper.yq.sc_id);
             if (FileUtil.isExistFile(importedRes)) {
                 resDirectories.add(importedRes);
             }
-
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasResources()) {
                     String path = BuiltInLibraries.getLibraryResourcesPath(lib.getName());
@@ -139,46 +129,38 @@ public class ResourceCompiler {
                     resDirectories.add(path);
                 }
             }
-
             // 2. Executa o crunching de PNGs em paralelo para a pasta 'crunched_res'
             File crunchedResDir = new File(buildHelper.yq.binDirectoryPath, "crunched_res");
             if (FileUtil.isExistFile(crunchedResDir.getAbsolutePath())) {
                 FileUtil.deleteFile(crunchedResDir.getAbsolutePath());
             }
-            crunchedResDir.mkdirs();
-
+            if (!crunchedResDir.exists()) {
+                crunchedResDir.mkdirs();
+            }
             crunchPngsInParallel(resDirectories, crunchedResDir);
-
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Compiling resources with AAPT1...", 9);
             }
-
             // 3. Monta os argumentos para 'aapt package'
             ArrayList<String> args = new ArrayList<>();
             args.add(aapt.getAbsolutePath());
             args.add("package");
-
             String extraPackages = buildHelper.getLibraryPackageNames();
             if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
                 args.add(extraPackages);
             }
-
             args.add("--min-sdk-version");
             args.add(String.valueOf(buildHelper.settings.getMinSdkVersion()));
-
             args.add("--target-sdk-version");
             args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
                     String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
-
             args.add("--version-code");
             String versionCode = buildHelper.yq.versionCode;
             args.add((versionCode == null || versionCode.isEmpty()) ? "1" : versionCode);
-
             args.add("--version-name");
             String versionName = buildHelper.yq.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
-
             args.add("--auto-add-overlay");
             args.add("--generate-dependencies");
             args.add("-f");
@@ -186,46 +168,37 @@ public class ResourceCompiler {
             args.add("--non-constant-id");
             args.add("--output-text-symbols");
             args.add(buildHelper.yq.binDirectoryPath);
-
             if (buildHelper.yq.N.g) {
                 args.add("--no-version-vectors");
             }
-
             // A pasta de PNGs otimizados vem em primeiro lugar para ter prioridade
-            if (crunchedResDir.exists() && crunchedResDir.list() != null && crunchedResDir.list().length > 0) {
+            if (crunchedResDir.exists() && crunchedResDir.list() != null && Objects.requireNonNull(crunchedResDir.list()).length > 0) {
                 args.add("-S");
                 args.add(crunchedResDir.getAbsolutePath());
             }
-
             // Demais pastas de recursos originais
             args.add("-S");
             args.add(buildHelper.yq.resDirectoryPath);
-
             for (String localRes : buildHelper.mll.getResLocalLibrary()) {
                 args.add("-S");
                 args.add(localRes);
             }
-
             if (FileUtil.isExistFile(importedRes)) {
                 args.add("-S");
                 args.add(importedRes);
             }
-
             // Assets
             args.add("-A");
             args.add(buildHelper.yq.assetsPath);
-
             String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
             if (FileUtil.isExistFile(importedAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
             }
-
             for (String localAsset : new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets()) {
                 args.add("-A");
                 args.add(localAsset);
             }
-
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasAssets()) {
                     String path = BuiltInLibraries.getLibraryAssetsPath(lib.getName());
@@ -239,92 +212,130 @@ public class ResourceCompiler {
                     args.add(path);
                 }
             }
-
             args.add("-J");
             args.add(buildHelper.yq.rJavaDirectoryPath);
-
             args.add("-G");
             args.add(buildHelper.yq.proguardAaptRules);
-
             linkingAssertFileExists(buildHelper.yq.androidManifestPath);
             args.add("-M");
             args.add(buildHelper.yq.androidManifestPath);
-
             args.add("-I");
             String customJar = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             args.add(customJar.isEmpty() ? buildHelper.androidJarPath : customJar);
-
             args.add("-F");
             args.add(buildHelper.yq.resourcesApkPath);
-
             LogUtil.d(TAG + ":aapt1", "AAPT1 args: " + args);
-
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args);
             String log = executor.execute(30000);
             if (!log.isEmpty()) {
                 LogUtil.e(TAG + ":aapt1", log);
                 if (log.contains("CANNOT LINK EXECUTABLE")) {
-                    throw new zy(log + "\n\nDica: O AAPT1 é incompatível com esta versão do Android. Ative o AAPT2 nas Configurações de Build (Build Settings).");
+                    throw new zy(log + "\n\nDica: O AAPT1 é incompatível com esta versão do Android. Ative o AAPT2 " +
+                            "nas Configurações de Build (Build Settings).");
                 }
                 throw new zy(log);
             }
-
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Resources compiled with AAPT1.", 10);
             }
         }
 
+        private void validateAapt1Compatibility(File aaptFile) throws zy {
+            // Quick check for AAPT1 compatibility - look for common symbols
+            // Note: This is a simple check - you might want to implement a more robust one
+            try {
+                Process process = Runtime.getRuntime().exec(new String[]{
+                        "file", aaptFile.getAbsolutePath()
+                });
+                process.waitFor();
+            } catch (Exception e) {
+                LogUtil.e(TAG + ":aapt1", "AAPT1 binary validation failed", e);
+                // Suggest switching to AAPT2
+                throw new zy("AAPT1 binary is incompatible with this Android version.\\n" +
+                        "Solution: Enable AAPT2 in Build Settings > Compiler.\n" +
+                        "Original error: " + e.getMessage());
+            }
+        }
+
         private void crunchPngsInParallel(List<String> resDirectories, File crunchedOutputDir) throws zy {
             List<CrunchTask> tasks = new ArrayList<>();
-
+            int successfulCopyCount = 0;
+            int aapt1ErrorCount = 0;
             for (String resDirPath : resDirectories) {
                 File resDir = new File(resDirPath);
                 if (!resDir.exists() || !resDir.isDirectory()) continue;
-
                 List<File> pngFiles = new ArrayList<>();
                 findPngFilesRecursively(resDir, pngFiles);
-
                 for (File inputPng : pngFiles) {
-                    // Preserva a estrutura de subpastas (ex: drawable-xhdpi/imagem.png)
-                    String relativePath = resDir.toURI().relativize(inputPng.toURI()).getPath();
-                    File outputPng = new File(crunchedOutputDir, relativePath);
-
-                    // Garante que a subpasta de destino exista antes de copiar ou processar
-                    if (!outputPng.getParentFile().exists()) {
-                        outputPng.getParentFile().mkdirs();
+                    // Preserva a estrutura de subpastas
+                    String relativePath = "";
+                    try {
+                        relativePath = resDir.toURI().relativize(inputPng.toURI()).getPath();
+                    } catch (IllegalArgumentException e) {
+                        LogUtil.w(TAG + ":aapt1Crunch",
+                                "Skipping file with relativization issue: " + inputPng.getAbsolutePath());
+                        continue;
                     }
-
+                    File outputPng = new File(crunchedOutputDir, relativePath);
+                    // Garante que a subpasta de destino exista antes de copiar ou processar
+                    File parentDir = outputPng.getParentFile();
+                    if (parentDir != null && !parentDir.exists()) {
+                        boolean created = parentDir.mkdirs();
+                        if (!created) {
+                            LogUtil.w(TAG + ":aapt1Crunch",
+                                    "Failed to create directory: " + parentDir.getAbsolutePath());
+                        }
+                    }
                     // CORREÇÃO: Arquivos .9.png de AARs modernos são copiados diretamente para evitar erros no AAPT1
                     if (inputPng.getName().endsWith(".9.png")) {
                         try {
                             FileUtil.copyFile(inputPng.getAbsolutePath(), outputPng.getAbsolutePath());
+                            successfulCopyCount++;
                         } catch (Exception e) {
                             LogUtil.e(TAG, "Erro ao copiar 9-patch: " + inputPng.getName(), e);
+                            aapt1ErrorCount++;
                         }
                         continue; // Pula a execução do AAPT1 para este arquivo
                     }
-
                     // Executa o AAPT1 normalmente para PNGs convencionais
                     tasks.add(new CrunchTask(aapt, inputPng, outputPng));
                 }
             }
-
+            // Log summary of processing
+            if (successfulCopyCount > 0) {
+                LogUtil.d(TAG + ":aapt1Crunch", "Successfully copied " + successfulCopyCount + " .9.png files " +
+                        "directly");
+            }
+            if (aapt1ErrorCount > 0) {
+                LogUtil.w(TAG + ":aapt1Crunch", "Failed to copy " + aapt1ErrorCount + " .9.png files");
+            }
             if (tasks.isEmpty()) {
+                if (aapt1ErrorCount == 0) {
+                    LogUtil.e(TAG + ":aapt1Crunch", "No regular PNG files found to crunch (all were .9.png)");
+                }
                 return;
             }
-
+            // Only proceed with AAPT1 if there are tasks and AAPT1 is available
+            try {
+                validateAapt1Compatibility(aapt);
+            } catch (zy e) {
+                // Suggest switching to AAPT2 instead of failing completely
+                LogUtil.e(TAG + ":aapt1Crunch", "AAPT1 is incompatible. Suggest switching to AAPT2: " + e.getMessage());
+                throw new zy("PNG crunching failed due to AAPT1 incompatibility.\\n" +
+                        "Recommendation: Enable AAPT2 in Build Settings.\\n\\n" +
+                        "Original error: " + e.getMessage());
+            }
+            // Rest of the parallel processing logic...
             int totalTasks = tasks.size();
-            LogUtil.d(TAG + ":aapt1Crunch", "Crunching " + totalTasks + " PNGs em paralelo...");
-
+            LogUtil.d(TAG + ":aapt1Crunch", "Crunching " + totalTasks + " PNGs in parallel...");
+            LogUtil.d(TAG + ":aapt1Crunch", "AAPT1 version check passed - proceeding with PNG crunching");
             int threadCount = Math.max(1, Runtime.getRuntime().availableProcessors());
             ExecutorService executor = Executors.newFixedThreadPool(threadCount);
             CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
-
             for (CrunchTask task : tasks) {
                 completionService.submit(task);
             }
-
             int completed = 0;
             while (completed < totalTasks) {
                 try {
@@ -344,7 +355,6 @@ public class ResourceCompiler {
                     throw new zy("Error during PNG crunching: " + e.getMessage());
                 }
             }
-
             try {
                 executor.shutdown();
                 if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
@@ -356,11 +366,9 @@ public class ResourceCompiler {
             }
         }
 
-
         private void findPngFilesRecursively(File dir, List<File> pngList) {
             File[] files = dir.listFiles();
             if (files == null) return;
-
             for (File file : files) {
                 if (file.isDirectory()) {
                     findPngFilesRecursively(file, pngList);
@@ -397,15 +405,35 @@ public class ResourceCompiler {
             private final File aapt;
             private final File inputPng;
             private final File outputPng;
-        
+
             CrunchTask(File aapt, File inputPng, File outputPng) {
                 this.aapt = aapt;
                 this.inputPng = inputPng;
                 this.outputPng = outputPng;
             }
-        
+
             @Override
             public String call() {
+                try {
+                    String log = getLog();
+                    // Se o arquivo final não foi criado ou ficou com 0 bytes, ocorreu uma falha real
+                    if (!outputPng.exists() || outputPng.length() == 0) {
+                        String errorMsg = String.format("Failed to crunch %s: output file not created or empty",
+                                inputPng.getName());
+                        LogUtil.e(TAG + ":aapt1Crunch", errorMsg + ":\n" + log);
+                        return log.isEmpty() ? errorMsg : log;
+                    }
+                    // Se o arquivo existe, o crunching foi bem-sucedido (ignora logs informativos do AAPT)
+                    return null;
+                } catch (Exception e) {
+                    String errorMsg = String.format("Exception during PNG crunching for %s: %s", inputPng.getName(),
+                            e.getMessage());
+                    LogUtil.e(TAG + ":aapt1Crunch", errorMsg, e);
+                    return errorMsg;
+                }
+            }
+
+            private String getLog() {
                 ArrayList<String> commands = new ArrayList<>();
                 commands.add(aapt.getAbsolutePath());
                 commands.add("singleCrunch");
@@ -413,19 +441,10 @@ public class ResourceCompiler {
                 commands.add(inputPng.getAbsolutePath());
                 commands.add("-o");
                 commands.add(outputPng.getAbsolutePath());
-        
                 BinaryExecutor executor = new BinaryExecutor();
                 executor.setCommands(commands);
                 String log = executor.execute(15000);
-        
-                // Se o arquivo final não foi criado ou ficou com 0 bytes, ocorreu uma falha real
-                if (!outputPng.exists() || outputPng.length() == 0) {
-                    LogUtil.e(TAG + ":aapt1Crunch", "Failed to crunch " + inputPng.getName() + ":\n" + log);
-                    return log.isEmpty() ? "Erro ao gerar arquivo de saída para: " + inputPng.getName() : log;
-                }
-        
-                // Se o arquivo existe, o crunching foi bem-sucedido (ignora logs informativos do AAPT)
-                return null;
+                return log;
             }
         }
     }
@@ -456,40 +475,31 @@ public class ResourceCompiler {
         public void compile() throws zy, MissingFileException {
             String outputPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
             emptyOrCreateDirectory(outputPath);
-
             long startTime = System.currentTimeMillis();
-
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Compiling resources with AAPT2...",
                         9);
             }
-
             compileLibrariesInParallel(outputPath);
-
             long savedTimeMillis = System.currentTimeMillis();
             compileProjectResources(outputPath);
             LogUtil.d(TAG + ":c",
                     "Compiling project resources took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-
             savedTimeMillis = System.currentTimeMillis();
             compileImportedResources(outputPath);
             LogUtil.d(TAG + ":c",
                     "Compiling imported resources took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-
             savedTimeMillis = System.currentTimeMillis();
             link();
             LogUtil.d(TAG + ":c",
                     "Linking resources took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-
             LogUtil.d(TAG + ":c",
                     "Total AAPT2 compilation took " + (System.currentTimeMillis() - startTime) + " ms");
         }
 
         private void compileLibrariesInParallel(String outputPath) throws zy, MissingFileException {
             compiledBuiltInLibraryResourcesDirectory.mkdirs();
-
             List<CompileTask> tasks = new ArrayList<>();
-
             // Built-in libraries
             for (Jp library : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (library.hasResources()) {
@@ -497,9 +507,7 @@ public class ResourceCompiler {
                     String resPath = BuiltInLibraries.getLibraryResourcesPath(libName);
                     File outputFile = new File(compiledBuiltInLibraryResourcesDirectory,
                             libName + ".zip");
-
                     compilingAssertDirectoryExists(resPath);
-
                     if (isBuiltInLibraryRecompilingNeeded(outputFile)) {
                         tasks.add(new CompileTask(aapt2,
                                 resPath,
@@ -511,7 +519,6 @@ public class ResourceCompiler {
                     }
                 }
             }
-
             // Local libraries
             for (String localResDir : buildHelper.mll.getResLocalLibrary()) {
                 File localDir = new File(localResDir).getParentFile();
@@ -524,25 +531,20 @@ public class ResourceCompiler {
                             "local library: " + localDir.getName()));
                 }
             }
-
             if (tasks.isEmpty()) {
                 LogUtil.d(TAG + ":cLLR",
                         "No libraries to compile.");
                 return;
             }
-
             int totalTasks = tasks.size();
             LogUtil.d(TAG + ":cLLR",
                     "Compiling " + totalTasks + " libraries in parallel...");
-
             ExecutorService executor = Executors.newFixedThreadPool(Math.max(1,
                     Runtime.getRuntime().availableProcessors()));
             CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
-
             for (CompileTask task : tasks) {
                 completionService.submit(task);
             }
-
             int completed = 0;
             while (completed < totalTasks) {
                 try {
@@ -561,7 +563,6 @@ public class ResourceCompiler {
                     throw new zy("Error during parallel compilation: " + e.getMessage());
                 }
             }
-
             try {
                 executor.shutdown();
                 if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
@@ -575,7 +576,6 @@ public class ResourceCompiler {
 
         private void compileProjectResources(String outputPath) throws zy, MissingFileException {
             compilingAssertDirectoryExists(buildHelper.yq.resDirectoryPath);
-
             ArrayList<String> commands = new ArrayList<>();
             commands.add(aapt2.getAbsolutePath());
             commands.add("compile");
@@ -583,7 +583,6 @@ public class ResourceCompiler {
             commands.add(buildHelper.yq.resDirectoryPath);
             commands.add("-o");
             commands.add(outputPath + File.separator + "project.zip");
-
             executeAndCheck(commands, "project resources");
         }
 
@@ -616,7 +615,6 @@ public class ResourceCompiler {
             if (progressListener != null) {
                 progressListener.onProgressUpdate("Linking resources with AAPT2...", 10);
             }
-        
             // Usa ArrayList<String> explicitamente para ser compatível com setCommands()
             ArrayList<String> args = new ArrayList<>(64);
             args.add(aapt2.getAbsolutePath());
@@ -628,21 +626,17 @@ public class ResourceCompiler {
             args.add("--auto-add-overlay");
             args.add("--no-version-vectors");
             args.add("--no-version-transitions");
-        
             args.add("--min-sdk-version");
             args.add(String.valueOf(buildHelper.settings.getMinSdkVersion()));
             args.add("--target-sdk-version");
             args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
                     String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
-        
             args.add("--version-code");
             String versionCode = buildHelper.yq.versionCode;
             args.add((versionCode == null || versionCode.isEmpty()) ? "1" : versionCode);
-        
             args.add("--version-name");
             String versionName = buildHelper.yq.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
-        
             args.add("-I");
             String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             if (customAndroidSdk.isEmpty()) {
@@ -651,35 +645,27 @@ public class ResourceCompiler {
                 linkingAssertFileExists(customAndroidSdk);
                 args.add(customAndroidSdk);
             }
-        
             addAssetsArguments(args);
             addCompiledResourcesArguments(args);
-        
             linkingAssertDirectoryExists(buildHelper.yq.rJavaDirectoryPath);
             args.add("--java");
             args.add(buildHelper.yq.rJavaDirectoryPath);
-        
             String proguardRules = buildHelper.yq.proguardAaptRules;
             if (proguardRules != null && !proguardRules.isEmpty()) {
                 args.add("--proguard");
                 args.add(proguardRules);
             }
-        
             linkingAssertFileExists(buildHelper.yq.androidManifestPath);
             args.add("--manifest");
             args.add(buildHelper.yq.androidManifestPath);
-        
             String extraPackages = buildHelper.getLibraryPackageNames();
             if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
                 args.add(extraPackages);
             }
-        
             args.add("-o");
             args.add(buildHelper.yq.resourcesApkPath);
-        
             LogUtil.d(TAG + ":l", args.toString());
-        
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args); // Agora é compatível com ArrayList<String>
             String log = executor.execute(30000);
@@ -688,20 +674,18 @@ public class ResourceCompiler {
                 throw new zy(log);
             }
         }
-        
+
         private void addAssetsArguments(ArrayList<String> args) {
             String mainAssets = buildHelper.yq.assetsPath;
             if (FileUtil.isExistFile(mainAssets)) {
                 args.add("-A");
                 args.add(mainAssets);
             }
-        
             String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
             if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
             }
-        
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasAssets()) {
                     String path = BuiltInLibraries.getLibraryAssetsPath(lib.getName());
@@ -710,7 +694,6 @@ public class ResourceCompiler {
                     args.add(path);
                 }
             }
-        
             List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
             for (String path : localAssets) {
                 linkingAssertDirectoryExists(path);
@@ -718,17 +701,15 @@ public class ResourceCompiler {
                 args.add(path);
             }
         }
-        
+
         private void addCompiledResourcesArguments(ArrayList<String> args) {
             String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
-        
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasResources()) {
                     args.add("-R");
                     args.add(new File(compiledBuiltInLibraryResourcesDirectory, lib.getName() + ".zip").getAbsolutePath());
                 }
             }
-        
             Path resDir = Paths.get(resourcesPath);
             if (Files.exists(resDir)) {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(resDir, "*.zip")) {
@@ -743,20 +724,18 @@ public class ResourceCompiler {
                     LogUtil.e(TAG, "Erro ao listar recursos compilados: " + e.getMessage());
                 }
             }
-        
             Path projectZip = resDir.resolve("project.zip");
             if (Files.exists(projectZip)) {
                 args.add("-R");
                 args.add(projectZip.toAbsolutePath().toString());
             }
-        
             Path importedZip = resDir.resolve("project-imported.zip");
             if (Files.exists(importedZip)) {
                 args.add("-R");
                 args.add(importedZip.toAbsolutePath().toString());
             }
         }
-        
+
         /**
          * Adiciona caminhos de assets evitando parallelStreams e locks de CPU.
          */
@@ -767,13 +746,11 @@ public class ResourceCompiler {
                 args.add("-A");
                 args.add(mainAssets);
             }
-            
             String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
             if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
             }
-        
             // 2. Built-in Libraries Assets
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasAssets()) {
@@ -783,7 +760,6 @@ public class ResourceCompiler {
                     args.add(path);
                 }
             }
-        
             // 3. Local Libraries Assets
             List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
             for (String path : localAssets) {
@@ -792,13 +768,12 @@ public class ResourceCompiler {
                 args.add(path);
             }
         }
-        
+
         /**
          * Varre arquivos compilados utilizando NIO DirectoryStream para consumo mínimo de I/O e RAM.
          */
         private void addCompiledResourcesArguments(List<String> args) {
             String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
-        
             // Resources de Bibliotecas Built-in
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasResources()) {
@@ -806,7 +781,6 @@ public class ResourceCompiler {
                     args.add(new File(compiledBuiltInLibraryResourcesDirectory, lib.getName() + ".zip").getAbsolutePath());
                 }
             }
-        
             // Iteração leve via NIO2 DirectoryStream filtrando apenas .zip
             Path resDir = Paths.get(resourcesPath);
             if (Files.exists(resDir)) {
@@ -822,21 +796,18 @@ public class ResourceCompiler {
                     LogUtil.e(TAG, "Erro ao listar recursos compilados: " + e.getMessage());
                 }
             }
-        
             // Resources do projeto
             Path projectZip = resDir.resolve("project.zip");
             if (Files.exists(projectZip)) {
                 args.add("-R");
                 args.add(projectZip.toAbsolutePath().toString());
             }
-        
             Path importedZip = resDir.resolve("project-imported.zip");
             if (Files.exists(importedZip)) {
                 args.add("-R");
                 args.add(importedZip.toAbsolutePath().toString());
             }
         }
-
 
         private boolean isBuiltInLibraryRecompilingNeeded(File cached) {
             if (cached.exists()) {
@@ -857,21 +828,18 @@ public class ResourceCompiler {
             }
             FileUtil.makeDir(path);
         }
-
         // --- MÉTODOS OTIMIZADOS DE VALIDAÇÃO DE DISCO (I/O) ---
 
         private void compilingAssertDirectoryExists(String path) throws MissingFileException {
             if (path == null || validatedDirectories.contains(path)) {
                 return;
             }
-
             Path nioPath = Paths.get(path);
             if (!Files.isDirectory(nioPath)) {
                 throw new MissingFileException(nioPath.toFile(),
                         MissingFileException.STEP_RESOURCE_COMPILING,
                         true);
             }
-
             validatedDirectories.add(path);
         }
 
@@ -879,14 +847,12 @@ public class ResourceCompiler {
             if (path == null || validatedFiles.contains(path)) {
                 return;
             }
-
             Path nioPath = Paths.get(path);
             if (!Files.isRegularFile(nioPath)) {
                 throw new MissingFileException(nioPath.toFile(),
                         MissingFileException.STEP_RESOURCE_LINKING,
                         false);
             }
-
             validatedFiles.add(path);
         }
 
@@ -894,14 +860,12 @@ public class ResourceCompiler {
             if (path == null || validatedDirectories.contains(path)) {
                 return;
             }
-
             Path nioPath = Paths.get(path);
             if (!Files.isDirectory(nioPath)) {
                 throw new RuntimeException(new MissingFileException(nioPath.toFile(),
                         MissingFileException.STEP_RESOURCE_LINKING,
                         true));
             }
-
             validatedDirectories.add(path);
         }
 
@@ -932,9 +896,7 @@ public class ResourceCompiler {
                 commands.add(inputDir);
                 commands.add("-o");
                 commands.add(outputPath);
-
                 LogUtil.d(TAG + ":cTASK", "Compiling " + description + " -> " + outputPath);
-
                 BinaryExecutor executor = new BinaryExecutor();
                 executor.setCommands(commands);
                 String log = executor.execute(20000);

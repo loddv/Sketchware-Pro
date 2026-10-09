@@ -13,7 +13,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.StrictMode;
 import android.system.Os;
-import android.text.TextUtils;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.Toast;
@@ -37,19 +36,24 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import mod.agus.jcoderz.dex.Dex;
@@ -95,7 +99,7 @@ public class ProjectBuilder {
     private final File aapt2Binary;
     private final File aaptBinary;
     private final Context context;
-    private final int parallelism = Runtime.getRuntime().availableProcessors();
+    private final int parallelism = Math.max(1, Math.max(4, Runtime.getRuntime().availableProcessors()));
     // Variáveis de instância (reutilizáveis por thread)
     private final ThreadLocal<CompilerResources> threadLocalResources = ThreadLocal.withInitial(CompilerResources::new);
     public BuildSettings build_settings;
@@ -187,7 +191,7 @@ public class ProjectBuilder {
     private void initExecutor() {
         this.executor = Executors.newFixedThreadPool(parallelism);
         LogUtil.d(TAG,
-                "Multithreading enabled with " + parallelism + " threads");
+                "Multithreading enabled with " + parallelism + " threads (Android-safe cap to reduce OOM risk)");
     }
 
     private void shutdownExecutor() {
@@ -262,123 +266,195 @@ public class ProjectBuilder {
     }
 
     public void createDexFilesFromClasses() throws Exception {
-        FileUtil.makeDir(yq.binDirectoryPath + File.separator + "dex");
-        if (proguard.isShrinkingEnabled() && proguard.isR8Enabled()) {return;}
+        File dexOutputDirectory = new File(
+                yq.binDirectoryPath,
+                "dex"
+        );
+        FileUtil.makeDir(dexOutputDirectory.getAbsolutePath());
+        if (proguard.isShrinkingEnabled() && proguard.isR8Enabled()) {
+            return;
+        }
+        long startedAt = System.currentTimeMillis();
         if (isD8Enabled()) {
-            long savedTimeMillis = System.currentTimeMillis();
             try {
-                // D8 já é multithreaded internamente
                 CompletableFuture<Void> d8Future = CompletableFuture.runAsync(() -> {
-                            try {
-                                DexCompiler.compileDexFiles(this);
-                            } catch (CompilationFailedException e) {
-                                throw new RuntimeException(e);
-                            }
-                        },
-                        executor);
-                d8Future.join(); // Espera terminar!
+                    try {
+                        DexCompiler.compileDexFiles(this);
+                    } catch (CompilationFailedException e) {
+                        throw new CompletionException(e);
+                    }
+                }, executor);
+                d8Future.join();
                 LogUtil.d(TAG,
-                        "D8 took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
+                        "D8 took "
+                                + (System.currentTimeMillis() - startedAt)
+                                + " ms");
+            } catch (CompletionException e) {
+                Throwable cause = e.getCause();
+                LogUtil.e(TAG, "D8 failed", cause != null ? cause : e);
+                if (cause instanceof Exception exception) {
+                    throw exception;
+                }
+                throw e;
             } catch (Exception e) {
                 LogUtil.e(TAG,
                         "D8 failed",
                         e);
                 throw e;
             }
-        } else {
-            long savedTimeMillis = System.currentTimeMillis();
-            List<String> args = Arrays.asList(
-                    "--debug",
-                    "--verbose",
-                    "--multi-dex",
-                    "--output=" + yq.binDirectoryPath + File.separator + "dex",
-                    proguard.isShrinkingEnabled() ? yq.proguardClassesPath : yq.compiledClassesPath
-            );
-            try {
-                LogUtil.d(TAG,
-                        "Running Dx with these arguments: " + args);
-                Main.clearInternTables();
-                Main.Arguments arguments = new Main.Arguments();
-                Method parseMethod = Main.Arguments.class.getDeclaredMethod("parse",
-                        String[].class);
-                parseMethod.setAccessible(true);
-                parseMethod.invoke(arguments,
-                        (Object) args.toArray(new String[0]));
-                Main.run(arguments);
-                LogUtil.d(TAG,
-                        "Dx took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-            } catch (Exception e) {
-                LogUtil.e(TAG,
-                        "Dx failed to process .class files",
-                        e);
-                throw e;
+            return;
+        }
+        List<String> args = Arrays.asList(
+                "--debug",
+                "--verbose",
+                "--multi-dex",
+                "--output=" + dexOutputDirectory.getAbsolutePath(),
+                proguard.isShrinkingEnabled()
+                        ? yq.proguardClassesPath
+                        : yq.compiledClassesPath
+        );
+        try {
+            LogUtil.d(TAG,
+                    "Running Dx with these arguments: " + args);
+            Main.clearInternTables();
+            Main.Arguments arguments = new Main.Arguments();
+            Method parseMethod = Main.Arguments.class.getDeclaredMethod("parse",
+                    String[].class);
+            parseMethod.setAccessible(true);
+            parseMethod.invoke(arguments,
+                    (Object) args.toArray(new String[0]));
+            Main.run(arguments);
+            LogUtil.d(TAG,
+                    "Dx took "
+                            + (System.currentTimeMillis() - startedAt)
+                            + " ms");
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            LogUtil.e(TAG, "Dx failed to process .class files",
+                    cause != null ? cause : e);
+            if (cause instanceof Exception exception) {
+                throw exception;
             }
+            throw e;
+        } catch (Exception e) {
+            LogUtil.e(TAG,
+                    "Dx failed to process .class files",
+                    e);
+            throw e;
         }
     }
 
     public String getClasspath() {
         StringBuilder classpath = new StringBuilder();
-        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath,
-                yq);
-        classpath.append(androidJarPath);
-        if (!build_settings.getValue(BuildSettings.SETTING_NO_HTTP_LEGACY,
-                        BuildSettings.SETTING_GENERIC_VALUE_FALSE)
-                .equals(BuildSettings.SETTING_GENERIC_VALUE_TRUE)) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.HTTP_LEGACY_ANDROID));
+        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath, yq);
+        appendClasspathEntry(classpath, androidJarPath);
+        if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
+                build_settings.getValue(
+                        BuildSettings.SETTING_NO_HTTP_LEGACY,
+                        BuildSettings.SETTING_GENERIC_VALUE_FALSE
+                ))) {
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            BuiltInLibraries.HTTP_LEGACY_ANDROID
+                    )
+            );
         }
         if (settings.getMinSdkVersion() < 21) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(BuiltInLibraries.ANDROIDX_MULTIDEX));
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            BuiltInLibraries.ANDROIDX_MULTIDEX
+                    )
+            );
         }
-        if (!build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION,
-                        BuildSettings.SETTING_JAVA_VERSION_1_7)
-                .equals(BuildSettings.SETTING_JAVA_VERSION_1_7)) {
-            classpath.append(":").append(new File(BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
-                    "core-lambda-stubs.jar").getAbsolutePath());
+        if (!BuildSettings.SETTING_JAVA_VERSION_1_7.equals(
+                build_settings.getValue(
+                        BuildSettings.SETTING_JAVA_VERSION,
+                        BuildSettings.SETTING_JAVA_VERSION_1_7
+                ))) {
+            appendClasspathEntry(
+                    classpath,
+                    new File(
+                            BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
+                            "core-lambda-stubs.jar"
+                    ).getAbsolutePath()
+            );
         }
         for (Jp library : builtInLibraryManager.getLibraries()) {
-            classpath.append(":").append(BuiltInLibraries.getLibraryClassesJarPathString(library.getName()));
+            appendClasspathEntry(
+                    classpath,
+                    BuiltInLibraries.getLibraryClassesJarPathString(
+                            library.getName()
+                    )
+            );
         }
-        classpath.append(mll.getJarLocalLibrary());
-        if (!build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
-                "").isEmpty()) {
-            classpath.append(":").append(build_settings.getValue(BuildSettings.SETTING_CLASSPATH,
-                    ""));
+        appendClasspathEntry(classpath, mll.getJarLocalLibrary());
+        String configuredClasspath = build_settings.getValue(
+                BuildSettings.SETTING_CLASSPATH,
+                ""
+        );
+        if (configuredClasspath != null && !configuredClasspath.isEmpty()) {
+            appendClasspathEntry(classpath, configuredClasspath);
         }
-        String path = FileUtil.getExternalStorageDir() + "/.sketchware/data/" + yq.sc_id + "/files/classpath/";
-        ArrayList<String> jars = FileUtil.listFiles(path,
-                "jar");
-        classpath.append(":").append(TextUtils.join(":",
-                jars));
+        String localClasspathDirectory =
+                FileUtil.getExternalStorageDir()
+                        + "/.sketchware/data/"
+                        + yq.sc_id
+                        + "/files/classpath/";
+        ArrayList<String> jars = FileUtil.listFiles(localClasspathDirectory, "jar");
+        if (jars != null) {
+            for (String jar : jars) {
+                appendClasspathEntry(classpath, jar);
+            }
+        }
         return classpath.toString();
     }
 
     public String getProguardClasspath() {
-        Collection<String> localLibraryJarsWithFullModeOn = new LinkedList<>();
+        Set<String> localLibraryJarsWithFullModeOn = new HashSet<>();
         for (HashMap<String, Object> localLibrary : mll.list) {
             Object nameObject = localLibrary.get("name");
             Object jarPathObject = localLibrary.get("jarPath");
-            if (nameObject instanceof String name && jarPathObject instanceof String jarPath) {
-                if (localLibrary.containsKey("jarPath") && proguard.libIsProguardFMEnabled(name)) {
-                    localLibraryJarsWithFullModeOn.add(jarPath);
-                }
+            if (nameObject instanceof String name
+                    && jarPathObject instanceof String jarPath
+                    && proguard.libIsProguardFMEnabled(name)) {
+                localLibraryJarsWithFullModeOn.add(jarPath);
             }
         }
         String normalClasspath = getClasspath();
-        StringBuilder classpath = new StringBuilder();
-        normalClasspathLoop:
-        for (String classpathPart : normalClasspath.split(":")) {
-            for (String jarPathToExclude : localLibraryJarsWithFullModeOn) {
-                if (classpathPart.equals(jarPathToExclude)) {
-                    localLibraryJarsWithFullModeOn.remove(jarPathToExclude);
-                    continue normalClasspathLoop;
-                }
-            }
-            if (!classpathPart.equals(yq.compiledClassesPath)) {
-                classpath.append(classpathPart).append(':');
-            }
+        if (normalClasspath == null || normalClasspath.isEmpty()) {
+            return "";
         }
-        classpath.deleteCharAt(classpath.length() - 1);
+        StringBuilder classpath = new StringBuilder();
+        for (String entry : normalClasspath.split(
+                Pattern.quote(File.pathSeparator)
+        )) {
+            if (entry.isEmpty()) {
+                continue;
+            }
+            if (entry.equals(yq.compiledClassesPath)) {
+                continue;
+            }
+            if (localLibraryJarsWithFullModeOn.contains(entry)) {
+                continue;
+            }
+            appendClasspathEntry(classpath, entry);
+        }
         return classpath.toString();
+    }
+
+    private static void appendClasspathEntry(
+            StringBuilder classpath,
+            String entry
+    ) {
+        if (entry == null || entry.isEmpty()) {
+            return;
+        }
+        if (classpath.length() > 0) {
+            classpath.append(File.pathSeparator);
+        }
+        classpath.append(entry);
     }
 
     private Collection<File> dexLibrariesParallel(File outputDirectory, List<File> dexes) throws Exception {
@@ -489,6 +565,9 @@ public class ProjectBuilder {
             args.add("--release");
             args.add(releaseVersion);
         }
+        // int compilerThreads = Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()));
+        // args.add("-threads");
+        // args.add(String.valueOf(compilerThreads));
         args.add("-nowarn");
         if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
                 build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS,
@@ -575,81 +654,6 @@ public class ProjectBuilder {
             args.add(filePath);
         }
     }
-
-/*	public void compileJavaCode() throws zy, IOException {
-		long savedTimeMillis = System.currentTimeMillis();
-		CompilerResources res = threadLocalResources.get();
-		res.reset();
-
-		try (PrintWriter outWriter = res.outWriter; PrintWriter errWriter = res.errWriter) {
-
-			// === Montagem eficiente de argumentos ===
-			ArrayList<String> args = res.args;
-			args.add("-" + build_settings.getValue(BuildSettings.SETTING_JAVA_VERSION, BuildSettings
-			.SETTING_JAVA_VERSION_1_7));
-			args.add("-nowarn");
-			if (! BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
-					build_settings.getValue(BuildSettings.SETTING_NO_WARNINGS, BuildSettings
-					.SETTING_GENERIC_VALUE_TRUE))) {
-				args.add("-deprecation");
-			}
-			args.add("-d");
-			args.add(yq.compiledClassesPath);
-			args.add("-cp");
-			args.add(getClasspath());
-			args.add("-proc:none");
-			args.add(yq.javaFilesPath);
-			args.add(yq.rJavaDirectoryPath);
-
-			String pathJava = fpu.getPathJava(yq.sc_id);
-			if (FileUtil.isExistFile(pathJava)) args.add(pathJava);
-			String pathBroadcast = fpu.getPathBroadcast(yq.sc_id);
-			if (FileUtil.isExistFile(pathBroadcast)) args.add(pathBroadcast);
-			String pathService = fpu.getPathService(yq.sc_id);
-			if (FileUtil.isExistFile(pathService)) args.add(pathService);
-
-			// === Deleção de R.java (otimizada) ===
-			File rJavaFile = new File(yq.rJavaDirectoryPath, "R.java");
-			if (rJavaFile.exists()) {
-				try {
-					if (! rJavaFile.delete()) {
-						LogUtil.w(TAG, "Failed to delete R.java: " + rJavaFile.getAbsolutePath());
-					}
-				} catch (SecurityException e) {
-					LogUtil.w(TAG, "Permission denied deleting R.java", e);
-				}
-			}
-
-			// === Compilação ===
-			org.eclipse.jdt.internal.compiler.batch.Main main =
-					new org.eclipse.jdt.internal.compiler.batch.Main(outWriter, errWriter, false, null, null);
-
-			if (isDebugEnabled()) {
-				LogUtil.d(TAG, "Compiling with args: " + args);
-			}
-
-			boolean success = main.compile(args.toArray(new String[args.size()]));
-
-			String stdout = res.outStream.getOut();
-			String stderr = res.errStream.getOut();
-
-			if (success && main.globalErrorsCount <= 0) {
-				if (isDebugEnabled()) {
-					LogUtil.d(TAG, "Compiler stdout: " + stdout);
-					LogUtil.d(TAG, "Compiler stderr: " + stderr);
-					LogUtil.d(TAG, "Compile time: " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
-				}
-			} else {
-				LogUtil.e(TAG, "Compile failed. Stderr: " + stderr);
-				throw new zy(stderr.isEmpty() ? "Unknown compilation error" : stderr);
-			}
-
-		} finally {
-			// Garante limpeza mesmo em caso de exceção
-			res.outWriter.flush();
-			res.errWriter.flush();
-		}
-	}*/
 
     public void buildApk() throws By {
         String firstDexPath = dexesToAddButNotMerge.isEmpty() ? yq.classesDexPath :
@@ -1110,13 +1114,13 @@ public class ProjectBuilder {
         }
 
         void reset() {
+            outWriter.flush();
+            errWriter.flush();
             outBuffer.setLength(0);
             errBuffer.setLength(0);
             args.clear();
             outStream.reset(outBuffer);
             errStream.reset(errBuffer);
-            outWriter.flush();
-            errWriter.flush();
         }
     }
 

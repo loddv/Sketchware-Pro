@@ -403,10 +403,8 @@ public class ProjectBuilder {
                         + yq.sc_id
                         + "/files/classpath/";
         ArrayList<String> jars = FileUtil.listFiles(localClasspathDirectory, "jar");
-        if (jars != null) {
-            for (String jar : jars) {
-                appendClasspathEntry(classpath, jar);
-            }
+        for (String jar : jars) {
+            appendClasspathEntry(classpath, jar);
         }
         return classpath.toString();
     }

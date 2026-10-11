@@ -34,23 +34,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.exifinterface.media.ExifInterface;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -142,7 +143,7 @@ public class FileUtil {
     }
 
     public static void createNewFileIfNotPresent(String path) {
-        if (path == null || path.isEmpty()) return; 
+        if (path == null || path.isEmpty()) return;
         int lastSep = path.lastIndexOf(File.separator);
         if (lastSep > 0) {
             String dirPath = path.substring(0, lastSep);
@@ -152,61 +153,49 @@ public class FileUtil {
         try {
             if (!file.exists()) file.createNewFile();
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error creating file: " + path, e);
         }
     }
 
     public static String readFile(String path) {
         createNewFileIfNotPresent(path);
-        StringBuilder sb = new StringBuilder();
-        try (FileReader fr = new FileReader(path)) {
-            char[] buff = new char[1024];
-            int length;
-            while ((length = fr.read(buff)) > 0) {
-                sb.append(new String(buff, 0, length));
-            }
+        try {
+            return new String(Files.readAllBytes(Paths.get(path)), Charset.defaultCharset());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error reading file: " + path, e);
+            return "";
         }
-        return sb.toString();
     }
 
     public static String readFileIfExist(String path) {
-        StringBuilder sb = new StringBuilder();
-        try (FileReader fr = new FileReader(path)) {
-            char[] buff = new char[1024];
-            int length;
-            while ((length = fr.read(buff)) > 0) {
-                sb.append(new String(buff, 0, length));
-            }
+        if (path == null || path.isEmpty()) return "";
+        if (!isExistFile(path)) return "";
+        try {
+            return new String(Files.readAllBytes(Paths.get(path)), Charset.defaultCharset());
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error reading file: " + path, e);
+            return "";
         }
-        return sb.toString();
     }
 
     public static void writeFile(String path, String str) {
         createNewFileIfNotPresent(path);
-        try (FileWriter fileWriter = new FileWriter(path, false)) {
-            fileWriter.write(str);
-            fileWriter.flush();
+        try {
+            Files.write(Paths.get(path), str.getBytes(Charset.defaultCharset()),
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error writing file: " + path, e);
         }
     }
 
     public static void copyFile(String sourcePath, String destPath) {
-        if (!isExistFile(sourcePath)) return;
-        createNewFileIfNotPresent(destPath);
-        try (FileInputStream fis = new FileInputStream(sourcePath); FileOutputStream fos =
-                new FileOutputStream(destPath, false)) {
-            byte[] buffer = new byte[32768];
-            int length;
-            while ((length = fis.read(buffer)) > 0) {
-                fos.write(buffer, 0, length);
-            }
+        if (!isFile(sourcePath)) return;
+        if (TextUtils.isEmpty(destPath)) return;
+        try {
+            Files.copy(Paths.get(sourcePath), Paths.get(destPath),
+                    StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error copying file " + sourcePath + " to " + destPath, e);
         }
     }
 
@@ -221,18 +210,11 @@ public class FileUtil {
         if (!source.isDirectory()) {
             File parentFile = copyInto.getParentFile();
             if (parentFile == null || parentFile.exists() || parentFile.mkdirs()) {
-                try (FileInputStream fileInputStream = new FileInputStream(source); FileOutputStream fileOutputStream = new FileOutputStream(copyInto)) {
-                    byte[] bArr = new byte[32768];
-                    while (true) {
-                        int read = fileInputStream.read(bArr);
-                        if (read <= 0) {
-                            return;
-                        }
-                        fileOutputStream.write(bArr, 0, read);
-                    }
+                try {
+                    Files.copy(source.toPath(), copyInto.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
-                    Log.e("FileUtil",
-                            "Error copying file " + source.getAbsolutePath() + " to " + copyInto.getAbsolutePath(), e);
+                    Log.e(TAG, "Error copying file " + source.getAbsolutePath() + " to " + copyInto.getAbsolutePath()
+                            , e);
                     throw e;
                 }
             } else {
@@ -251,17 +233,7 @@ public class FileUtil {
     }
 
     public static void extractFileFromZip(InputStream inputStream, File file) throws IOException {
-        try (OutputStream outputStream = new FileOutputStream(file)) {
-            byte[] bArr = new byte[8192];
-            while (true) {
-                int read = inputStream.read(bArr);
-                if (read > 0) {
-                    outputStream.write(bArr, 0, read);
-                } else {
-                    return;
-                }
-            }
-        }
+        Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     @SuppressLint("ObsoleteSdkInt")
@@ -271,27 +243,24 @@ public class FileUtil {
     }
 
     public static void deleteFile(String path) {
-        File file = new File(path);
-        if (!file.exists()) return;
-        if (file.isFile()) {
-            if (!file.delete()) {
-                Log.e("FileUtil", "Failed to delete file: " + file.getAbsolutePath());
-            }
-            return;
-        }
-        File[] fileArr = file.listFiles();
-        if (fileArr != null) {
-            for (File subFile : fileArr) {
-                if (subFile.isDirectory()) {
-                    deleteFile(subFile.getAbsolutePath());
+        Path filePath = Paths.get(path);
+        if (!Files.exists(filePath)) return;
+        try {
+            Files.walkFileTree(filePath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
                 }
-                if (subFile.isFile()) {
-                    subFile.delete();
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
                 }
-            }
-        }
-        if (!file.delete()) {
-            Log.e("FileUtil", "Failed to delete directory: " + file.getAbsolutePath());
+            });
+        } catch (IOException e) {
+            Log.e(TAG, "Error deleting file: " + path, e);
         }
     }
 
@@ -556,7 +525,7 @@ public class FileUtil {
         try (FileOutputStream out = new FileOutputStream(destPath)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error saving bitmap: " + destPath, e);
         }
     }
 
@@ -778,31 +747,27 @@ public class FileUtil {
      * @throws IOException Thrown when any exception occurs while operating
      */
     public static void writeBytes(File target, byte[] data) throws IOException {
-        if (!target.exists()) {
-            target.getParentFile().mkdirs();
+        File parent = target.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
         }
-        BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(target));
-        outputStream.write(data);
-        outputStream.flush();
-        outputStream.close();
+        Files.write(target.toPath(), data);
     }
 
     public static void extractZipTo(ZipInputStream input, String outPath) throws IOException {
-        File outDir = new File(outPath);
-        if (!outDir.exists()) {
-            outDir.mkdirs();
+        Path outDir = Paths.get(outPath);
+        if (!Files.exists(outDir)) {
+            Files.createDirectories(outDir);
         }
-        ZipEntry entry = input.getNextEntry();
-        while (entry != null) {
-            String entryPathExtracted = new File(outPath, entry.getName()).getAbsolutePath();
+        ZipEntry entry;
+        while ((entry = input.getNextEntry()) != null) {
             if (!entry.isDirectory()) {
-                new File(entryPathExtracted).getParentFile().mkdirs();
-                writeBytes(new File(entryPathExtracted), readFromInputStream(input));
+                Path dest = outDir.resolve(entry.getName());
+                Files.createDirectories(dest.getParent());
+                Files.copy(input, dest, StandardCopyOption.REPLACE_EXISTING);
             }
             input.closeEntry();
-            entry = input.getNextEntry();
         }
-        input.close();
     }
 
     /**

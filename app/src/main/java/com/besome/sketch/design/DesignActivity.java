@@ -696,39 +696,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     }).start();
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_clean_temp_files)); // OK
-        options.add(new GridOptionAdapter.Option("Last compile err",
-                R.drawable.ic_mtrl_warning,
-                v -> {
-                    new CompileErrorSaver(sc_id).showLastErrors(this);
-                    bottomSheetDialog.dismiss();
-                }));
-        options.add(new GridOptionAdapter.Option("Source code",
-                R.drawable.ic_mtrl_code,
-                v -> {
-                    showCurrentActivitySrcCode();
-                    bottomSheetDialog.dismiss();
-                }));
-        options.add(new GridOptionAdapter.Option("Tree source code",
-                R.drawable.ic_mtrl_frame_source,
-                v -> {
-                    launchActivity(SrcViewerActivity.class,
-                            null,
-                            new Pair<>("current",
-                                    Helper.getText(fileName)));
-                    bottomSheetDialog.dismiss();
-                }));
-        options.add(new GridOptionAdapter.Option("Install last APK",
+        options.add(new GridOptionAdapter.Option("Launch App",
                 R.drawable.ic_mtrl_android,
-                v -> {
-                    if (FileUtil.isExistFile(q.finalToInstallApkPath)) {
-                        installBuiltApk();
-                    } else {
-                        SketchwareUtil.toast("APK does not exist anymore");
-                    }
-                    bottomSheetDialog.dismiss();
-                }).setId(R.id.action_install_apk)); // OK
-        options.add(new GridOptionAdapter.Option("Launcher app",
-                R.drawable.ic_mtrl_circle_play,
                 v -> {
                     if (isAppInstalled()) {
                         startApp();
@@ -737,7 +706,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     }
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_start_app)); // OK
-        options.add(new GridOptionAdapter.Option("Remove installed app",
+        options.add(new GridOptionAdapter.Option("Uninstall App",
                 R.drawable.ic_mtrl_delete,
                 v -> {
                     if (isAppInstalled()) {
@@ -750,6 +719,16 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     }
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_uninstall_apk)); // OK
+        options.add(new GridOptionAdapter.Option("Install last APK",
+                R.drawable.ic_mtrl_apk_install,
+                v -> {
+                    if (FileUtil.isExistFile(q.finalToInstallApkPath)) {
+                        installBuiltApk();
+                    } else {
+                        SketchwareUtil.toast("APK does not exist anymore");
+                    }
+                    bottomSheetDialog.dismiss();
+                }).setId(R.id.action_install_apk)); // OK
         options.add(new GridOptionAdapter.Option("Show Apk signatures",
                 R.drawable.ic_mtrl_key,
                 v -> {
@@ -758,6 +737,27 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     apkSignatures.showSignaturesDialog();
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_show_signatures)); // OK
+        options.add(new GridOptionAdapter.Option("View Error Log",
+                R.drawable.ic_mtrl_warning,
+                v -> {
+                    new CompileErrorSaver(sc_id).showLastErrors(this);
+                    bottomSheetDialog.dismiss();
+                }));
+        options.add(new GridOptionAdapter.Option("Source code",
+                R.drawable.ic_mtrl_code,
+                v -> {
+                    showCurrentActivitySrcCode();
+                    bottomSheetDialog.dismiss();
+                }));
+        options.add(new GridOptionAdapter.Option("Tree source code",
+                R.drawable.class_48_white,
+                v -> {
+                    launchActivity(SrcViewerActivity.class,
+                            null,
+                            new Pair<>("current",
+                                    Helper.getText(fileName)));
+                    bottomSheetDialog.dismiss();
+                }));
         options.add(new GridOptionAdapter.Option("XML editor",
                 R.drawable.ic_mtrl_frame_source,
                 v -> {
@@ -1602,6 +1602,11 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 if (canceled) {
                     return;
                 }
+                onProgress("Deleting previos erros logs...",
+                        21);
+                new CompileErrorSaver(sc_id).deleteSavedLogs();
+                onProgress("Installing APK...",
+                        22);
                 activity.installBuiltApk();
                 isBuildFinished = true;
             } catch (MissingFileException e) {
@@ -1647,13 +1652,13 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 
         @Override
         public void onProgress(String progress, int step) {
-            int totalSteps = 20;
+            int totalSteps = 22;
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
             activity.runOnUiThread(() -> {
                 progressBar.setIndeterminate(step == -1);
                 if (!canceled) {
-                    updateNotification(progress + " (" + step + " / " + totalSteps + ")");
+                    updateNotification(progress, (step * 100) / totalSteps);
                 }
                 progressText.setText(progress);
                 var progressInt = (step * 100) / totalSteps;
@@ -1697,44 +1702,40 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             }
         }
 
+        private NotificationCompat.Builder getBaseNotificationBuilder(Context context) {
+            return new NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_mtrl_code)
+                    .setContentTitle("Building project")
+                    .setOngoing(true)
+                    .addAction(R.drawable.ic_cancel_white_96dp,
+                            "Cancel Build",
+                            getCancelPendingIntent());
+        }
+
         private void maybeShowNotification() {
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
             if (!isShowingNotification) {
                 createNotificationChannelIfNeeded();
-                NotificationCompat.Builder builder = new NotificationCompat.Builder(activity,
-                        CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_mtrl_code)
-                        .setContentTitle("Building project")
+                NotificationCompat.Builder builder = getBaseNotificationBuilder(activity)
                         .setContentText("Starting build...")
-                        .setOngoing(true)
                         .setProgress(0,
                                 0,
-                                true)
-                        .addAction(R.drawable.ic_cancel_white_96dp,
-                                "Cancel build",
-                                getCancelPendingIntent());
+                                true);
                 notificationManager.notify(notificationId,
                         builder.build());
                 isShowingNotification = true;
             }
         }
 
-        private void updateNotification(String progress) {
+        private void updateNotification(String progress, int step) {
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(activity,
-                    CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_mtrl_code)
-                    .setContentTitle("Building project")
-                    .setContentText(progress)
-                    .setOngoing(true)
-                    .setProgress(0,
-                            0,
-                            true)
-                    .addAction(R.drawable.ic_cancel_white_96dp,
-                            "Cancel Build",
-                            getCancelPendingIntent());
+            NotificationCompat.Builder builder = getBaseNotificationBuilder(activity)
+                    .setContentText("[" + step + "] " + progress)
+                    .setProgress(100,
+                            step,
+                            false);
             notificationManager.notify(notificationId,
                     builder.build());
         }

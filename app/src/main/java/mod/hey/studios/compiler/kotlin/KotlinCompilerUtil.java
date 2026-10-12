@@ -22,7 +22,7 @@ public class KotlinCompilerUtil {
      * or not.
      */
     public static boolean areAnyKtFilesPresent(ProjectBuilder bui) {
-        return areAnyKtFilesPresent(bui.yq);
+        return areAnyKtFilesPresent(bui.projectFiles);
     }
 
     public static boolean areAnyKtFilesPresent(yq yq) {
@@ -40,22 +40,18 @@ public class KotlinCompilerUtil {
     static List<File> getFilesToCompile(yq workspace) {
         String scId = workspace.sc_id;
         List<File> mFilesToCompile = new ArrayList<>();
-
         // .sketchware/mysc/xxx/app/src/main/java
         mFilesToCompile.addAll(getSourceFiles(
                 new File(workspace.javaFilesPath)
         ));
-
         // .sketchware/mysc/xxx/gen
         mFilesToCompile.addAll(getSourceFiles(
                 new File(workspace.rJavaDirectoryPath)
         ));
-
         // .sketchware/data/xxx/files/java
         mFilesToCompile.addAll(getSourceFiles(
                 new File(new FilePathUtil().getPathJava(scId))
         ));
-
         return mFilesToCompile;
     }
 
@@ -65,26 +61,21 @@ public class KotlinCompilerUtil {
      */
     static List<File> getCompilerPlugins(yq workspace) {
         String scId = workspace.sc_id;
-
         File pluginDir = new File(new FilePathUtil().getPathKotlinCompilerPlugins(scId));
         if (!pluginDir.exists()) {
             return Collections.emptyList();
         }
-
         File[] children = pluginDir.listFiles(c -> c.getName().endsWith(".jar"));
         if (children == null) {
             return Collections.emptyList();
         }
-
         return new ArrayList<>(Arrays.asList(children));
     }
 
     private static List<File> getSourceFiles(File dir) {
         List<File> files = new ArrayList<>();
-
         File[] children = dir.listFiles();
         if (children == null) return files;
-
         for (File child : children) {
             if (child.isDirectory()) {
                 files.addAll(getSourceFiles(child));
@@ -94,7 +85,6 @@ public class KotlinCompilerUtil {
                 }
             }
         }
-
         return files;
     }
 }

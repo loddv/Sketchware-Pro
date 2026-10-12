@@ -103,7 +103,7 @@ public class ProjectBuilder {
     // Variáveis de instância (reutilizáveis por thread)
     private final ThreadLocal<CompilerResources> threadLocalResources = ThreadLocal.withInitial(CompilerResources::new);
     public BuildSettings build_settings;
-    public yq yq;
+    public yq projectFiles;
     public FilePathUtil fpu;
     public ManageLocalLibrary mll;
     public BuiltInLibraryManager builtInLibraryManager;
@@ -119,7 +119,7 @@ public class ProjectBuilder {
     // === MULTITHREADING SUPPORT ===
     private ExecutorService executor;
 
-    public ProjectBuilder(Context context, yq yqVar) {
+    public ProjectBuilder(Context context, yq thisProjectFiles) {
         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
                 .detectAll()
                 .penaltyLog()
@@ -145,19 +145,19 @@ public class ProjectBuilder {
                 "aapt");
         aapt2Binary = new File(context.getCacheDir(),
                 "aapt2");
-        build_settings = new BuildSettings(yqVar.sc_id);
+        build_settings = new BuildSettings(thisProjectFiles.sc_id);
         usingAapt2 = isAAPT2Enabled();
         this.context = context;
-        yq = yqVar;
+        projectFiles = thisProjectFiles;
         fpu = new FilePathUtil();
-        mll = new ManageLocalLibrary(yqVar.sc_id);
-        builtInLibraryManager = new BuiltInLibraryManager(yqVar.sc_id);
+        mll = new ManageLocalLibrary(thisProjectFiles.sc_id);
+        builtInLibraryManager = new BuiltInLibraryManager(thisProjectFiles.sc_id);
         File defaultAndroidJar = new File(BuiltInLibraries.EXTRACTED_COMPILE_ASSETS_PATH,
                 "android.jar");
         androidJarPath = build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH,
                 defaultAndroidJar.getAbsolutePath());
-        proguard = new ProguardHandler(yqVar.sc_id);
-        settings = new ProjectSettings(yqVar.sc_id);
+        proguard = new ProguardHandler(thisProjectFiles.sc_id);
+        settings = new ProjectSettings(thisProjectFiles.sc_id);
         initExecutor(); // Inicializa o pool de threads
     }
 
@@ -231,16 +231,17 @@ public class ProjectBuilder {
                 .equals(ProjectSettings.SETTING_GENERIC_VALUE_FALSE)) {
             return;
         }
-        File outputDirectory = new File(yq.javaFilesPath + File.separator + yq.packageName.replace(".",
+        File outputDirectory =
+                new File(projectFiles.javaFilesPath + File.separator + projectFiles.packageName.replace(".",
                 File.separator) + File.separator + "databinding");
         outputDirectory.mkdirs();
-        List<File> layouts = FileUtil.listFiles(yq.layoutFilesPath,
+        List<File> layouts = FileUtil.listFiles(projectFiles.layoutFilesPath,
                         "xml").stream()
                 .map(File::new)
                 .collect(Collectors.toList());
         ViewBindingBuilder builder = new ViewBindingBuilder(layouts,
                 outputDirectory,
-                yq.packageName);
+                projectFiles.packageName);
         builder.generateBindings();
     }
 
@@ -267,7 +268,7 @@ public class ProjectBuilder {
 
     public void createDexFilesFromClasses() throws Exception {
         File dexOutputDirectory = new File(
-                yq.binDirectoryPath,
+                projectFiles.binDirectoryPath,
                 "dex"
         );
         FileUtil.makeDir(dexOutputDirectory.getAbsolutePath());
@@ -310,8 +311,8 @@ public class ProjectBuilder {
                 "--multi-dex",
                 "--output=" + dexOutputDirectory.getAbsolutePath(),
                 proguard.isShrinkingEnabled()
-                        ? yq.proguardClassesPath
-                        : yq.compiledClassesPath
+                        ? projectFiles.proguardClassesPath
+                        : projectFiles.compiledClassesPath
         );
         try {
             LogUtil.d(TAG,
@@ -346,7 +347,7 @@ public class ProjectBuilder {
 
     public String getClasspath() {
         StringBuilder classpath = new StringBuilder();
-        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath, yq);
+        KotlinCompilerBridge.maybeAddKotlinFilesToClasspath(classpath, projectFiles);
         appendClasspathEntry(classpath, androidJarPath);
         if (!BuildSettings.SETTING_GENERIC_VALUE_TRUE.equals(
                 build_settings.getValue(
@@ -400,7 +401,7 @@ public class ProjectBuilder {
         String localClasspathDirectory =
                 FileUtil.getExternalStorageDir()
                         + "/.sketchware/data/"
-                        + yq.sc_id
+                        + projectFiles.sc_id
                         + "/files/classpath/";
         ArrayList<String> jars = FileUtil.listFiles(localClasspathDirectory, "jar");
         for (String jar : jars) {
@@ -431,7 +432,7 @@ public class ProjectBuilder {
             if (entry.isEmpty()) {
                 continue;
             }
-            if (entry.equals(yq.compiledClassesPath)) {
+            if (entry.equals(projectFiles.compiledClassesPath)) {
                 continue;
             }
             if (localLibraryJarsWithFullModeOn.contains(entry)) {
@@ -573,18 +574,18 @@ public class ProjectBuilder {
             args.add("-deprecation");
         }
         args.add("-d");
-        args.add(yq.compiledClassesPath);
+        args.add(projectFiles.compiledClassesPath);
         args.add("-cp");
         args.add(getClasspath());
         args.add("-proc:none");
-        args.add(yq.javaFilesPath);
-        args.add(yq.rJavaDirectoryPath);
+        args.add(projectFiles.javaFilesPath);
+        args.add(projectFiles.rJavaDirectoryPath);
         // Adicionar arquivos de forma segura e centralizada
-        addIfFileExists(args, fpu.getPathJava(yq.sc_id));
-        addIfFileExists(args, fpu.getPathBroadcast(yq.sc_id));
-        addIfFileExists(args, fpu.getPathService(yq.sc_id));
+        addIfFileExists(args, fpu.getPathJava(projectFiles.sc_id));
+        addIfFileExists(args, fpu.getPathBroadcast(projectFiles.sc_id));
+        addIfFileExists(args, fpu.getPathService(projectFiles.sc_id));
         // Deleção otimizada do arquivo R.java
-        File rJavaFile = new File(yq.rJavaDirectoryPath,
+        File rJavaFile = new File(projectFiles.rJavaDirectoryPath,
                 "R.java");
         if (rJavaFile.exists()) {
             try {
@@ -654,11 +655,11 @@ public class ProjectBuilder {
     }
 
     public void buildApk() throws By {
-        String firstDexPath = dexesToAddButNotMerge.isEmpty() ? yq.classesDexPath :
+        String firstDexPath = dexesToAddButNotMerge.isEmpty() ? projectFiles.classesDexPath :
                 dexesToAddButNotMerge.remove(0).getAbsolutePath();
         try {
-            ApkBuilder apkBuilder = new ApkBuilder(new File(yq.unsignedUnalignedApkPath),
-                    new File(yq.resourcesApkPath),
+            ApkBuilder apkBuilder = new ApkBuilder(new File(projectFiles.unsignedUnalignedApkPath),
+                    new File(projectFiles.resourcesApkPath),
                     new File(firstDexPath),
                     null,
                     null,
@@ -671,7 +672,7 @@ public class ProjectBuilder {
                     apkBuilder.addResourcesFromJar(new File(jarPath));
                 }
             }
-            File nativeLibrariesDirectory = new File(fpu.getPathNativelibs(yq.sc_id));
+            File nativeLibrariesDirectory = new File(fpu.getPathNativelibs(projectFiles.sc_id));
             if (nativeLibrariesDirectory.exists()) {
                 apkBuilder.addNativeLibraries(nativeLibrariesDirectory);
             }
@@ -679,7 +680,7 @@ public class ProjectBuilder {
                 apkBuilder.addNativeLibraries(new File(nativeLibraryDirectory));
             }
             if (dexesToAddButNotMerge.isEmpty()) {
-                List<String> dexFiles = FileUtil.listFiles(yq.binDirectoryPath,
+                List<String> dexFiles = FileUtil.listFiles(projectFiles.binDirectoryPath,
                         "dex");
                 for (String dexFile : dexFiles) {
                     if (!Uri.fromFile(new File(dexFile)).getLastPathSegment().equals("classes.dex")) {
@@ -754,14 +755,14 @@ public class ProjectBuilder {
                         Toast.LENGTH_LONG);
             }
         }
-        for (String file : FileUtil.listFiles(yq.binDirectoryPath + File.separator + "dex",
+        for (String file : FileUtil.listFiles(projectFiles.binDirectoryPath + File.separator + "dex",
                 "dex")) {
             dexes.add(new File(file));
         }
         LogUtil.d(TAG,
                 "Will merge these " + dexes.size() + " DEX files to classes.dex: " + dexes);
-        if (settings.getMinSdkVersion() < 21 || !yq.N.isDebugBuild) {
-            dexLibrariesParallel(new File(yq.binDirectoryPath),
+        if (settings.getMinSdkVersion() < 21 || !projectFiles.N.isDebugBuild) {
+            dexLibrariesParallel(new File(projectFiles.binDirectoryPath),
                     dexes);
             LogUtil.d(TAG,
                     "Merging DEX files took " + (System.currentTimeMillis() - savedTimeMillis) + " ms");
@@ -799,23 +800,25 @@ public class ProjectBuilder {
     }
 
     public void buildBuiltInLibraryInformation() {
-        if (yq.N.g) {
+        if (projectFiles.N.g) {
             builtInLibraryManager.addLibrary(BuiltInLibraries.ANDROIDX_APPCOMPAT);
             builtInLibraryManager.addLibrary(BuiltInLibraries.ANDROIDX_COORDINATORLAYOUT);
             builtInLibraryManager.addLibrary(BuiltInLibraries.MATERIAL);
         }
-        if (yq.N.isFirebaseEnabled) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_COMMON);}
-        if (yq.N.isFirebaseAuthUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_AUTH);}
-        if (yq.N.isFirebaseDatabaseUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_DATABASE);}
-        if (yq.N.isFirebaseStorageUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_STORAGE);}
-        if (yq.N.isMapUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.PLAY_SERVICES_MAPS);}
-        if (yq.N.isAdMobEnabled) {builtInLibraryManager.addLibrary(BuiltInLibraries.PLAY_SERVICES_ADS);}
-        if (yq.N.isGsonUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GSON);}
-        if (yq.N.isGlideUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GLIDE);}
-        if (yq.N.isHttp3Used) {builtInLibraryManager.addLibrary(BuiltInLibraries.OKHTTP_ANDROID);}
+        if (projectFiles.N.isFirebaseEnabled) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_COMMON);}
+        if (projectFiles.N.isFirebaseAuthUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_AUTH);}
+        if (projectFiles.N.isFirebaseDatabaseUsed) {
+            builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_DATABASE);
+        }
+        if (projectFiles.N.isFirebaseStorageUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.FIREBASE_STORAGE);}
+        if (projectFiles.N.isMapUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.PLAY_SERVICES_MAPS);}
+        if (projectFiles.N.isAdMobEnabled) {builtInLibraryManager.addLibrary(BuiltInLibraries.PLAY_SERVICES_ADS);}
+        if (projectFiles.N.isGsonUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GSON);}
+        if (projectFiles.N.isGlideUsed) {builtInLibraryManager.addLibrary(BuiltInLibraries.GLIDE);}
+        if (projectFiles.N.isHttp3Used) {builtInLibraryManager.addLibrary(BuiltInLibraries.OKHTTP_ANDROID);}
         KotlinCompilerBridge.maybeAddKotlinBuiltInLibraryDependenciesIfPossible(this,
                 builtInLibraryManager);
-        ExtLibSelected.addUsedDependencies(yq.N.x,
+        ExtLibSelected.addUsedDependencies(projectFiles.N.x,
                 builtInLibraryManager);
     }
 
@@ -825,8 +828,8 @@ public class ProjectBuilder {
 
     public void signDebugApk() throws GeneralSecurityException, IOException, ClassNotFoundException,
             IllegalAccessException, InstantiationException {
-        TestkeySignBridge.signWithTestkey(yq.unsignedUnalignedApkPath,
-                yq.finalToInstallApkPath);
+        TestkeySignBridge.signWithTestkey(projectFiles.unsignedUnalignedApkPath,
+                projectFiles.finalToInstallApkPath);
     }
 
     private void mergeDexes(File target, List<Dex> dexes) throws IOException {
@@ -847,10 +850,10 @@ public class ProjectBuilder {
     }
 
     private void proguardAddRjavaRules(List<String> args) {
-        FileUtil.writeFile(yq.proguardAutoGeneratedExclusions,
+        FileUtil.writeFile(projectFiles.proguardAutoGeneratedExclusions,
                 getRJavaRules());
         args.add("-include");
-        args.add(yq.proguardAutoGeneratedExclusions);
+        args.add(projectFiles.proguardAutoGeneratedExclusions);
     }
 
     private String getRJavaRules() {
@@ -876,7 +879,7 @@ public class ProjectBuilder {
                 .collect(Collectors.joining("\n"));
         sb.append(builtInRules).append("\n")
                 .append(mllRules).append("\n")
-                .append("-keep class ").append(yq.packageName).append(".R { *; }\n");
+                .append("-keep class ").append(projectFiles.packageName).append(".R { *; }\n");
         return sb.toString();
     }
 
@@ -891,7 +894,7 @@ public class ProjectBuilder {
                 .toList();
         ArrayList<String> config = new ArrayList<>();
         config.add(ProguardHandler.ANDROID_PROGUARD_RULES_PATH);
-        config.add(yq.proguardAaptRules);
+        config.add(projectFiles.proguardAaptRules);
         config.add(proguard.getCustomProguardRules());
         config.addAll(builtInRulePaths);
         config.addAll(mll.getPgRules());
@@ -909,8 +912,8 @@ public class ProjectBuilder {
                 .filter(jarPath -> jarPath != null && !jarPath.isEmpty())
                 .toList();
         CompletableFuture<File> projectJarFuture = CompletableFuture.supplyAsync(() -> {
-                    JarBuilder.INSTANCE.generateJar(new File(yq.compiledClassesPath));
-                    return new File(yq.compiledClassesPath + ".jar");
+                    JarBuilder.INSTANCE.generateJar(new File(projectFiles.compiledClassesPath));
+                    return new File(projectFiles.compiledClassesPath + ".jar");
                 },
                 executor);
         List<File> inputJars = jarPaths.stream().map(File::new).collect(Collectors.toList());
@@ -922,7 +925,7 @@ public class ProjectBuilder {
                     getProguardClasspath().split(":"),
                     inputJars.stream().map(File::getAbsolutePath).toArray(String[]::new),
                     settings.getMinSdkVersion(),
-                    yq
+                    projectFiles
             ).compile();
         } catch (Exception e) {
             throw new IOException(e);
@@ -937,7 +940,7 @@ public class ProjectBuilder {
         args.add("-include");
         args.add(ProguardHandler.ANDROID_PROGUARD_RULES_PATH);
         args.add("-include");
-        args.add(yq.proguardAaptRules);
+        args.add(projectFiles.proguardAaptRules);
         args.add("-include");
         args.add(proguard.getCustomProguardRules());
         proguardAddLibConfigs(args);
@@ -947,7 +950,7 @@ public class ProjectBuilder {
             args.add(rule);
         }
         args.add("-injars");
-        args.add(yq.compiledClassesPath);
+        args.add(projectFiles.compiledClassesPath);
         for (HashMap<String, Object> hashMap : mll.list) {
             String obj = Objects.requireNonNull(hashMap.get("name")).toString();
             if (hashMap.containsKey("jarPath") && proguard.libIsProguardFMEnabled(obj)) {
@@ -958,14 +961,14 @@ public class ProjectBuilder {
         args.add("-libraryjars");
         args.add(getProguardClasspath());
         args.add("-outjars");
-        args.add(yq.proguardClassesPath);
+        args.add(projectFiles.proguardClassesPath);
         if (proguard.isDebugFilesEnabled()) {
             args.add("-printseeds");
-            args.add(yq.proguardSeedsPath);
+            args.add(projectFiles.proguardSeedsPath);
             args.add("-printusage");
-            args.add(yq.proguardUsagePath);
+            args.add(projectFiles.proguardUsagePath);
             args.add("-printmapping");
-            args.add(yq.proguardMappingPath);
+            args.add(projectFiles.proguardMappingPath);
         }
         LogUtil.d(TAG,
                 "About to run ProGuard with these arguments: " + args);
@@ -992,7 +995,7 @@ public class ProjectBuilder {
 
     public void runStringfog() {
         try {
-            StringFogMappingPrinter printer = new StringFogMappingPrinter(new File(yq.binDirectoryPath,
+            StringFogMappingPrinter printer = new StringFogMappingPrinter(new File(projectFiles.binDirectoryPath,
                     "stringFogMapping.txt"));
             StringFogClassInjector injector = new StringFogClassInjector(new String[0],
                     "UTF-8",
@@ -1002,10 +1005,10 @@ public class ProjectBuilder {
             printer.startMappingOutput();
             printer.ouputInfo("UTF-8",
                     "com.github.megatronking.stringfog.xor.StringFogImpl");
-            injector.doFog2ClassInDir(new File(yq.compiledClassesPath));
+            injector.doFog2ClassInDir(new File(projectFiles.compiledClassesPath));
             KB.a(context,
                     "stringfog/stringfog.zip",
-                    yq.compiledClassesPath);
+                    projectFiles.compiledClassesPath);
         } catch (Exception e) {
             LogUtil.e("StringFog",
                     "Failed to run StringFog",
@@ -1068,9 +1071,9 @@ public class ProjectBuilder {
             getDexFilesReadyParallel();
             resourcesFuture.join();
             buildApk();
-            runZipalign(yq.unsignedUnalignedApkPath,
-                    yq.finalToInstallApkPath);
-            if (yq.N.isDebugBuild) {signDebugApk();}
+            runZipalign(projectFiles.unsignedUnalignedApkPath,
+                    projectFiles.finalToInstallApkPath);
+            if (projectFiles.N.isDebugBuild) {signDebugApk();}
             LogUtil.d(TAG,
                     "Total build time: " + (System.currentTimeMillis() - timestampResourceCompilationStarted) + " ms");
         } finally {

@@ -47,8 +47,9 @@ public class AppBundleCompiler {
 
     public AppBundleCompiler(ProjectBuilder builder) {
         this.builder = builder;
-        mainModuleArchive = new File(builder.yq.binDirectoryPath, MODULE_ARCHIVE_FILE_NAME);
-        appBundle = new File(builder.yq.binDirectoryPath, getBundleFilename(builder.yq.projectName));
+        mainModuleArchive = new File(builder.projectFiles.binDirectoryPath, MODULE_ARCHIVE_FILE_NAME);
+        appBundle = new File(builder.projectFiles.binDirectoryPath,
+                getBundleFilename(builder.projectFiles.projectName));
     }
 
     public static String getBundleFilename(String sc_id) {
@@ -61,13 +62,10 @@ public class AppBundleCompiler {
 
     public void buildBundle() throws zy {
         long savedTimeMillis = System.currentTimeMillis();
-
         LogUtil.d(TAG, "About to run BuildBundleCommand");
-
         Path mainModule = mainModuleArchive.toPath();
         Path appBundlePath = appBundle.toPath();
         LogUtil.d(TAG, "Converting main module " + mainModule + " to " + appBundlePath);
-
         var bundleBuilder = BuildBundleCommand.builder()
                 .setModulesPaths(ImmutableList.of(mainModule))
                 .setOverwriteOutput(true)
@@ -78,11 +76,10 @@ public class AppBundleCompiler {
                         ).build()
                 );
         if (builder.proguard.isShrinkingEnabled() && builder.proguard.isDebugFilesEnabled()) {
-            Path mapping = Paths.get(builder.yq.proguardMappingPath);
+            Path mapping = Paths.get(builder.projectFiles.proguardMappingPath);
             LogUtil.d(TAG, "Adding metadata file " + mapping + " as com.android.tools.build.obfuscation/proguard.map");
             bundleBuilder.addMetadataFile("com.android.tools.build.obfuscation", "proguard.map", mapping);
         }
-
         try {
             var command = bundleBuilder.build();
             LogUtil.d(TAG, "Now running " + command);
@@ -101,9 +98,9 @@ public class AppBundleCompiler {
     public void createModuleMainArchive() throws IOException {
         var moduleMain = new BufferedOutputStream(new FileOutputStream(mainModuleArchive));
         try (var moduleMainZip = new ZipOutputStream(moduleMain)) {
-            try (var apkRes = new ZipInputStream(new FileInputStream(builder.yq.resourcesApkPath))) {
+            try (var apkRes = new ZipInputStream(new FileInputStream(builder.projectFiles.resourcesApkPath))) {
                 /* First, compress DEX files into module-main.zip */
-                var binDirectoryContent = new File(builder.yq.binDirectoryPath).listFiles();
+                var binDirectoryContent = new File(builder.projectFiles.binDirectoryPath).listFiles();
                 if (binDirectoryContent != null) {
                     for (var file : binDirectoryContent) {
                         if (file.isFile() && file.getName().endsWith(".dex")) {
@@ -123,9 +120,7 @@ public class AppBundleCompiler {
                         }
                     }
                 }
-
                 var entry = apkRes.getNextEntry();
-
                 while (entry != null) {
                     ZipEntry toCompress;
                     if (entry.getName().startsWith("assets/")) {
@@ -141,7 +136,6 @@ public class AppBundleCompiler {
                     } else {
                         toCompress = new ZipEntry(MODULE_ROOT + File.separator + entry.getName());
                     }
-
                     int entryMethod = entry.getMethod();
                     toCompress.setMethod(entryMethod);
                     if (entryMethod == ZipEntry.STORED) {
@@ -150,30 +144,24 @@ public class AppBundleCompiler {
                         toCompress.setCrc(entry.getCrc());
                         uncompressedModuleMainPaths.add(entry.getName());
                     }
-
                     // Check for duplicate entries here
                     if (!addedEntries.contains(toCompress.getName())) {
                         moduleMainZip.putNextEntry(toCompress);
-
                         var buffer = new byte[1024];
                         int length;
                         while ((length = apkRes.read(buffer)) > 0) {
                             moduleMainZip.write(buffer, 0, length);
                         }
-
                         moduleMainZip.closeEntry();
                         addedEntries.add(toCompress.getName());
                     }
-
                     apkRes.closeEntry();
                     entry = apkRes.getNextEntry();
                 }
                 moduleMain.flush();
             }
-
-            var nativeLibrariesDirectory = new File(new FilePathUtil().getPathNativelibs(builder.yq.sc_id));
+            var nativeLibrariesDirectory = new File(new FilePathUtil().getPathNativelibs(builder.projectFiles.sc_id));
             var architectures = nativeLibrariesDirectory.listFiles();
-
             if (architectures != null) {
                 for (var architecture : architectures) {
                     var nativeLibraries = architecture.listFiles();
@@ -199,27 +187,23 @@ public class AppBundleCompiler {
             }
 
             /* Start with enabled Local libraries' JARs */
-            var jars = new ManageLocalLibrary(builder.yq.sc_id).getLocalLibraryJars();
+            var jars = new ManageLocalLibrary(builder.projectFiles.sc_id).getLocalLibraryJars();
 
             /* Add built-in libraries' JARs */
             for (var library : builder.builtInLibraryManager.getLibraries()) {
                 jars.add(BuiltInLibraries.getLibraryClassesJarPath(library.getName()));
             }
-
             for (var jar : jars) {
                 try (var jarStream = new FileInputStream(jar);
                      var jarArchiveStream = new ZipInputStream(jarStream)) {
                     var jarArchiveEntry = jarArchiveStream.getNextEntry();
-
                     while (jarArchiveEntry != null) {
                         var pathInJar = jarArchiveEntry.getName();
                         if (!jarArchiveEntry.isDirectory() && !pathInJar.equals("META-INF/MANIFEST.MF") && !pathInJar.endsWith(".class")) {
                             var nonClassFileToAddToModule = new ZipEntry(MODULE_ROOT + File.separator + pathInJar);
-
                             // Check for duplicate entries here
                             if (!addedEntries.contains(nonClassFileToAddToModule.getName())) {
                                 moduleMainZip.putNextEntry(nonClassFileToAddToModule);
-
                                 var buffer = new byte[1024];
                                 int length;
                                 while ((length = jarArchiveStream.read(buffer)) > 0) {
@@ -229,7 +213,6 @@ public class AppBundleCompiler {
                                 addedEntries.add(nonClassFileToAddToModule.getName());
                             }
                         }
-
                         jarArchiveEntry = jarArchiveStream.getNextEntry();
                     }
                 }

@@ -2,7 +2,9 @@ package mod.hey.studios.compiler.kotlin
 
 import a.a.a.ProjectBuilder
 import mod.hey.studios.build.BuildSettings
-import mod.hey.studios.compiler.kotlin.KotlinCompilerUtil.*
+import mod.hey.studios.compiler.kotlin.KotlinCompilerUtil.areAnyKtFilesPresent
+import mod.hey.studios.compiler.kotlin.KotlinCompilerUtil.getCompilerPlugins
+import mod.hey.studios.compiler.kotlin.KotlinCompilerUtil.getFilesToCompile
 import mod.jbk.util.LogUtil
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
@@ -18,7 +20,7 @@ import java.io.File
 class KotlinCompiler(
     private val builder: ProjectBuilder
 ) {
-    private val workspace = builder.yq
+    private val workspace = builder.projectFiles
 
     /**
      * Invokes `kotlinc`.

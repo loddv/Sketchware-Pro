@@ -116,9 +116,9 @@ public class ResourceCompiler {
             }
             // 1. Coleta todas as pastas de recursos para fazer o crunching dos PNGs
             List<String> resDirectories = new ArrayList<>();
-            resDirectories.add(buildHelper.yq.resDirectoryPath);
+            resDirectories.add(buildHelper.projectFiles.resDirectoryPath);
             resDirectories.addAll(buildHelper.mll.getResLocalLibrary());
-            String importedRes = buildHelper.fpu.getPathResource(buildHelper.yq.sc_id);
+            String importedRes = buildHelper.fpu.getPathResource(buildHelper.projectFiles.sc_id);
             if (FileUtil.isExistFile(importedRes)) {
                 resDirectories.add(importedRes);
             }
@@ -130,7 +130,7 @@ public class ResourceCompiler {
                 }
             }
             // 2. Executa o crunching de PNGs em paralelo para a pasta 'crunched_res'
-            File crunchedResDir = new File(buildHelper.yq.binDirectoryPath, "crunched_res");
+            File crunchedResDir = new File(buildHelper.projectFiles.binDirectoryPath, "crunched_res");
             if (FileUtil.isExistFile(crunchedResDir.getAbsolutePath())) {
                 FileUtil.deleteFile(crunchedResDir.getAbsolutePath());
             }
@@ -156,10 +156,10 @@ public class ResourceCompiler {
             args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
                     String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
             args.add("--version-code");
-            String versionCode = buildHelper.yq.versionCode;
+            String versionCode = buildHelper.projectFiles.versionCode;
             args.add((versionCode == null || versionCode.isEmpty()) ? "1" : versionCode);
             args.add("--version-name");
-            String versionName = buildHelper.yq.versionName;
+            String versionName = buildHelper.projectFiles.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
             args.add("--auto-add-overlay");
             args.add("--generate-dependencies");
@@ -167,8 +167,8 @@ public class ResourceCompiler {
             args.add("-m");
             args.add("--non-constant-id");
             args.add("--output-text-symbols");
-            args.add(buildHelper.yq.binDirectoryPath);
-            if (buildHelper.yq.N.g) {
+            args.add(buildHelper.projectFiles.binDirectoryPath);
+            if (buildHelper.projectFiles.N.g) {
                 args.add("--no-version-vectors");
             }
             // A pasta de PNGs otimizados vem em primeiro lugar para ter prioridade
@@ -178,7 +178,7 @@ public class ResourceCompiler {
             }
             // Demais pastas de recursos originais
             args.add("-S");
-            args.add(buildHelper.yq.resDirectoryPath);
+            args.add(buildHelper.projectFiles.resDirectoryPath);
             for (String localRes : buildHelper.mll.getResLocalLibrary()) {
                 args.add("-S");
                 args.add(localRes);
@@ -189,13 +189,13 @@ public class ResourceCompiler {
             }
             // Assets
             args.add("-A");
-            args.add(buildHelper.yq.assetsPath);
-            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
+            args.add(buildHelper.projectFiles.assetsPath);
+            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.projectFiles.sc_id);
             if (FileUtil.isExistFile(importedAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
             }
-            for (String localAsset : new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets()) {
+            for (String localAsset : new ManageLocalLibrary(buildHelper.projectFiles.sc_id).getAssets()) {
                 args.add("-A");
                 args.add(localAsset);
             }
@@ -213,17 +213,17 @@ public class ResourceCompiler {
                 }
             }
             args.add("-J");
-            args.add(buildHelper.yq.rJavaDirectoryPath);
+            args.add(buildHelper.projectFiles.rJavaDirectoryPath);
             args.add("-G");
-            args.add(buildHelper.yq.proguardAaptRules);
-            linkingAssertFileExists(buildHelper.yq.androidManifestPath);
+            args.add(buildHelper.projectFiles.proguardAaptRules);
+            linkingAssertFileExists(buildHelper.projectFiles.androidManifestPath);
             args.add("-M");
-            args.add(buildHelper.yq.androidManifestPath);
+            args.add(buildHelper.projectFiles.androidManifestPath);
             args.add("-I");
             String customJar = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
             args.add(customJar.isEmpty() ? buildHelper.androidJarPath : customJar);
             args.add("-F");
-            args.add(buildHelper.yq.resourcesApkPath);
+            args.add(buildHelper.projectFiles.resourcesApkPath);
             LogUtil.d(TAG + ":aapt1", "AAPT1 args: " + args);
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args);
@@ -473,7 +473,7 @@ public class ResourceCompiler {
 
         @Override
         public void compile() throws zy, MissingFileException {
-            String outputPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
+            String outputPath = buildHelper.projectFiles.binDirectoryPath + File.separator + "res";
             emptyOrCreateDirectory(outputPath);
             long startTime = System.currentTimeMillis();
             if (progressListener != null) {
@@ -575,19 +575,19 @@ public class ResourceCompiler {
         }
 
         private void compileProjectResources(String outputPath) throws zy, MissingFileException {
-            compilingAssertDirectoryExists(buildHelper.yq.resDirectoryPath);
+            compilingAssertDirectoryExists(buildHelper.projectFiles.resDirectoryPath);
             ArrayList<String> commands = new ArrayList<>();
             commands.add(aapt2.getAbsolutePath());
             commands.add("compile");
             commands.add("--dir");
-            commands.add(buildHelper.yq.resDirectoryPath);
+            commands.add(buildHelper.projectFiles.resDirectoryPath);
             commands.add("-o");
             commands.add(outputPath + File.separator + "project.zip");
             executeAndCheck(commands, "project resources");
         }
 
         private void compileImportedResources(String outputPath) throws zy {
-            String importedResPath = buildHelper.fpu.getPathResource(buildHelper.yq.sc_id);
+            String importedResPath = buildHelper.fpu.getPathResource(buildHelper.projectFiles.sc_id);
             if (FileUtil.isExistFile(importedResPath) && new File(importedResPath).length() != 0) {
                 ArrayList<String> commands = new ArrayList<>();
                 commands.add(aapt2.getAbsolutePath());
@@ -632,10 +632,10 @@ public class ResourceCompiler {
             args.add(buildHelper.settings.getValue(ProjectSettings.SETTING_TARGET_SDK_VERSION,
                     String.valueOf(VAR_DEFAULT_TARGET_SDK_VERSION)));
             args.add("--version-code");
-            String versionCode = buildHelper.yq.versionCode;
+            String versionCode = buildHelper.projectFiles.versionCode;
             args.add((versionCode == null || versionCode.isEmpty()) ? "1" : versionCode);
             args.add("--version-name");
-            String versionName = buildHelper.yq.versionName;
+            String versionName = buildHelper.projectFiles.versionName;
             args.add((versionName == null || versionName.isEmpty()) ? "1.0" : versionName);
             args.add("-I");
             String customAndroidSdk = buildHelper.build_settings.getValue(BuildSettings.SETTING_ANDROID_JAR_PATH, "");
@@ -647,24 +647,24 @@ public class ResourceCompiler {
             }
             addAssetsArguments(args);
             addCompiledResourcesArguments(args);
-            linkingAssertDirectoryExists(buildHelper.yq.rJavaDirectoryPath);
+            linkingAssertDirectoryExists(buildHelper.projectFiles.rJavaDirectoryPath);
             args.add("--java");
-            args.add(buildHelper.yq.rJavaDirectoryPath);
-            String proguardRules = buildHelper.yq.proguardAaptRules;
+            args.add(buildHelper.projectFiles.rJavaDirectoryPath);
+            String proguardRules = buildHelper.projectFiles.proguardAaptRules;
             if (proguardRules != null && !proguardRules.isEmpty()) {
                 args.add("--proguard");
                 args.add(proguardRules);
             }
-            linkingAssertFileExists(buildHelper.yq.androidManifestPath);
+            linkingAssertFileExists(buildHelper.projectFiles.androidManifestPath);
             args.add("--manifest");
-            args.add(buildHelper.yq.androidManifestPath);
+            args.add(buildHelper.projectFiles.androidManifestPath);
             String extraPackages = buildHelper.getLibraryPackageNames();
             if (!extraPackages.isEmpty()) {
                 args.add("--extra-packages");
                 args.add(extraPackages);
             }
             args.add("-o");
-            args.add(buildHelper.yq.resourcesApkPath);
+            args.add(buildHelper.projectFiles.resourcesApkPath);
             LogUtil.d(TAG + ":l", args.toString());
             BinaryExecutor executor = new BinaryExecutor();
             executor.setCommands(args); // Agora é compatível com ArrayList<String>
@@ -676,12 +676,12 @@ public class ResourceCompiler {
         }
 
         private void addAssetsArguments(ArrayList<String> args) {
-            String mainAssets = buildHelper.yq.assetsPath;
+            String mainAssets = buildHelper.projectFiles.assetsPath;
             if (FileUtil.isExistFile(mainAssets)) {
                 args.add("-A");
                 args.add(mainAssets);
             }
-            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
+            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.projectFiles.sc_id);
             if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
@@ -694,7 +694,7 @@ public class ResourceCompiler {
                     args.add(path);
                 }
             }
-            List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
+            List<String> localAssets = new ManageLocalLibrary(buildHelper.projectFiles.sc_id).getAssets();
             for (String path : localAssets) {
                 linkingAssertDirectoryExists(path);
                 args.add("-A");
@@ -703,7 +703,7 @@ public class ResourceCompiler {
         }
 
         private void addCompiledResourcesArguments(ArrayList<String> args) {
-            String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
+            String resourcesPath = buildHelper.projectFiles.binDirectoryPath + File.separator + "res";
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasResources()) {
                     args.add("-R");
@@ -741,12 +741,12 @@ public class ResourceCompiler {
          */
         private void addAssetsArguments(List<String> args) {
             // 1. Main & Imported Assets
-            String mainAssets = buildHelper.yq.assetsPath;
+            String mainAssets = buildHelper.projectFiles.assetsPath;
             if (FileUtil.isExistFile(mainAssets)) {
                 args.add("-A");
                 args.add(mainAssets);
             }
-            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.yq.sc_id);
+            String importedAssets = buildHelper.fpu.getPathAssets(buildHelper.projectFiles.sc_id);
             if (FileUtil.isExistFile(importedAssets) && !importedAssets.equals(mainAssets)) {
                 args.add("-A");
                 args.add(importedAssets);
@@ -761,7 +761,7 @@ public class ResourceCompiler {
                 }
             }
             // 3. Local Libraries Assets
-            List<String> localAssets = new ManageLocalLibrary(buildHelper.yq.sc_id).getAssets();
+            List<String> localAssets = new ManageLocalLibrary(buildHelper.projectFiles.sc_id).getAssets();
             for (String path : localAssets) {
                 linkingAssertDirectoryExists(path);
                 args.add("-A");
@@ -773,7 +773,7 @@ public class ResourceCompiler {
          * Varre arquivos compilados utilizando NIO DirectoryStream para consumo mínimo de I/O e RAM.
          */
         private void addCompiledResourcesArguments(List<String> args) {
-            String resourcesPath = buildHelper.yq.binDirectoryPath + File.separator + "res";
+            String resourcesPath = buildHelper.projectFiles.binDirectoryPath + File.separator + "res";
             // Resources de Bibliotecas Built-in
             for (Jp lib : buildHelper.builtInLibraryManager.getLibraries()) {
                 if (lib.hasResources()) {

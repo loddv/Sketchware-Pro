@@ -146,14 +146,14 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
     private ImageView xmlLayoutOrientation;
-    private boolean B;
+    private boolean isHandlingUnsavedChanges;
     private int currentTabNumber;
     private CustomViewPager viewPager;
     private CoordinatorLayout coordinatorLayout;
     private DrawerLayout drawer;
-    private yq q;
-    private DB r;
-    private DB t;
+    private yq projectFiles;
+    private DB projectSettings;
+    private DB projectParams;
     private Menu bottomMenu;
     private MaterialButton btnRun;
     private BottomSheetDialog bottomSheetDialog;
@@ -396,7 +396,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         if (!ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_ROOT_AUTO_INSTALL_PROJECTS)) {
             requestPackageInstallerInstall();
         } else {
-            File apkUri = new File(q.finalToInstallApkPath);
+            File apkUri = new File(projectFiles.finalToInstallApkPath);
             long length = apkUri.length();
             Shell.getShell(shell -> {
                 if (shell.isRoot()) {
@@ -407,7 +407,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                         if (result.isSuccess()) {
                             SketchwareUtil.toast("Package installed successfully!");
                             if (ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_ROOT_AUTO_OPEN_AFTER_INSTALLING)) {
-                                Intent launcher = getPackageManager().getLaunchIntentForPackage(q.packageName);
+                                Intent launcher =
+                                        getPackageManager().getLaunchIntentForPackage(projectFiles.packageName);
                                 if (launcher != null) {
                                     startActivity(launcher);
                                 } else {
@@ -444,7 +445,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 return;
             }
         }
-        File apkFile = new File(q.finalToInstallApkPath);
+        File apkFile = new File(projectFiles.finalToInstallApkPath);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         // 2. Uso do FileProvider para Android 7.0+ (API 24)
@@ -472,7 +473,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         }
         Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        String packageName = q.packageName;
+        String packageName = projectFiles.packageName;
         // 2. Uso do FileProvider para Android 7.0+ (API 24) ou tratamento de URI por versão
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             // O processo de desinstalação do Android opera diretamente sobre o URI do pacote,
@@ -513,9 +514,9 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 requestPackageInstallerUninstall();
             } catch (Exception e) {
                 // OU Opção B: Chamar o seu método customizado uninstall(...) usando o PackageInstaller
-                if (q != null && !TextUtils.isEmpty(q.packageName)) {
+                if (projectFiles != null && !TextUtils.isEmpty(projectFiles.packageName)) {
                     // Cria o VersionedPackage com o nome do pacote (versão -1 ou PackageManager.VERSION_CODE_UNKNOWN)
-                    VersionedPackage versionedPackage = new VersionedPackage(q.packageName,
+                    VersionedPackage versionedPackage = new VersionedPackage(projectFiles.packageName,
                             PackageManager.VERSION_CODE_HIGHEST);
                     // Flags (ex: 0 ou PackageInstaller.DELETE_ALL_USERS)
                     int flags = 0;
@@ -529,7 +530,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 if (shell.isRoot()) {
                     List<String> stdout = new LinkedList<>();
                     List<String> stderr = new LinkedList<>();
-                    Shell.cmd("pm uninstall " + q.packageName).to(stdout,
+                    Shell.cmd("pm uninstall " + projectFiles.packageName).to(stdout,
                             stderr).submit(result -> {
                         if (result.isSuccess()) {
                             SketchwareUtil.toast("Package uninstalled successfully!");
@@ -554,30 +555,31 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     }
 
     private void requestPackageUninstall() {
-        if (q == null || TextUtils.isEmpty(q.packageName)) {
+        if (projectFiles == null || TextUtils.isEmpty(projectFiles.packageName)) {
             return;
         }
         try {
-            SketchwareUtil.toast("Uninstalling package: " + q.packageName);
-            LogUtil.d("DesignActivity", "Uninstalling package: " + q.packageName);
-            Intent intent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + q.packageName));
+            SketchwareUtil.toast("Uninstalling package: " + projectFiles.packageName);
+            LogUtil.d("DesignActivity", "Uninstalling package: " + projectFiles.packageName);
+            Intent intent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + projectFiles.packageName));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
-            LogUtil.e("DesignActivity", "No application found to handle package deletion for: " + q.packageName, e);
+            LogUtil.e("DesignActivity",
+                    "No application found to handle package deletion for: " + projectFiles.packageName, e);
             SketchwareUtil.toastError("Failed to open uninstaller.");
         }
     }
 
     private boolean isAppInstalled() {
-        if (q == null || TextUtils.isEmpty(q.packageName)) {
+        if (projectFiles == null || TextUtils.isEmpty(projectFiles.packageName)) {
             return false;
         }
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                getPackageManager().getPackageInfo(q.packageName, PackageManager.PackageInfoFlags.of(0));
+                getPackageManager().getPackageInfo(projectFiles.packageName, PackageManager.PackageInfoFlags.of(0));
             } else {
-                getPackageManager().getPackageInfo(q.packageName, 0);
+                getPackageManager().getPackageInfo(projectFiles.packageName, 0);
             }
             return true;
         } catch (PackageManager.NameNotFoundException e) {
@@ -586,8 +588,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     }
 
     private void startApp() {
-        if (q != null && q.packageName != null && !q.packageName.isEmpty()) {
-            Intent launcher = getPackageManager().getLaunchIntentForPackage(q.packageName);
+        if (projectFiles != null && projectFiles.packageName != null && !projectFiles.packageName.isEmpty()) {
+            Intent launcher = getPackageManager().getLaunchIntentForPackage(projectFiles.packageName);
             if (launcher != null) {
                 startActivity(launcher);
             } else {
@@ -608,7 +610,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             if (currentTabNumber > 0) {
                 currentTabNumber--;
                 viewPager.setCurrentItem(currentTabNumber);
-            } else if (t.c("P12I2")) {
+            } else if (projectParams.c("P12I2")) {
                 k();
                 saveChangesAndCloseProject();
             } else {
@@ -646,9 +648,9 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         } else {
             sc_id = savedInstanceState.getString("sc_id");
         }
-        r = new DB(getApplicationContext(),
+        projectSettings = new DB(getApplicationContext(),
                 "P1");
-        t = new DB(getApplicationContext(),
+        projectParams = new DB(getApplicationContext(),
                 "P12");
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setSubtitle(sc_id);
@@ -687,7 +689,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 R.drawable.ic_mtrl_delete,
                 v -> {
                     new Thread(() -> {
-                        FileUtil.deleteFile(q.projectMyscPath);
+                        FileUtil.deleteFile(projectFiles.projectMyscPath);
                         runOnUiThread(() -> {
                             SketchwareUtil.toast("Done cleaning temp files!");
                             updateBottomMenu();
@@ -722,7 +724,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         options.add(new GridOptionAdapter.Option("Install last APK",
                 R.drawable.ic_mtrl_apk_install,
                 v -> {
-                    if (FileUtil.isExistFile(q.finalToInstallApkPath)) {
+                    if (FileUtil.isExistFile(projectFiles.finalToInstallApkPath)) {
                         installBuiltApk();
                     } else {
                         SketchwareUtil.toast("APK does not exist anymore");
@@ -733,7 +735,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 R.drawable.ic_mtrl_key,
                 v -> {
                     ApkSignatures apkSignatures = new ApkSignatures(this,
-                            q.finalToInstallApkPath);
+                            projectFiles.finalToInstallApkPath);
                     apkSignatures.showSignaturesDialog();
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_show_signatures)); // OK
@@ -887,8 +889,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     }
 
     private boolean isDebugApkExists() {
-        if (q != null) {
-            return FileUtil.isExistFile(q.finalToInstallApkPath);
+        if (projectFiles != null) {
+            return FileUtil.isExistFile(projectFiles.finalToInstallApkPath);
         }
         return false;
     }
@@ -897,7 +899,8 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         handler.post(() -> {
             boolean isInstalled = isAppInstalled();
             /*updateOptionVisibility(2, false);*/
-            boolean projectMyscPathExists = q != null && FileUtil.isExistFile(q.projectMyscPath);
+            boolean projectMyscPathExists =
+                    projectFiles != null && FileUtil.isExistFile(projectFiles.projectMyscPath);
             updateOptionVisibility(R.id.action_clean_temp_files,
                     projectMyscPathExists);
             boolean isDebugApkExists = isDebugApkExists();
@@ -945,7 +948,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         HashMap<String, Object> projectInfo = lC.b(sc_id);
         getSupportActionBar().setTitle(yB.c(projectInfo,
                 "my_ws_name"));
-        q = new yq(getApplicationContext(),
+        projectFiles = new yq(getApplicationContext(),
                 wq.d(sc_id),
                 projectInfo);
         try {
@@ -995,7 +998,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         if (!isStoragePermissionGranted()) {
             finish();
         }
-        if (!B) {
+        if (!isHandlingUnsavedChanges) {
             UnsavedChangesSaver unsavedChangesSaver = new UnsavedChangesSaver(this);
             unsavedChangesSaver.execute();
         }
@@ -1066,7 +1069,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
     }
 
     private void askIfToRestoreOldUnsavedProjectData() {
-        B = true;
+        isHandlingUnsavedChanges = true;
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(this);
         dialog.setIcon(R.drawable.ic_mtrl_history);
         dialog.setTitle(Helper.getResString(R.string.design_restore_data_title));
@@ -1106,13 +1109,13 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                             jC.a(sc_id).a(jC.d(sc_id));
                         }
                         refresh();
-                        B = false;
+                        isHandlingUnsavedChanges = false;
                         v.dismiss();
                     }
                 });
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_no),
                 (v, which) -> {
-                    B = false;
+                    isHandlingUnsavedChanges = false;
                     v.dismiss();
                 });
         dialog.setCancelable(false);
@@ -1193,7 +1196,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         new Thread(() -> {
             String filename = Helper.getText(fileName);
             // var yq = new yq(getApplicationContext(), sc_id);
-            var xmlGenerator = new Ox(q.N,
+            var xmlGenerator = new Ox(projectFiles.N,
                     projectFile);
             var projectDataManager = jC.a(sc_id);
             var viewBeans = projectDataManager.d(filename);
@@ -1280,7 +1283,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         launchActivity(ManageJavaActivity.class,
                 null,
                 new Pair<>("pkgName",
-                        q.packageName));
+                        projectFiles.packageName));
     }
 
     /**
@@ -1472,7 +1475,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             activity.runOnUiThread(() -> {
                 updateRunOptions(true);
                 updateRunButton(true);
-                activity.r.a("P1I10",
+                activity.projectSettings.a("P1I10",
                         true);
                 activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 maybeShowNotification();
@@ -1483,7 +1486,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
             try {
-                var q = activity.q;
+                var q = activity.projectFiles;
                 var sc_id = DesignActivity.sc_id;
                 onProgress("Deleting temporary files...",
                         1);
@@ -1732,7 +1735,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             DesignActivity activity = getActivity();
             if (activity == null) {return;}
             NotificationCompat.Builder builder = getBaseNotificationBuilder(activity)
-                    .setContentText("[" + step + "] " + progress)
+                    .setContentText(step + "% " + progress)
                     .setProgress(100,
                             step,
                             false);

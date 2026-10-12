@@ -40,9 +40,9 @@ public class DexCompiler {
         Collection<Path> programFiles;
         Path classesPath;
         if (builder.proguard.isShrinkingEnabled()) {
-            classesPath = Paths.get(builder.yq.proguardClassesPath);
+            classesPath = Paths.get(builder.projectFiles.proguardClassesPath);
         } else {
-            classesPath = Paths.get(builder.yq.compiledClassesPath);
+            classesPath = Paths.get(builder.projectFiles.compiledClassesPath);
         }
         // Use try-with-resources para garantir fechamento da stream e paralelize a listagem
         try (var stream = Files.walk(classesPath)) {
@@ -65,7 +65,7 @@ public class DexCompiler {
                 .filter(Files::exists)
                 .filter(Files::isRegularFile)
                 .toList();
-        Path outputDir = Paths.get(builder.yq.binDirectoryPath, "dex");
+        Path outputDir = Paths.get(builder.projectFiles.binDirectoryPath, "dex");
         try {
             Files.createDirectories(outputDir);
         } catch (IOException e) {

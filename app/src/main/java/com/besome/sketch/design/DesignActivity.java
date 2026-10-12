@@ -5,10 +5,14 @@ import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
+import android.content.pm.PackageManager;
+import android.content.pm.VersionedPackage;
 import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Build;
@@ -16,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -457,6 +462,141 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         startActivity(intent);
     }
 
+    private void requestPackageInstallerUninstall() {
+        // Obtenha o nome do pacote do aplicativo a ser desinstalado (ex: "com.exemplo.app")
+        //        String packageName = q.finalToInstallApkPath; // Currently assigns an APK path
+        // 1. Tratamento para Android 8.0 (API 26) ou superior
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Nota: Para desinstalação via Intent padrão, o Android gerencia a segurança nativamente,
+            // mas mantemos a estrutura de checagem de versão caso sua lógica exija validações específicas.
+        }
+        Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        String packageName = q.packageName;
+        // 2. Uso do FileProvider para Android 7.0+ (API 24) ou tratamento de URI por versão
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // O processo de desinstalação do Android opera diretamente sobre o URI do pacote,
+            // mantendo a compatibilidade segura exigida pelas APIs modernas (API 24+).
+            Uri packageUri = Uri.parse("package:" + packageName);
+            intent.setData(packageUri);
+        } else {
+            Uri packageUri = Uri.parse("package:" + packageName);
+            intent.setData(packageUri);
+        }
+        startActivity(intent);
+    }
+
+    public void uninstall(VersionedPackage versionedPackage, int flags, IntentSender statusReceiver) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    getPackageManager().getPackageInstaller().uninstall(versionedPackage, flags, statusReceiver);
+                }
+            } catch (Exception e) {
+                LogUtil.e("DesignActivity", "Failed to uninstall package via PackageInstaller", e);
+                SketchwareUtil.toastError("Failed to uninstall package.");
+            }
+        } else {
+            // Fallback for older Android versions
+            uninstallApp();
+        }
+    }
+
+    /**
+     * Uninstalls the application.
+     */
+    private void uninstallApp() {
+        if (!ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_ROOT_AUTO_INSTALL_PROJECTS)) {
+            SketchwareUtil.toast("No root access granted. Continuing using default package uninstall prompt.");
+            // Opção A: Continuar usando a intent padrão com tela de confirmação (mais recomendada para apps comuns)
+            try {
+                requestPackageInstallerUninstall();
+            } catch (Exception e) {
+                // OU Opção B: Chamar o seu método customizado uninstall(...) usando o PackageInstaller
+                if (q != null && !TextUtils.isEmpty(q.packageName)) {
+                    // Cria o VersionedPackage com o nome do pacote (versão -1 ou PackageManager.VERSION_CODE_UNKNOWN)
+                    VersionedPackage versionedPackage = new VersionedPackage(q.packageName,
+                            PackageManager.VERSION_CODE_HIGHEST);
+                    // Flags (ex: 0 ou PackageInstaller.DELETE_ALL_USERS)
+                    int flags = 0;
+                    // IntentSender para receber o retorno do status (pode ser null se não precisar tratar o callback)
+                    IntentSender statusReceiver = null;
+                    uninstall(versionedPackage, flags, null);
+                }
+            }
+        } else {
+            Shell.getShell(shell -> {
+                if (shell.isRoot()) {
+                    List<String> stdout = new LinkedList<>();
+                    List<String> stderr = new LinkedList<>();
+                    Shell.cmd("pm uninstall " + q.packageName).to(stdout,
+                            stderr).submit(result -> {
+                        if (result.isSuccess()) {
+                            SketchwareUtil.toast("Package uninstalled successfully!");
+                            updateBottomMenu();
+                        } else {
+                            String sharedErrorMessage =
+                                    "Failed to uninstall package, result code: " + result.getCode() + ". ";
+                            SketchwareUtil.toastError(sharedErrorMessage + "Logs are available in /Internal storage/" +
+                                            ".sketchware/debug.txt",
+                                    Toast.LENGTH_LONG);
+                            LogUtil.e("DesignActivity",
+                                    sharedErrorMessage + "stdout: " + stdout + ", stderr: " + stderr);
+                        }
+                    });
+                } else {
+                    SketchwareUtil.toastError("No root access granted. Continuing using default package uninstall " +
+                            "prompt.");
+                    requestPackageUninstall();
+                }
+            });
+        }
+    }
+
+    private void requestPackageUninstall() {
+        if (q == null || TextUtils.isEmpty(q.packageName)) {
+            return;
+        }
+        try {
+            SketchwareUtil.toast("Uninstalling package: " + q.packageName);
+            LogUtil.d("DesignActivity", "Uninstalling package: " + q.packageName);
+            Intent intent = new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + q.packageName));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            LogUtil.e("DesignActivity", "No application found to handle package deletion for: " + q.packageName, e);
+            SketchwareUtil.toastError("Failed to open uninstaller.");
+        }
+    }
+
+    private boolean isAppInstalled() {
+        if (q == null || TextUtils.isEmpty(q.packageName)) {
+            return false;
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getPackageManager().getPackageInfo(q.packageName, PackageManager.PackageInfoFlags.of(0));
+            } else {
+                getPackageManager().getPackageInfo(q.packageName, 0);
+            }
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private void startApp() {
+        if (q != null && q.packageName != null && !q.packageName.isEmpty()) {
+            Intent launcher = getPackageManager().getLaunchIntentForPackage(q.packageName);
+            if (launcher != null) {
+                startActivity(launcher);
+            } else {
+                SketchwareUtil.toastError("Couldn't launch project, either not installed or not with launcher " +
+                        "activity.");
+            }
+        }
+    }
+
     @SuppressLint("MissingSuperCall")
     @Override
     public void onBackPressed() {
@@ -548,8 +688,11 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 v -> {
                     new Thread(() -> {
                         FileUtil.deleteFile(q.projectMyscPath);
-                        updateBottomMenu();
-                        runOnUiThread(() -> SketchwareUtil.toast("Done cleaning temp files!"));
+                        runOnUiThread(() -> {
+                            SketchwareUtil.toast("Done cleaning temp files!");
+                            updateBottomMenu();
+
+                        });
                     }).start();
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_clean_temp_files)); // OK
@@ -569,9 +712,9 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                 R.drawable.ic_mtrl_frame_source,
                 v -> {
                     launchActivity(SrcViewerActivity.class,
-                        null,
-                        new Pair<>("current",
-                                Helper.getText(fileName)));
+                            null,
+                            new Pair<>("current",
+                                    Helper.getText(fileName)));
                     bottomSheetDialog.dismiss();
                 }));
         options.add(new GridOptionAdapter.Option("Install last APK",
@@ -584,6 +727,29 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                     }
                     bottomSheetDialog.dismiss();
                 }).setId(R.id.action_install_apk)); // OK
+        options.add(new GridOptionAdapter.Option("Launcher app",
+                R.drawable.ic_mtrl_circle_play,
+                v -> {
+                    if (isAppInstalled()) {
+                        startApp();
+                    } else {
+                        SketchwareUtil.toast("App is not installed");
+                    }
+                    bottomSheetDialog.dismiss();
+                }).setId(R.id.action_start_app)); // OK
+        options.add(new GridOptionAdapter.Option("Remove installed app",
+                R.drawable.ic_mtrl_delete,
+                v -> {
+                    if (isAppInstalled()) {
+                        new Thread(() -> {
+                            uninstallApp();
+                            runOnUiThread(() -> SketchwareUtil.toast("Done uninstalling app!"));
+                        }).start();
+                    } else {
+                        SketchwareUtil.toast("App is not installed");
+                    }
+                    bottomSheetDialog.dismiss();
+                }).setId(R.id.action_uninstall_apk)); // OK
         options.add(new GridOptionAdapter.Option("Show Apk signatures",
                 R.drawable.ic_mtrl_key,
                 v -> {
@@ -601,6 +767,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         recyclerView.setAdapter(new GridOptionAdapter(options));
         btnOptions.setOnClickListener(v -> {
             if (bottomSheetDialog != null && !bottomSheetDialog.isShowing()) {
+                updateBottomMenu();
                 bottomSheetDialog.show();
 
             }
@@ -681,7 +848,6 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
             existing.cancelBuild();
             return;
         }
-
         BuildTask newTask = new BuildTask(this);
         if (currentBuildTask.compareAndSet(existing, newTask)) {
             newTask.execute();
@@ -729,15 +895,18 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
 
     private void updateBottomMenu() {
         handler.post(() -> {
+            boolean isInstalled = isAppInstalled();
+            /*updateOptionVisibility(2, false);*/
             boolean projectMyscPathExists = q != null && FileUtil.isExistFile(q.projectMyscPath);
             updateOptionVisibility(R.id.action_clean_temp_files,
                     projectMyscPathExists);
             boolean isDebugApkExists = isDebugApkExists();
-            /*updateOptionVisibility(2, false);*/
             updateOptionVisibility(R.id.action_install_apk,
                     isDebugApkExists);
-
-            /*updateOptionVisibility(R.id.action_show_signatures, isDebugApkExists);*/
+            updateOptionVisibility(R.id.action_uninstall_apk,
+                    isInstalled);
+            updateOptionVisibility(R.id.action_start_app,
+                    isInstalled);
             updateOptionVisibility(R.id.action_show_signatures,
                     isDebugApkExists);
         });
@@ -800,6 +969,21 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         long freeMegabytes = GB.c();
         if (freeMegabytes < 100L && freeMegabytes > 0L) {
             warnAboutInsufficientStorageSpace();
+        }
+        updateBottomMenu();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        updateBottomMenu();
+    }
+
+    @Override
+    public void onVisibleBehindCanceled() {
+        super.onVisibleBehindCanceled();
+        if (!isStoragePermissionGranted()) {
+            finish();
         }
     }
 

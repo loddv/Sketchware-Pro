@@ -39,6 +39,29 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class ExtraPaletteBlock {
 
+    public enum BlockType {
+        VOID(" "),
+        BOOLEAN("b"),
+        DOUBLE("d"),
+        STRING("s"),
+        MAP("a"),
+        VIEW("v"),
+        COMPONENT("p"),
+        CLICK("c"),
+        FRAGMENT("f"),
+        LIST("l");
+
+        private final String code;
+
+        BlockType(String code) {
+            this.code = code;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+
     private final String eventName;
     private final String javaName;
     private final String xmlName;
@@ -144,29 +167,29 @@ public class ExtraPaletteBlock {
         ArrayList<String> booleanVariables = jC.a(sc_id).e(javaName, 0);
         for (int i = 0; i < booleanVariables.size(); i++) {
             if (i == 0) logicEditor.a("Boolean", getTitleBgColor());
-            logicEditor.a(booleanVariables.get(i), "b", "getVar").setTag(booleanVariables.get(i));
+            logicEditor.a(booleanVariables.get(i), BlockType.BOOLEAN.getCode(), "getVar").setTag(booleanVariables.get(i));
         }
         ArrayList<String> numberVariables = jC.a(sc_id).e(javaName, 1);
         for (int i = 0; i < numberVariables.size(); i++) {
             if (i == 0) logicEditor.a("Number", getTitleBgColor());
-            logicEditor.a(numberVariables.get(i), "d", "getVar").setTag(numberVariables.get(i));
+            logicEditor.a(numberVariables.get(i), BlockType.DOUBLE.getCode(), "getVar").setTag(numberVariables.get(i));
         }
         ArrayList<String> stringVariables = jC.a(sc_id).e(javaName, 2);
         for (int i = 0; i < stringVariables.size(); i++) {
             if (i == 0) logicEditor.a("String", getTitleBgColor());
-            logicEditor.a(stringVariables.get(i), "s", "getVar").setTag(stringVariables.get(i));
+            logicEditor.a(stringVariables.get(i), BlockType.STRING.getCode(), "getVar").setTag(stringVariables.get(i));
         }
         ArrayList<String> mapVariables = jC.a(sc_id).e(javaName, 3);
         for (int i = 0; i < mapVariables.size(); i++) {
             if (i == 0) logicEditor.a("Map", getTitleBgColor());
-            logicEditor.a(mapVariables.get(i), "a", "getVar").setTag(mapVariables.get(i));
+            logicEditor.a(mapVariables.get(i), BlockType.MAP.getCode(), "getVar").setTag(mapVariables.get(i));
         }
         ArrayList<String> customVariables = jC.a(sc_id).e(javaName, 5);
         for (int i = 0; i < customVariables.size(); i++) {
             if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
-            String[] split = customVariables.get(i).split(" ");
+            String[] split = customVariables.get(i).split(BlockType.VOID.getCode());
             if (split.length > 1) {
-                logicEditor.a(split[1], "v", split[0], "getVar").setTag(customVariables.get(i));
+                logicEditor.a(split[1], BlockType.VIEW.getCode(), split[0], "getVar").setTag(customVariables.get(i));
             } else {
                 SketchwareUtil.toastError("Found invalid data of Custom Variable #" + (i + 1) + ": \"" + customVariables.get(i) + "\"");
             }
@@ -212,7 +235,8 @@ public class ExtraPaletteBlock {
                 logicEditor.a("Components", getTitleBgColor());
             }
             if (component.type != 27) {
-                logicEditor.a(component.componentId, "p", ComponentBean.getComponentTypeName(component.type), "getVar"
+                logicEditor.a(component.componentId, BlockType.COMPONENT.getCode(),
+                        ComponentBean.getComponentTypeName(component.type), "getVar"
                 ).setTag(component.componentId);
             }
         }
@@ -240,15 +264,15 @@ public class ExtraPaletteBlock {
                                 IdGenerator.getLastPath(customView.convert);
                         String resultId = isViewBindingEnabled ?
                                 "binding." + ViewBindingBuilder.generateParameterFromId(customView.id) : customView.id;
-                        logicEditor.a(resultId, "v", typeName, "getVar").setTag(resultId);
+                        logicEditor.a(resultId, BlockType.VIEW.getCode(), typeName, "getVar").setTag(resultId);
                     }
                 }
             }
-            logicEditor.a(" ", "notifyDataSetChanged");
-            logicEditor.a("c", "viewOnClick");
-            logicEditor.a("c", "viewOnLongClick");
-            logicEditor.a("c", "checkboxOnChecked");
-            logicEditor.a("b", "checkboxIsChecked");
+            logicEditor.a(BlockType.VOID.getCode(), "notifyDataSetChanged");
+            logicEditor.a(BlockType.CLICK.getCode(), "viewOnClick");
+            logicEditor.a(BlockType.CLICK.getCode(), "viewOnLongClick");
+            logicEditor.a(BlockType.CLICK.getCode(), "checkboxOnChecked");
+            logicEditor.a(BlockType.BOOLEAN.getCode(), "checkboxIsChecked");
             return;
         }
         ArrayList<ViewBean> views = jC.a(sc_id).d(xmlName);
@@ -263,7 +287,8 @@ public class ExtraPaletteBlock {
                     String typeName = view.convert.isEmpty() ? ViewBean.getViewTypeName(view.type) :
                             IdGenerator.getLastPath(view.convert);
                     logicEditor.a(isViewBindingEnabled ?
-                                    "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id, "v",
+                                    "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id,
+                            BlockType.VIEW.getCode(),
                             typeName
                             , "getVar").setTag(isViewBindingEnabled ?
                             "binding." + ViewBindingBuilder.generateParameterFromId(view.id) : view.id);
@@ -287,7 +312,7 @@ public class ExtraPaletteBlock {
                                 IdGenerator.getLastPath(drawerView.convert);
                         logicEditor.a(isViewBindingEnabled ?
                                         "binding.drawer." + ViewBindingBuilder.generateParameterFromId(drawerView.id) : id,
-                                "v", typeName, "getVar").setTag(id);
+                                BlockType.VIEW.getCode(), typeName, "getVar").setTag(id);
                     }
                 }
             }
@@ -298,32 +323,32 @@ public class ExtraPaletteBlock {
         switch (eventName) {
             case "onTabAdded", "onTabLayoutNewTabAdded" -> {
                 logicEditor.a("Fragment & TabLayout", getTitleBgColor());
-                logicEditor.a("f", "returnTitle");
+                logicEditor.a(BlockType.FRAGMENT.getCode(), "returnTitle");
             }
             case "onFragmentAdded" -> {
                 logicEditor.a("Fragment & TabLayout", getTitleBgColor());
-                logicEditor.a("f", "returnFragment");
+                logicEditor.a(BlockType.FRAGMENT.getCode(), "returnFragment");
             }
             case "onScrollChanged" -> {
                 logicEditor.a("ListView", getTitleBgColor());
-                logicEditor.a("d", "listscrollparam");
-                logicEditor.a("d", "getLastVisiblePosition");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "listscrollparam");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getLastVisiblePosition");
             }
             case "onScrollChanged2" -> {
                 logicEditor.a("RecyclerView", getTitleBgColor());
-                logicEditor.a("d", "recyclerscrollparam");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "recyclerscrollparam");
             }
             case "onPageChanged" -> {
                 logicEditor.a("ViewPager", getTitleBgColor());
-                logicEditor.a("d", "pagerscrollparam");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "pagerscrollparam");
             }
             case "onCreateOptionsMenu" -> {
                 logicEditor.a("Menu", getTitleBgColor());
-                logicEditor.a(" ", "menuInflater");
-                logicEditor.a(" ", "menuAddItem");
-                logicEditor.a(" ", "menuAddMenuItem");
-                logicEditor.a("c", "menuAddSubmenu");
-                logicEditor.a(" ", "submenuAddItem");
+                logicEditor.a(BlockType.VOID.getCode(), "menuInflater");
+                logicEditor.a(BlockType.VOID.getCode(), "menuAddItem");
+                logicEditor.a(BlockType.VOID.getCode(), "menuAddMenuItem");
+                logicEditor.a(BlockType.CLICK.getCode(), "menuAddSubmenu");
+                logicEditor.a(BlockType.VOID.getCode(), "submenuAddItem");
             }
             default -> {
             }
@@ -335,11 +360,11 @@ public class ExtraPaletteBlock {
             int type = list.first;
             String name = list.second;
             switch (type) {
-                case 1, 2, 3 -> logicEditor.a(name, "l", kq.a(type), "getVar").setTag(name);
+                case 1, 2, 3 -> logicEditor.a(name, BlockType.LIST.getCode(), kq.a(type), "getVar").setTag(name);
                 default -> {
                     String variableName = CustomVariableUtil.getVariableName(name);
                     if (variableName != null) {
-                        logicEditor.a(variableName, "l", "List", "getVar").setTag(name);
+                        logicEditor.a(variableName, BlockType.LIST.getCode(), "List", "getVar").setTag(name);
                     } else {
                         logicEditor.a("Invalid: " + name, getColor(logicEditor, R.attr.colorError));
                     }
@@ -359,11 +384,11 @@ public class ExtraPaletteBlock {
         logicEditor.paletteBlock.a();
         if (eventName.equals("Import")) {
             if (paletteId == 3) {
-                logicEditor.a(" ", "addSourceDirectly");
+                logicEditor.a(BlockType.VOID.getCode(), "addSourceDirectly");
             } else {
                 logicEditor.a("Enter the path without import & semicolon", getTitleBgColor());
-                logicEditor.a(" ", "customImport");
-                logicEditor.a(" ", "customImport2");
+                logicEditor.a(BlockType.VOID.getCode(), "customImport");
+                logicEditor.a(BlockType.VOID.getCode(), "customImport2");
             }
             return;
         }
@@ -375,21 +400,24 @@ public class ExtraPaletteBlock {
                 StringsEditorManager stringsEditorManager = new StringsEditorManager();
                 stringsEditorManager.convertXmlStringsToListMap(FileUtil.readFileIfExist(filePath), StringsListMap);
                 logicEditor.b("Open Resources editor", "openResourcesEditor");
-                logicEditor.a("s", "getResString");
+                logicEditor.a(BlockType.STRING.getCode(), "getResString");
                 logicEditor.a("Saved Res Strings :", getTitleBgColor());
                 if (!stringsEditorManager.isXmlStringsExist(StringsListMap, "app_name")) {
-                    logicEditor.a("app_name", "s", "getResStr").setTag("S98ZCSapp_name");
+                    logicEditor.a("app_name", BlockType.STRING.getCode(), "getResStr").setTag("S98ZCSapp_name");
                 }
                 for (int i = 0; i < StringsListMap.size(); i++) {
                     String key = Objects.requireNonNull(StringsListMap.get(i).get("key")).toString();
-                    logicEditor.a(key, "s", "getResStr").setTag("S98ZCS" + key);
+                    logicEditor.a(key, BlockType.STRING.getCode(), "getResStr").setTag("S98ZCS" + key);
                 }
                 return;
             case 0:
                 logicEditor.b("Add variable", "variableAdd");
                 logicEditor.b("Add custom variable", "variableAddNew", clickListener);
-                logicEditor.b("Remove variable", "variableRemove", clickListener);
-                logicEditor.b("Edit variable", "variableEdit", clickListener);
+                // Check if any variables (boolean=0, number=1, string=2, map=3, custom=5/6) exist and are used
+                if (areAnyVariablesUsed()) {
+                    logicEditor.b("Remove variable", "variableRemove", clickListener);
+                    logicEditor.b("Edit variable", "variableEdit", clickListener);
+                }
                 variables();
                 return;
             case 1:
@@ -405,107 +433,107 @@ public class ExtraPaletteBlock {
                 BlocksHandler.primaryBlocksD(logicEditor);
                 return;
             case 4:
-                logicEditor.a("d", "mathGetDip");
-                logicEditor.a("d", "mathGetDisplayWidth");
-                logicEditor.a("d", "mathGetDisplayHeight");
-                logicEditor.a("d", "mathPi");
-                logicEditor.a("d", "mathE");
-                logicEditor.a("d", "mathPow");
-                logicEditor.a("d", "mathMin");
-                logicEditor.a("d", "mathMax");
-                logicEditor.a("d", "mathSqrt");
-                logicEditor.a("d", "mathAbs");
-                logicEditor.a("d", "mathRound");
-                logicEditor.a("d", "mathCeil");
-                logicEditor.a("d", "mathFloor");
-                logicEditor.a("d", "mathSin");
-                logicEditor.a("d", "mathCos");
-                logicEditor.a("d", "mathTan");
-                logicEditor.a("d", "mathAsin");
-                logicEditor.a("d", "mathAcos");
-                logicEditor.a("d", "mathAtan");
-                logicEditor.a("d", "mathExp");
-                logicEditor.a("d", "mathLog");
-                logicEditor.a("d", "mathLog10");
-                logicEditor.a("d", "mathToRadian");
-                logicEditor.a("d", "mathToDegree");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathGetDip");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathGetDisplayWidth");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathGetDisplayHeight");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathPi");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathE");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathPow");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathMin");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathMax");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathSqrt");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathAbs");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathRound");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathCeil");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathFloor");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathSin");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathCos");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathTan");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathAsin");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathAcos");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathAtan");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathExp");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathLog");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathLog10");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathToRadian");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "mathToDegree");
                 return;
             case 5:
                 extraBlocks.fileBlocks();
                 logicEditor.a("FileUtil Blocks", getTitleBgColor());
                 if (!frc.getAssetsFile().isEmpty()) {
-                    logicEditor.a(" ", "getAssetFile");
-                    logicEditor.a("s", "copyAssetFile");
+                    logicEditor.a(BlockType.VOID.getCode(), "getAssetFile");
+                    logicEditor.a(BlockType.STRING.getCode(), "copyAssetFile");
                 }
-                logicEditor.a("s", "fileutilread");
-                logicEditor.a(" ", "fileutilwrite");
-                logicEditor.a(" ", "fileutilcopy");
-                logicEditor.a(" ", "fileutilcopydir");
-                logicEditor.a(" ", "fileutilmove");
-                logicEditor.a(" ", "fileutildelete");
-                logicEditor.a(" ", "renameFile");
-                logicEditor.a("b", "fileutilisexist");
-                logicEditor.a(" ", "fileutilmakedir");
-                logicEditor.a(" ", "fileutillistdir");
-                logicEditor.a("b", "fileutilisdir");
-                logicEditor.a("b", "fileutilisfile");
-                logicEditor.a("d", "fileutillength");
-                logicEditor.a("b", "fileutilStartsWith");
-                logicEditor.a("b", "fileutilEndsWith");
-                logicEditor.a("s", "fileutilGetLastSegmentPath");
-                logicEditor.a("s", "getExternalStorageDir");
-                logicEditor.a("s", "getPackageDataDir");
-                logicEditor.a("s", "getPublicDir");
-                logicEditor.a(" ", "resizeBitmapFileRetainRatio");
-                logicEditor.a(" ", "resizeBitmapFileToSquare");
-                logicEditor.a(" ", "resizeBitmapFileToCircle");
-                logicEditor.a(" ", "resizeBitmapFileWithRoundedBorder");
-                logicEditor.a(" ", "cropBitmapFileFromCenter");
-                logicEditor.a(" ", "rotateBitmapFile");
-                logicEditor.a(" ", "scaleBitmapFile");
-                logicEditor.a(" ", "skewBitmapFile");
-                logicEditor.a(" ", "setBitmapFileColorFilter");
-                logicEditor.a(" ", "setBitmapFileBrightness");
-                logicEditor.a(" ", "setBitmapFileContrast");
-                logicEditor.a("d", "getJpegRotate");
+                logicEditor.a(BlockType.STRING.getCode(), "fileutilread");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutilwrite");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutilcopy");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutilcopydir");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutilmove");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutildelete");
+                logicEditor.a(BlockType.VOID.getCode(), "renameFile");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "fileutilisexist");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutilmakedir");
+                logicEditor.a(BlockType.VOID.getCode(), "fileutillistdir");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "fileutilisdir");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "fileutilisfile");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "fileutillength");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "fileutilStartsWith");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "fileutilEndsWith");
+                logicEditor.a(BlockType.STRING.getCode(), "fileutilGetLastSegmentPath");
+                logicEditor.a(BlockType.STRING.getCode(), "getExternalStorageDir");
+                logicEditor.a(BlockType.STRING.getCode(), "getPackageDataDir");
+                logicEditor.a(BlockType.STRING.getCode(), "getPublicDir");
+                logicEditor.a(BlockType.VOID.getCode(), "resizeBitmapFileRetainRatio");
+                logicEditor.a(BlockType.VOID.getCode(), "resizeBitmapFileToSquare");
+                logicEditor.a(BlockType.VOID.getCode(), "resizeBitmapFileToCircle");
+                logicEditor.a(BlockType.VOID.getCode(), "resizeBitmapFileWithRoundedBorder");
+                logicEditor.a(BlockType.VOID.getCode(), "cropBitmapFileFromCenter");
+                logicEditor.a(BlockType.VOID.getCode(), "rotateBitmapFile");
+                logicEditor.a(BlockType.VOID.getCode(), "scaleBitmapFile");
+                logicEditor.a(BlockType.VOID.getCode(), "skewBitmapFile");
+                logicEditor.a(BlockType.VOID.getCode(), "setBitmapFileColorFilter");
+                logicEditor.a(BlockType.VOID.getCode(), "setBitmapFileBrightness");
+                logicEditor.a(BlockType.VOID.getCode(), "setBitmapFileContrast");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getJpegRotate");
                 return;
             case 6:
-                logicEditor.a(" ", "setEnable");
-                logicEditor.a("b", "getEnable");
-                logicEditor.a(" ", "setVisible");
-                logicEditor.a("b", "checkViewVisibility");
-                logicEditor.a(" ", "setElevation");
-                logicEditor.a(" ", "setRotate");
-                logicEditor.a("d", "getRotate");
-                logicEditor.a(" ", "setAlpha");
-                logicEditor.a("d", "getAlpha");
-                logicEditor.a(" ", "setTranslationX");
-                logicEditor.a("d", "getTranslationX");
-                logicEditor.a(" ", "setTranslationY");
-                logicEditor.a("d", "getTranslationY");
-                logicEditor.a(" ", "setScaleX");
-                logicEditor.a("d", "getScaleX");
-                logicEditor.a(" ", "setScaleY");
-                logicEditor.a("d", "getScaleY");
-                logicEditor.a("d", "getLocationX");
-                logicEditor.a("d", "getLocationY");
-                logicEditor.a("d", "getHeight");
-                logicEditor.a("d", "getWidth");
-                logicEditor.a(" ", "requestFocus");
-                logicEditor.a(" ", "removeView");
-                logicEditor.a(" ", "removeViews");
-                logicEditor.a(" ", "addView");
-                logicEditor.a("v", "viewGetChildAt");
-                logicEditor.a(" ", "addViews");
-                logicEditor.a(" ", "setGravity");
-                logicEditor.a(" ", "setColorFilterView");
-                logicEditor.a(" ", "setBgColor");
-                logicEditor.a(" ", "setBgResource");
-                logicEditor.a(" ", "setBgDrawable");
-                logicEditor.a(" ", "setStrokeView");
-                logicEditor.a(" ", "setCornerRadiusView");
-                logicEditor.a(" ", "setGradientBackground");
-                logicEditor.a(" ", "setRadiusAndStrokeView");
+                logicEditor.a(BlockType.VOID.getCode(), "setEnable");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "getEnable");
+                logicEditor.a(BlockType.VOID.getCode(), "setVisible");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "checkViewVisibility");
+                logicEditor.a(BlockType.VOID.getCode(), "setElevation");
+                logicEditor.a(BlockType.VOID.getCode(), "setRotate");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getRotate");
+                logicEditor.a(BlockType.VOID.getCode(), "setAlpha");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getAlpha");
+                logicEditor.a(BlockType.VOID.getCode(), "setTranslationX");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getTranslationX");
+                logicEditor.a(BlockType.VOID.getCode(), "setTranslationY");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getTranslationY");
+                logicEditor.a(BlockType.VOID.getCode(), "setScaleX");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getScaleX");
+                logicEditor.a(BlockType.VOID.getCode(), "setScaleY");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getScaleY");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getLocationX");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getLocationY");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getHeight");
+                logicEditor.a(BlockType.DOUBLE.getCode(), "getWidth");
+                logicEditor.a(BlockType.VOID.getCode(), "requestFocus");
+                logicEditor.a(BlockType.VOID.getCode(), "removeView");
+                logicEditor.a(BlockType.VOID.getCode(), "removeViews");
+                logicEditor.a(BlockType.VOID.getCode(), "addView");
+                logicEditor.a(BlockType.VIEW.getCode(), "viewGetChildAt");
+                logicEditor.a(BlockType.VOID.getCode(), "addViews");
+                logicEditor.a(BlockType.VOID.getCode(), "setGravity");
+                logicEditor.a(BlockType.VOID.getCode(), "setColorFilterView");
+                logicEditor.a(BlockType.VOID.getCode(), "setBgColor");
+                logicEditor.a(BlockType.VOID.getCode(), "setBgResource");
+                logicEditor.a(BlockType.VOID.getCode(), "setBgDrawable");
+                logicEditor.a(BlockType.VOID.getCode(), "setStrokeView");
+                logicEditor.a(BlockType.VOID.getCode(), "setCornerRadiusView");
+                logicEditor.a(BlockType.VOID.getCode(), "setGradientBackground");
+                logicEditor.a(BlockType.VOID.getCode(), "setRadiusAndStrokeView");
             {
                 boolean editTextUsed = isWidgetUsed("EditText")
                         || extraBlocks.isCustomVarUsed("EditText");
@@ -538,86 +566,86 @@ public class ExtraPaletteBlock {
                         || seekBarUsed || progressBarUsed || videoViewUsed || webViewUsed) {
                     logicEditor.a("Widgets", getTitleBgColor());
                     if (textViewUsed) {
-                        logicEditor.a(" ", "setText");
-                        logicEditor.a("s", "getText");
-                        logicEditor.a(" ", "setTypeface");
-                        logicEditor.a(" ", "setTextColor");
-                        logicEditor.a(" ", "setTextSize");
+                        logicEditor.a(BlockType.VOID.getCode(), "setText");
+                        logicEditor.a(BlockType.STRING.getCode(), "getText");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTypeface");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTextColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTextSize");
                     }
                     if (editTextUsed) {
-                        logicEditor.a(" ", "setHint");
-                        logicEditor.a(" ", "setHintTextColor");
-                        logicEditor.a(" ", "EditTextdiableSuggestion");
-                        logicEditor.a(" ", "EditTextLines");
-                        logicEditor.a(" ", "EditTextSingleLine");
-                        logicEditor.a(" ", "EditTextShowError");
-                        logicEditor.a(" ", "EditTextSelectAll");
-                        logicEditor.a(" ", "EditTextSetSelection");
-                        logicEditor.a(" ", "EditTextSetMaxLines");
-                        logicEditor.a("d", "EdittextGetselectionStart");
-                        logicEditor.a("d", "EdittextGetselectionEnd");
+                        logicEditor.a(BlockType.VOID.getCode(), "setHint");
+                        logicEditor.a(BlockType.VOID.getCode(), "setHintTextColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextdiableSuggestion");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextLines");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextSingleLine");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextShowError");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextSelectAll");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextSetSelection");
+                        logicEditor.a(BlockType.VOID.getCode(), "EditTextSetMaxLines");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "EdittextGetselectionStart");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "EdittextGetselectionEnd");
                     }
                     if (compoundButtonUsed) {
-                        logicEditor.a(" ", "setChecked");
-                        logicEditor.a("b", "getChecked");
+                        logicEditor.a(BlockType.VOID.getCode(), "setChecked");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "getChecked");
                     }
                     if (autoCompleteTextViewUsed) {
-                        logicEditor.a(" ", "autoComSetData");
+                        logicEditor.a(BlockType.VOID.getCode(), "autoComSetData");
                     }
                     if (multiAutoCompleteTextViewUsed) {
-                        logicEditor.a(" ", "multiAutoComSetData");
-                        logicEditor.a(" ", "setThreshold");
-                        logicEditor.a(" ", "setTokenizer");
+                        logicEditor.a(BlockType.VOID.getCode(), "multiAutoComSetData");
+                        logicEditor.a(BlockType.VOID.getCode(), "setThreshold");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTokenizer");
                     }
                     if (imageViewUsed) {
-                        logicEditor.a(" ", "setImage");
-                        logicEditor.a(" ", "setImageCustomRes");
-                        logicEditor.a(" ", "setImageIdentifier");
-                        logicEditor.a(" ", "setImageFilePath");
-                        logicEditor.a(" ", "setImageUrl");
-                        logicEditor.a(" ", "setColorFilter");
+                        logicEditor.a(BlockType.VOID.getCode(), "setImage");
+                        logicEditor.a(BlockType.VOID.getCode(), "setImageCustomRes");
+                        logicEditor.a(BlockType.VOID.getCode(), "setImageIdentifier");
+                        logicEditor.a(BlockType.VOID.getCode(), "setImageFilePath");
+                        logicEditor.a(BlockType.VOID.getCode(), "setImageUrl");
+                        logicEditor.a(BlockType.VOID.getCode(), "setColorFilter");
                     }
                     if (ratingBarUsed) {
-                        logicEditor.a("d", "getRating");
-                        logicEditor.a(" ", "setRating");
-                        logicEditor.a(" ", "setNumStars");
-                        logicEditor.a(" ", "setStepSize");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "getRating");
+                        logicEditor.a(BlockType.VOID.getCode(), "setRating");
+                        logicEditor.a(BlockType.VOID.getCode(), "setNumStars");
+                        logicEditor.a(BlockType.VOID.getCode(), "setStepSize");
                     }
                     if (seekBarUsed) {
-                        logicEditor.a(" ", "seekBarSetProgress");
-                        logicEditor.a("d", "seekBarGetProgress");
-                        logicEditor.a(" ", "seekBarSetMax");
-                        logicEditor.a("d", "seekBarGetMax");
+                        logicEditor.a(BlockType.VOID.getCode(), "seekBarSetProgress");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "seekBarGetProgress");
+                        logicEditor.a(BlockType.VOID.getCode(), "seekBarSetMax");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "seekBarGetMax");
                     }
                     if (progressBarUsed) {
-                        logicEditor.a(" ", "progressBarSetIndeterminate");
+                        logicEditor.a(BlockType.VOID.getCode(), "progressBarSetIndeterminate");
                     }
                     if (videoViewUsed) {
-                        logicEditor.a(" ", "videoviewSetVideoUri");
-                        logicEditor.a(" ", "videoviewStart");
-                        logicEditor.a(" ", "videoviewPause");
-                        logicEditor.a(" ", "videoviewStop");
-                        logicEditor.a("b", "videoviewIsPlaying");
-                        logicEditor.a("b", "videoviewCanPause");
-                        logicEditor.a("b", "videoviewCanSeekForward");
-                        logicEditor.a("b", "videoviewCanSeekBackward");
-                        logicEditor.a("d", "videoviewGetCurrentPosition");
-                        logicEditor.a("d", "videoviewGetDuration");
+                        logicEditor.a(BlockType.VOID.getCode(), "videoviewSetVideoUri");
+                        logicEditor.a(BlockType.VOID.getCode(), "videoviewStart");
+                        logicEditor.a(BlockType.VOID.getCode(), "videoviewPause");
+                        logicEditor.a(BlockType.VOID.getCode(), "videoviewStop");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "videoviewIsPlaying");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "videoviewCanPause");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "videoviewCanSeekForward");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "videoviewCanSeekBackward");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "videoviewGetCurrentPosition");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "videoviewGetDuration");
                     }
                     if (webViewUsed) {
-                        logicEditor.a(" ", "webViewLoadUrl");
-                        logicEditor.a("s", "webViewGetUrl");
-                        logicEditor.a("d", "webviewGetProgress");
-                        logicEditor.a(" ", "webViewSetCacheMode");
-                        logicEditor.a("b", "webViewCanGoBack");
-                        logicEditor.a("b", "webViewCanGoForward");
-                        logicEditor.a(" ", "webViewGoBack");
-                        logicEditor.a(" ", "webViewGoForward");
-                        logicEditor.a(" ", "webViewClearCache");
-                        logicEditor.a(" ", "webViewClearHistory");
-                        logicEditor.a(" ", "webViewStopLoading");
-                        logicEditor.a(" ", "webViewZoomIn");
-                        logicEditor.a(" ", "webViewZoomOut");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewLoadUrl");
+                        logicEditor.a(BlockType.STRING.getCode(), "webViewGetUrl");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "webviewGetProgress");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewSetCacheMode");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "webViewCanGoBack");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "webViewCanGoForward");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewGoBack");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewGoForward");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewClearCache");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewClearHistory");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewStopLoading");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewZoomIn");
+                        logicEditor.a(BlockType.VOID.getCode(), "webViewZoomOut");
                     }
                 }
             }
@@ -631,54 +659,54 @@ public class ExtraPaletteBlock {
                 if (spinnerUsed || listViewUsed || recyclerViewUsed || gridViewUsed || viewPagerUsed) {
                     logicEditor.a("List", getTitleBgColor());
                     if (spinnerUsed) {
-                        logicEditor.a(" ", "spnSetData");
-                        logicEditor.a(" ", "spnSetCustomViewData");
-                        logicEditor.a(" ", "spnRefresh");
-                        logicEditor.a(" ", "spnSetSelection");
-                        logicEditor.a("d", "spnGetSelection");
+                        logicEditor.a(BlockType.VOID.getCode(), "spnSetData");
+                        logicEditor.a(BlockType.VOID.getCode(), "spnSetCustomViewData");
+                        logicEditor.a(BlockType.VOID.getCode(), "spnRefresh");
+                        logicEditor.a(BlockType.VOID.getCode(), "spnSetSelection");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "spnGetSelection");
                     }
                     if (!inOnBindCustomView) {
                         if (listViewUsed) {
-                            logicEditor.a(" ", "listSetData");
-                            logicEditor.a(" ", "listSetCustomViewData");
-                            logicEditor.a(" ", "listRefresh");
-                            logicEditor.a(" ", "refreshingList");
-                            logicEditor.a(" ", "listSmoothScrollTo");
-                            logicEditor.a(" ", "listViewSetSelection");
-                            logicEditor.a(" ", "listSetTranscriptMode");
-                            logicEditor.a(" ", "listSetStackFromBottom");
-                            logicEditor.a(" ", "ListViewAddHeader");
-                            logicEditor.a(" ", "listViewRemoveHeader");
-                            logicEditor.a(" ", "ListViewAddFooter");
-                            logicEditor.a(" ", "listViewRemoveFooter");
+                            logicEditor.a(BlockType.VOID.getCode(), "listSetData");
+                            logicEditor.a(BlockType.VOID.getCode(), "listSetCustomViewData");
+                            logicEditor.a(BlockType.VOID.getCode(), "listRefresh");
+                            logicEditor.a(BlockType.VOID.getCode(), "refreshingList");
+                            logicEditor.a(BlockType.VOID.getCode(), "listSmoothScrollTo");
+                            logicEditor.a(BlockType.VOID.getCode(), "listViewSetSelection");
+                            logicEditor.a(BlockType.VOID.getCode(), "listSetTranscriptMode");
+                            logicEditor.a(BlockType.VOID.getCode(), "listSetStackFromBottom");
+                            logicEditor.a(BlockType.VOID.getCode(), "ListViewAddHeader");
+                            logicEditor.a(BlockType.VOID.getCode(), "listViewRemoveHeader");
+                            logicEditor.a(BlockType.VOID.getCode(), "ListViewAddFooter");
+                            logicEditor.a(BlockType.VOID.getCode(), "listViewRemoveFooter");
                         }
                         if (recyclerViewUsed) {
-                            logicEditor.a(" ", "recyclerSetCustomViewData");
-                            logicEditor.a(" ", "recyclerSetLayoutManager");
-                            logicEditor.a(" ", "recyclerSetLayoutManagerHorizontal");
-                            logicEditor.a(" ", "recyclerSetHasFixedSize");
-                            logicEditor.a(" ", "recyclerSmoothScrollToPosition");
-                            logicEditor.a(" ", "recyclerScrollToPositionWithOffset");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerSetCustomViewData");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerSetLayoutManager");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerSetLayoutManagerHorizontal");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerSetHasFixedSize");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerSmoothScrollToPosition");
+                            logicEditor.a(BlockType.VOID.getCode(), "recyclerScrollToPositionWithOffset");
                         }
                         if (gridViewUsed) {
-                            logicEditor.a(" ", "gridSetCustomViewData");
-                            logicEditor.a(" ", "gridSetNumColumns");
-                            logicEditor.a(" ", "gridSetColumnWidth");
-                            logicEditor.a(" ", "gridSetVerticalSpacing");
-                            logicEditor.a(" ", "gridSetHorizontalSpacing");
-                            logicEditor.a(" ", "gridSetStretchMode");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetCustomViewData");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetNumColumns");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetColumnWidth");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetVerticalSpacing");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetHorizontalSpacing");
+                            logicEditor.a(BlockType.VOID.getCode(), "gridSetStretchMode");
                         }
                         if (viewPagerUsed) {
-                            logicEditor.a(" ", "pagerSetCustomViewData");
-                            logicEditor.a(" ", "pagerSetFragmentAdapter");
-                            logicEditor.a("d", "pagerGetOffscreenPageLimit");
-                            logicEditor.a(" ", "pagerSetOffscreenPageLimit");
-                            logicEditor.a("d", "pagerGetCurrentItem");
-                            logicEditor.a(" ", "pagerSetCurrentItem");
-                            logicEditor.a(" ", "ViewPagerNotifyOnDtatChange");
+                            logicEditor.a(BlockType.VOID.getCode(), "pagerSetCustomViewData");
+                            logicEditor.a(BlockType.VOID.getCode(), "pagerSetFragmentAdapter");
+                            logicEditor.a(BlockType.DOUBLE.getCode(), "pagerGetOffscreenPageLimit");
+                            logicEditor.a(BlockType.VOID.getCode(), "pagerSetOffscreenPageLimit");
+                            logicEditor.a(BlockType.DOUBLE.getCode(), "pagerGetCurrentItem");
+                            logicEditor.a(BlockType.VOID.getCode(), "pagerSetCurrentItem");
+                            logicEditor.a(BlockType.VOID.getCode(), "ViewPagerNotifyOnDtatChange");
                         }
                     } else {
-                        logicEditor.a(" ", "setRecyclerViewLayoutParams");
+                        logicEditor.a(BlockType.VOID.getCode(), "setRecyclerViewLayoutParams");
                     }
                 }
             }
@@ -694,48 +722,48 @@ public class ExtraPaletteBlock {
                 if (drawerUsed || fabUsed || bottomNavigationViewUsed || swipeRefreshLayoutUsed || cardViewUsed || tabLayoutUsed || textInputLayoutUsed) {
                     logicEditor.a("AndroidX components", getTitleBgColor());
                     if (drawerUsed) {
-                        logicEditor.a("b", "isDrawerOpen");
-                        logicEditor.a(" ", "openDrawer");
-                        logicEditor.a(" ", "closeDrawer");
+                        logicEditor.a(BlockType.BOOLEAN.getCode(), "isDrawerOpen");
+                        logicEditor.a(BlockType.VOID.getCode(), "openDrawer");
+                        logicEditor.a(BlockType.VOID.getCode(), "closeDrawer");
                     }
                     if (fabUsed) {
-                        logicEditor.a(" ", "fabIcon");
-                        logicEditor.a(" ", "fabSize");
-                        logicEditor.a(" ", "fabVisibility");
+                        logicEditor.a(BlockType.VOID.getCode(), "fabIcon");
+                        logicEditor.a(BlockType.VOID.getCode(), "fabSize");
+                        logicEditor.a(BlockType.VOID.getCode(), "fabVisibility");
                     }
                     if (bottomNavigationViewUsed) {
-                        logicEditor.a(" ", "bottomMenuAddItem");
+                        logicEditor.a(BlockType.VOID.getCode(), "bottomMenuAddItem");
                     }
                     if (swipeRefreshLayoutUsed) {
-                        logicEditor.a("c", "onSwipeRefreshLayout");
-                        logicEditor.a(" ", "setRefreshing");
+                        logicEditor.a(BlockType.CLICK.getCode(), "onSwipeRefreshLayout");
+                        logicEditor.a(BlockType.VOID.getCode(), "setRefreshing");
                     }
                     if (cardViewUsed) {
-                        logicEditor.a(" ", "setCardBackgroundColor");
-                        logicEditor.a(" ", "setCardRadius");
-                        logicEditor.a(" ", "setCardElevation");
-                        logicEditor.a(" ", "setPreventCornerOverlap");
-                        logicEditor.a(" ", "setUseCompatPadding");
+                        logicEditor.a(BlockType.VOID.getCode(), "setCardBackgroundColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setCardRadius");
+                        logicEditor.a(BlockType.VOID.getCode(), "setCardElevation");
+                        logicEditor.a(BlockType.VOID.getCode(), "setPreventCornerOverlap");
+                        logicEditor.a(BlockType.VOID.getCode(), "setUseCompatPadding");
                     }
                     if (tabLayoutUsed) {
-                        logicEditor.a(" ", "addTab");
-                        logicEditor.a(" ", "setupWithViewPager");
-                        logicEditor.a(" ", "setInlineLabel");
-                        logicEditor.a(" ", "setTabTextColors");
-                        logicEditor.a(" ", "setTabRippleColor");
-                        logicEditor.a(" ", "setSelectedTabIndicatorColor");
-                        logicEditor.a(" ", "setSelectedTabIndicatorHeight");
+                        logicEditor.a(BlockType.VOID.getCode(), "addTab");
+                        logicEditor.a(BlockType.VOID.getCode(), "setupWithViewPager");
+                        logicEditor.a(BlockType.VOID.getCode(), "setInlineLabel");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTabTextColors");
+                        logicEditor.a(BlockType.VOID.getCode(), "setTabRippleColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setSelectedTabIndicatorColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setSelectedTabIndicatorHeight");
                     }
                     if (textInputLayoutUsed) {
-                        logicEditor.a(" ", "tilSetBoxBgColor");
-                        logicEditor.a(" ", "tilSetBoxStrokeColor");
-                        logicEditor.a(" ", "tilSetBoxBgMode");
-                        logicEditor.a(" ", "tilSetBoxCornerRadii");
-                        logicEditor.a(" ", "tilSetError");
-                        logicEditor.a(" ", "tilSetErrorEnabled");
-                        logicEditor.a(" ", "tilSetCounterEnabled");
-                        logicEditor.a(" ", "tilSetCounterMaxLength");
-                        logicEditor.a("d", "tilGetCounterMaxLength");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetBoxBgColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetBoxStrokeColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetBoxBgMode");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetBoxCornerRadii");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetError");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetErrorEnabled");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetCounterEnabled");
+                        logicEditor.a(BlockType.VOID.getCode(), "tilSetCounterMaxLength");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "tilGetCounterMaxLength");
                     }
                 }
             }
@@ -750,54 +778,54 @@ public class ExtraPaletteBlock {
                 if (waveSideBarUsed || badgeViewUsed || bubbleLayoutUsed || patternLockViewUsed || codeViewUsed || lottieAnimationViewUsed) {
                     logicEditor.a("Library", getTitleBgColor());
                     if (otpViewUsed) {
-                        logicEditor.a(" ", "otpViewSetFieldCount");
-                        logicEditor.a(" ", "otpViewSetOTPText");
-                        logicEditor.a("s", "otpViewGetOTPText");
-                        logicEditor.a("c", "otpViewSetOTPListener");
+                        logicEditor.a(BlockType.VOID.getCode(), "otpViewSetFieldCount");
+                        logicEditor.a(BlockType.VOID.getCode(), "otpViewSetOTPText");
+                        logicEditor.a(BlockType.STRING.getCode(), "otpViewGetOTPText");
+                        logicEditor.a(BlockType.CLICK.getCode(), "otpViewSetOTPListener");
                     }
                     if (waveSideBarUsed) {
-                        logicEditor.a(" ", "setCustomLetter");
+                        logicEditor.a(BlockType.VOID.getCode(), "setCustomLetter");
                     }
                     if (badgeViewUsed) {
-                        logicEditor.a("d", "getBadgeCount");
-                        logicEditor.a(" ", "setBadgeNumber");
-                        logicEditor.a(" ", "setBadgeString");
-                        logicEditor.a(" ", "setBadgeBackground");
-                        logicEditor.a(" ", "setBadgeTextColor");
-                        logicEditor.a(" ", "setBadgeTextSize");
+                        logicEditor.a(BlockType.DOUBLE.getCode(), "getBadgeCount");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBadgeNumber");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBadgeString");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBadgeBackground");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBadgeTextColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBadgeTextSize");
                     }
                     if (bubbleLayoutUsed) {
-                        logicEditor.a(" ", "setBubbleColor");
-                        logicEditor.a(" ", "setBubbleStrokeColor");
-                        logicEditor.a(" ", "setBubbleStrokeWidth");
-                        logicEditor.a(" ", "setBubbleCornerRadius");
-                        logicEditor.a(" ", "setBubbleArrowHeight");
-                        logicEditor.a(" ", "setBubbleArrowWidth");
-                        logicEditor.a(" ", "setBubbleArrowPosition");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleStrokeColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleStrokeWidth");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleCornerRadius");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleArrowHeight");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleArrowWidth");
+                        logicEditor.a(BlockType.VOID.getCode(), "setBubbleArrowPosition");
                     }
                     if (patternLockViewUsed) {
-                        logicEditor.a("s", "patternToString");
-                        logicEditor.a("s", "patternToMD5");
-                        logicEditor.a("s", "patternToSha1");
-                        logicEditor.a(" ", "patternSetDotCount");
-                        logicEditor.a(" ", "patternSetNormalStateColor");
-                        logicEditor.a(" ", "patternSetCorrectStateColor");
-                        logicEditor.a(" ", "patternSetWrongStateColor");
-                        logicEditor.a(" ", "patternSetViewMode");
-                        logicEditor.a(" ", "patternLockClear");
+                        logicEditor.a(BlockType.STRING.getCode(), "patternToString");
+                        logicEditor.a(BlockType.STRING.getCode(), "patternToMD5");
+                        logicEditor.a(BlockType.STRING.getCode(), "patternToSha1");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternSetDotCount");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternSetNormalStateColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternSetCorrectStateColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternSetWrongStateColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternSetViewMode");
+                        logicEditor.a(BlockType.VOID.getCode(), "patternLockClear");
                     }
                     if (codeViewUsed) {
-                        logicEditor.a(" ", "codeviewSetCode");
-                        logicEditor.a(" ", "codeviewSetLanguage");
-                        logicEditor.a(" ", "codeviewSetTheme");
-                        logicEditor.a(" ", "codeviewApply");
+                        logicEditor.a(BlockType.VOID.getCode(), "codeviewSetCode");
+                        logicEditor.a(BlockType.VOID.getCode(), "codeviewSetLanguage");
+                        logicEditor.a(BlockType.VOID.getCode(), "codeviewSetTheme");
+                        logicEditor.a(BlockType.VOID.getCode(), "codeviewApply");
                     }
                     if (lottieAnimationViewUsed) {
-                        logicEditor.a(" ", "lottieSetAnimationFromAsset");
-                        logicEditor.a(" ", "lottieSetAnimationFromJson");
-                        logicEditor.a(" ", "lottieSetAnimationFromUrl");
-                        logicEditor.a(" ", "lottieSetRepeatCount");
-                        logicEditor.a(" ", "lottieSetSpeed");
+                        logicEditor.a(BlockType.VOID.getCode(), "lottieSetAnimationFromAsset");
+                        logicEditor.a(BlockType.VOID.getCode(), "lottieSetAnimationFromJson");
+                        logicEditor.a(BlockType.VOID.getCode(), "lottieSetAnimationFromUrl");
+                        logicEditor.a(BlockType.VOID.getCode(), "lottieSetRepeatCount");
+                        logicEditor.a(BlockType.VOID.getCode(), "lottieSetSpeed");
                     }
                 }
             }
@@ -809,28 +837,28 @@ public class ExtraPaletteBlock {
                 if (signInButtonUsed || youtubePlayerViewUsed || adMobUsed || mapViewUsed) {
                     logicEditor.a("Google", getTitleBgColor());
                     if (signInButtonUsed) {
-                        logicEditor.a(" ", "signInButtonSetColorScheme");
-                        logicEditor.a(" ", "signInButtonSetSize");
+                        logicEditor.a(BlockType.VOID.getCode(), "signInButtonSetColorScheme");
+                        logicEditor.a(BlockType.VOID.getCode(), "signInButtonSetSize");
                     }
                     if (youtubePlayerViewUsed) {
-                        logicEditor.a(" ", "YTPVLifecycle");
-                        logicEditor.a("c", "YTPVSetListener");
+                        logicEditor.a(BlockType.VOID.getCode(), "YTPVLifecycle");
+                        logicEditor.a(BlockType.CLICK.getCode(), "YTPVSetListener");
                     }
                     if (adMobUsed) {
-                        logicEditor.a(" ", "bannerAdViewLoadAd");
+                        logicEditor.a(BlockType.VOID.getCode(), "bannerAdViewLoadAd");
                     }
                     if (mapViewUsed) {
-                        logicEditor.a(" ", "mapViewSetMapType");
-                        logicEditor.a(" ", "mapViewMoveCamera");
-                        logicEditor.a(" ", "mapViewZoomTo");
-                        logicEditor.a(" ", "mapViewZoomIn");
-                        logicEditor.a(" ", "mapViewZoomOut");
-                        logicEditor.a(" ", "mapViewAddMarker");
-                        logicEditor.a(" ", "mapViewSetMarkerInfo");
-                        logicEditor.a(" ", "mapViewSetMarkerPosition");
-                        logicEditor.a(" ", "mapViewSetMarkerColor");
-                        logicEditor.a(" ", "mapViewSetMarkerIcon");
-                        logicEditor.a(" ", "mapViewSetMarkerVisible");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMapType");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewMoveCamera");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewZoomTo");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewZoomIn");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewZoomOut");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewAddMarker");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMarkerInfo");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMarkerPosition");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMarkerColor");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMarkerIcon");
+                        logicEditor.a(BlockType.VOID.getCode(), "mapViewSetMarkerVisible");
                     }
                 }
             }
@@ -840,257 +868,257 @@ public class ExtraPaletteBlock {
                 if (timePickerUsed || calendarViewUsed) {
                     logicEditor.a("Date & Time", getTitleBgColor());
                     if (timePickerUsed) {
-                        logicEditor.a(" ", "timepickerSetHour");
-                        logicEditor.a(" ", "timepickerSetMinute");
-                        logicEditor.a(" ", "timepickerSetCurrentHour");
-                        logicEditor.a(" ", "timepickerSetCurrentMinute");
-                        logicEditor.a(" ", "timepickerSetIs24Hour");
+                        logicEditor.a(BlockType.VOID.getCode(), "timepickerSetHour");
+                        logicEditor.a(BlockType.VOID.getCode(), "timepickerSetMinute");
+                        logicEditor.a(BlockType.VOID.getCode(), "timepickerSetCurrentHour");
+                        logicEditor.a(BlockType.VOID.getCode(), "timepickerSetCurrentMinute");
+                        logicEditor.a(BlockType.VOID.getCode(), "timepickerSetIs24Hour");
                     }
                     if (calendarViewUsed) {
-                        logicEditor.a(" ", "calendarViewSetDate");
-                        logicEditor.a(" ", "calendarViewSetMinDate");
-                        logicEditor.a(" ", "calnedarViewSetMaxDate");
+                        logicEditor.a(BlockType.VOID.getCode(), "calendarViewSetDate");
+                        logicEditor.a(BlockType.VOID.getCode(), "calendarViewSetMinDate");
+                        logicEditor.a(BlockType.VOID.getCode(), "calnedarViewSetMaxDate");
                     }
                 }
             }
             logicEditor.a("Function", getTitleBgColor());
-            logicEditor.a(" ", "performClick");
-            logicEditor.a("c", "viewOnClick");
-            logicEditor.a("c", "viewOnLongClick");
-            logicEditor.a("c", "viewOnTouch");
-            logicEditor.a("c", "showSnackbar");
+            logicEditor.a(BlockType.VOID.getCode(), "performClick");
+            logicEditor.a(BlockType.CLICK.getCode(), "viewOnClick");
+            logicEditor.a(BlockType.CLICK.getCode(), "viewOnLongClick");
+            logicEditor.a(BlockType.CLICK.getCode(), "viewOnTouch");
+            logicEditor.a(BlockType.CLICK.getCode(), "showSnackbar");
             return;
             case 7:
                 logicEditor.b("Add component", "componentAdd");
-                logicEditor.a(" ", "changeStatebarColour");
-                logicEditor.a(" ", "LightStatusBar");
-                logicEditor.a(" ", "showKeyboard");
-                logicEditor.a(" ", "hideKeyboard");
-                logicEditor.a(" ", "doToast");
-                logicEditor.a(" ", "copyToClipboard");
-                logicEditor.a(" ", "setTitle");
-                logicEditor.a("b", "intentHasExtra");
-                logicEditor.a("s", "intentGetString");
-                logicEditor.a("f", "finishActivity");
-                logicEditor.a("f", "finishAffinity");
+                logicEditor.a(BlockType.VOID.getCode(), "changeStatebarColour");
+                logicEditor.a(BlockType.VOID.getCode(), "LightStatusBar");
+                logicEditor.a(BlockType.VOID.getCode(), "showKeyboard");
+                logicEditor.a(BlockType.VOID.getCode(), "hideKeyboard");
+                logicEditor.a(BlockType.VOID.getCode(), "doToast");
+                logicEditor.a(BlockType.VOID.getCode(), "copyToClipboard");
+                logicEditor.a(BlockType.VOID.getCode(), "setTitle");
+                logicEditor.a(BlockType.BOOLEAN.getCode(), "intentHasExtra");
+                logicEditor.a(BlockType.STRING.getCode(), "intentGetString");
+                logicEditor.a(BlockType.FRAGMENT.getCode(), "finishActivity");
+                logicEditor.a(BlockType.FRAGMENT.getCode(), "finishAffinity");
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_INTENT)
                         || extraBlocks.isCustomVarUsed("Intent")) {
                     logicEditor.a("Intent", getTitleBgColor());
-                    logicEditor.a(" ", "intentSetAction");
-                    logicEditor.a(" ", "intentSetData");
-                    logicEditor.a(" ", "intentSetType");
-                    logicEditor.a(" ", "intentSetScreen");
-                    logicEditor.a(" ", "launchApp");
-                    logicEditor.a(" ", "intentPutExtra");
-                    logicEditor.a(" ", "intentRemoveExtra");
-                    logicEditor.a(" ", "intentSetFlags");
-                    logicEditor.a(" ", "startActivity");
-                    logicEditor.a(" ", "startActivityWithChooser");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentSetAction");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentSetData");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentSetType");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentSetScreen");
+                    logicEditor.a(BlockType.VOID.getCode(), "launchApp");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentPutExtra");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentRemoveExtra");
+                    logicEditor.a(BlockType.VOID.getCode(), "intentSetFlags");
+                    logicEditor.a(BlockType.VOID.getCode(), "startActivity");
+                    logicEditor.a(BlockType.VOID.getCode(), "startActivityWithChooser");
                 }
                 if (!frc.getBroadcastFile().isEmpty()) {
                     logicEditor.a("Broadcast", getTitleBgColor());
-                    logicEditor.a(" ", "sendBroadcast");
+                    logicEditor.a(BlockType.VOID.getCode(), "sendBroadcast");
                 }
                 if (!frc.getServiceFile().isEmpty()) {
                     logicEditor.a("Service", getTitleBgColor());
-                    logicEditor.a(" ", "startService");
-                    logicEditor.a(" ", "stopService");
+                    logicEditor.a(BlockType.VOID.getCode(), "startService");
+                    logicEditor.a(BlockType.VOID.getCode(), "stopService");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SHAREDPREF)) {
                     logicEditor.a("SharedPreferences", getTitleBgColor());
-                    logicEditor.a("b", "fileContainsData");
-                    logicEditor.a("s", "fileGetData");
-                    logicEditor.a(" ", "fileSetData");
-                    logicEditor.a(" ", "fileRemoveData");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "fileContainsData");
+                    logicEditor.a(BlockType.STRING.getCode(), "fileGetData");
+                    logicEditor.a(BlockType.VOID.getCode(), "fileSetData");
+                    logicEditor.a(BlockType.VOID.getCode(), "fileRemoveData");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_DATE_PICKER_DIALOG)) {
                     logicEditor.a("DatePickerDialog", getTitleBgColor());
-                    logicEditor.a(" ", "datePickerDialogShow");
+                    logicEditor.a(BlockType.VOID.getCode(), "datePickerDialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TIME_PICKER_DIALOG)) {
                     logicEditor.a("TimePickerDialog", getTitleBgColor());
-                    logicEditor.a(" ", "timePickerDialogShow");
+                    logicEditor.a(BlockType.VOID.getCode(), "timePickerDialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_CALENDAR)) {
                     logicEditor.a("Calendar", getTitleBgColor());
-                    logicEditor.a(" ", "calendarGetNow");
-                    logicEditor.a(" ", "calendarAdd");
-                    logicEditor.a(" ", "calendarSet");
-                    logicEditor.a("s", "calendarFormat");
-                    logicEditor.a("d", "calendarDiff");
-                    logicEditor.a("d", "calendarGetTime");
-                    logicEditor.a(" ", "calendarSetTime");
+                    logicEditor.a(BlockType.VOID.getCode(), "calendarGetNow");
+                    logicEditor.a(BlockType.VOID.getCode(), "calendarAdd");
+                    logicEditor.a(BlockType.VOID.getCode(), "calendarSet");
+                    logicEditor.a(BlockType.STRING.getCode(), "calendarFormat");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "calendarDiff");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "calendarGetTime");
+                    logicEditor.a(BlockType.VOID.getCode(), "calendarSetTime");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_VIBRATOR)) {
                     logicEditor.a("Vibrator", getTitleBgColor());
-                    logicEditor.a(" ", "vibratorAction");
+                    logicEditor.a(BlockType.VOID.getCode(), "vibratorAction");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TIMERTASK)
                         || extraBlocks.isCustomVarUsed("Timer")) {
                     logicEditor.a("Timer", getTitleBgColor());
-                    logicEditor.a("c", "timerAfter");
-                    logicEditor.a("c", "timerEvery");
-                    logicEditor.a(" ", "timerCancel");
+                    logicEditor.a(BlockType.CLICK.getCode(), "timerAfter");
+                    logicEditor.a(BlockType.CLICK.getCode(), "timerEvery");
+                    logicEditor.a(BlockType.VOID.getCode(), "timerCancel");
                 }
                 if (extraBlocks.isComponentUsed(36)) {
                     logicEditor.a("AsyncTask", getTitleBgColor());
-                    logicEditor.a(" ", "AsyncTaskExecute");
-                    logicEditor.a(" ", "AsyncTaskPublishProgress");
+                    logicEditor.a(BlockType.VOID.getCode(), "AsyncTaskExecute");
+                    logicEditor.a(BlockType.VOID.getCode(), "AsyncTaskPublishProgress");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_DIALOG)
                         || extraBlocks.isCustomVarUsed("Dialog")) {
                     logicEditor.a("Dialog", getTitleBgColor());
-                    logicEditor.a(" ", "dialogSetTitle");
-                    logicEditor.a(" ", "Dialog SetIcon");
-                    logicEditor.a(" ", "dialogSetMessage");
-                    logicEditor.a("c", "dialogOkButton");
-                    logicEditor.a("c", "dialogCancelButton");
-                    logicEditor.a("c", "dialogNeutralButton");
-                    logicEditor.a(" ", "dialogShow");
+                    logicEditor.a(BlockType.VOID.getCode(), "dialogSetTitle");
+                    logicEditor.a(BlockType.VOID.getCode(), "Dialog SetIcon");
+                    logicEditor.a(BlockType.VOID.getCode(), "dialogSetMessage");
+                    logicEditor.a(BlockType.CLICK.getCode(), "dialogOkButton");
+                    logicEditor.a(BlockType.CLICK.getCode(), "dialogCancelButton");
+                    logicEditor.a(BlockType.CLICK.getCode(), "dialogNeutralButton");
+                    logicEditor.a(BlockType.VOID.getCode(), "dialogShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_MEDIAPLAYER)) {
                     logicEditor.a("MediaPlayer", getTitleBgColor());
-                    logicEditor.a(" ", "mediaplayerCreate");
-                    logicEditor.a(" ", "mediaplayerStart");
-                    logicEditor.a(" ", "mediaplayerPause");
-                    logicEditor.a(" ", "mediaplayerSeek");
-                    logicEditor.a("d", "mediaplayerGetCurrent");
-                    logicEditor.a("d", "mediaplayerGetDuration");
-                    logicEditor.a("b", "mediaplayerIsPlaying");
-                    logicEditor.a(" ", "mediaplayerSetLooping");
-                    logicEditor.a("b", "mediaplayerIsLooping");
-                    logicEditor.a(" ", "mediaplayerReset");
-                    logicEditor.a(" ", "mediaplayerRelease");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerCreate");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerStart");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerPause");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerSeek");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "mediaplayerGetCurrent");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "mediaplayerGetDuration");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "mediaplayerIsPlaying");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerSetLooping");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "mediaplayerIsLooping");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerReset");
+                    logicEditor.a(BlockType.VOID.getCode(), "mediaplayerRelease");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SOUNDPOOL)) {
                     logicEditor.a("SoundPool", getTitleBgColor());
-                    logicEditor.a(" ", "soundpoolCreate");
-                    logicEditor.a("d", "soundpoolLoad");
-                    logicEditor.a("d", "soundpoolStreamPlay");
-                    logicEditor.a(" ", "soundpoolStreamStop");
+                    logicEditor.a(BlockType.VOID.getCode(), "soundpoolCreate");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "soundpoolLoad");
+                    logicEditor.a(BlockType.DOUBLE.getCode(), "soundpoolStreamPlay");
+                    logicEditor.a(BlockType.VOID.getCode(), "soundpoolStreamStop");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_OBJECTANIMATOR)) {
                     logicEditor.a("ObjectAnimator", getTitleBgColor());
-                    logicEditor.a(" ", "objectanimatorSetTarget");
-                    logicEditor.a(" ", "objectanimatorSetProperty");
-                    logicEditor.a(" ", "objectanimatorSetValue");
-                    logicEditor.a(" ", "objectanimatorSetFromTo");
-                    logicEditor.a(" ", "objectanimatorSetDuration");
-                    logicEditor.a(" ", "objectanimatorSetRepeatMode");
-                    logicEditor.a(" ", "objectanimatorSetRepeatCount");
-                    logicEditor.a(" ", "objectanimatorSetInterpolator");
-                    logicEditor.a(" ", "objectanimatorStart");
-                    logicEditor.a(" ", "objectanimatorCancel");
-                    logicEditor.a("b", "objectanimatorIsRunning");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetTarget");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetProperty");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetValue");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetFromTo");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetDuration");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetRepeatMode");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetRepeatCount");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorSetInterpolator");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorStart");
+                    logicEditor.a(BlockType.VOID.getCode(), "objectanimatorCancel");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "objectanimatorIsRunning");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE)) {
                     logicEditor.a("Firebase", getTitleBgColor());
-                    logicEditor.a(" ", "firebaseAdd");
-                    logicEditor.a(" ", "firebasePush");
-                    logicEditor.a("s", "firebaseGetPushKey");
-                    logicEditor.a(" ", "firebaseDelete");
-                    logicEditor.a("c", "firebaseGetChildren");
-                    logicEditor.a(" ", "firebaseStartListen");
-                    logicEditor.a(" ", "firebaseStopListen");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseAdd");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebasePush");
+                    logicEditor.a(BlockType.STRING.getCode(), "firebaseGetPushKey");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseDelete");
+                    logicEditor.a(BlockType.CLICK.getCode(), "firebaseGetChildren");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseStartListen");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseStopListen");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE_AUTH)) {
                     logicEditor.a("FirebaseAuth", getTitleBgColor());
-                    logicEditor.a("b", "firebaseauthIsLoggedIn");
-                    logicEditor.a("s", "firebaseauthGetCurrentUser");
-                    logicEditor.a("s", "firebaseauthGetUid");
-                    logicEditor.a(" ", "firebaseauthCreateUser");
-                    logicEditor.a(" ", "firebaseauthSignInUser");
-                    logicEditor.a(" ", "firebaseauthSignInAnonymously");
-                    logicEditor.a(" ", "firebaseauthResetPassword");
-                    logicEditor.a(" ", "firebaseauthSignOutUser");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "firebaseauthIsLoggedIn");
+                    logicEditor.a(BlockType.STRING.getCode(), "firebaseauthGetCurrentUser");
+                    logicEditor.a(BlockType.STRING.getCode(), "firebaseauthGetUid");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseauthCreateUser");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseauthSignInUser");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseauthSignInAnonymously");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseauthResetPassword");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebaseauthSignOutUser");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_GYROSCOPE)) {
                     logicEditor.a("Gyroscope", getTitleBgColor());
-                    logicEditor.a(" ", "gyroscopeStartListen");
-                    logicEditor.a(" ", "gyroscopeStopListen");
+                    logicEditor.a(BlockType.VOID.getCode(), "gyroscopeStartListen");
+                    logicEditor.a(BlockType.VOID.getCode(), "gyroscopeStopListen");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_INTERSTITIAL_AD)) {
                     logicEditor.a("AdMob Interstitial", getTitleBgColor());
-                    logicEditor.a(" ", "interstitialAdLoad");
-                    logicEditor.a(" ", "interstitialAdShow");
-                    logicEditor.a("b", "interstitialAdIsLoaded");
+                    logicEditor.a(BlockType.VOID.getCode(), "interstitialAdLoad");
+                    logicEditor.a(BlockType.VOID.getCode(), "interstitialAdShow");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "interstitialAdIsLoaded");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_REWARDED_VIDEO_AD)) {
                     logicEditor.a("RewardedVideoAd", getTitleBgColor());
-                    logicEditor.a(" ", "rewardedVideoAdLoad");
-                    logicEditor.a(" ", "rewardedVideoAdShow");
+                    logicEditor.a(BlockType.VOID.getCode(), "rewardedVideoAdLoad");
+                    logicEditor.a(BlockType.VOID.getCode(), "rewardedVideoAdShow");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FIREBASE_STORAGE)) {
                     logicEditor.a("Firebase Storage", getTitleBgColor());
-                    logicEditor.a(" ", "firebasestorageUploadFile");
-                    logicEditor.a(" ", "firebasestorageDownloadFile");
-                    logicEditor.a(" ", "firebasestorageDelete");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebasestorageUploadFile");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebasestorageDownloadFile");
+                    logicEditor.a(BlockType.VOID.getCode(), "firebasestorageDelete");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_CAMERA)) {
                     logicEditor.a("Camera", getTitleBgColor());
-                    logicEditor.a(" ", "camerastarttakepicture");
+                    logicEditor.a(BlockType.VOID.getCode(), "camerastarttakepicture");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_FILE_PICKER)) {
                     logicEditor.a("FilePicker", getTitleBgColor());
-                    logicEditor.a(" ", "filepickerstartpickfiles");
-                    logicEditor.a(" ", "imageCrop");
+                    logicEditor.a(BlockType.VOID.getCode(), "filepickerstartpickfiles");
+                    logicEditor.a(BlockType.VOID.getCode(), "imageCrop");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_REQUEST_NETWORK)) {
                     logicEditor.a("RequestNetwork", getTitleBgColor());
-                    logicEditor.a("b", "isConnected");
-                    logicEditor.a(" ", "requestnetworkSetParams");
-                    logicEditor.a(" ", "requestnetworkSetHeaders");
-                    logicEditor.a(" ", "requestnetworkStartRequestNetwork");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "isConnected");
+                    logicEditor.a(BlockType.VOID.getCode(), "requestnetworkSetParams");
+                    logicEditor.a(BlockType.VOID.getCode(), "requestnetworkSetHeaders");
+                    logicEditor.a(BlockType.VOID.getCode(), "requestnetworkStartRequestNetwork");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_TEXT_TO_SPEECH)) {
                     logicEditor.a("TextToSpeech", getTitleBgColor());
-                    logicEditor.a("b", "textToSpeechIsSpeaking");
-                    logicEditor.a(" ", "textToSpeechSetPitch");
-                    logicEditor.a(" ", "textToSpeechSetSpeechRate");
-                    logicEditor.a(" ", "textToSpeechSpeak");
-                    logicEditor.a(" ", "textToSpeechStop");
-                    logicEditor.a(" ", "textToSpeechShutdown");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "textToSpeechIsSpeaking");
+                    logicEditor.a(BlockType.VOID.getCode(), "textToSpeechSetPitch");
+                    logicEditor.a(BlockType.VOID.getCode(), "textToSpeechSetSpeechRate");
+                    logicEditor.a(BlockType.VOID.getCode(), "textToSpeechSpeak");
+                    logicEditor.a(BlockType.VOID.getCode(), "textToSpeechStop");
+                    logicEditor.a(BlockType.VOID.getCode(), "textToSpeechShutdown");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_SPEECH_TO_TEXT)) {
                     logicEditor.a("SpeechToText", getTitleBgColor());
-                    logicEditor.a(" ", "speechToTextStartListening");
-                    logicEditor.a(" ", "speechToTextStopListening");
-                    logicEditor.a(" ", "speechToTextShutdown");
+                    logicEditor.a(BlockType.VOID.getCode(), "speechToTextStartListening");
+                    logicEditor.a(BlockType.VOID.getCode(), "speechToTextStopListening");
+                    logicEditor.a(BlockType.VOID.getCode(), "speechToTextShutdown");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_BLUETOOTH_CONNECT)) {
                     logicEditor.a("Bluetooth", getTitleBgColor());
-                    logicEditor.a("b", "bluetoothConnectIsBluetoothEnabled");
-                    logicEditor.a("b", "bluetoothConnectIsBluetoothActivated");
-                    logicEditor.a("s", "bluetoothConnectGetRandomUuid");
-                    logicEditor.a(" ", "bluetoothConnectReadyConnection");
-                    logicEditor.a(" ", "bluetoothConnectReadyConnectionToUuid");
-                    logicEditor.a(" ", "bluetoothConnectStartConnection");
-                    logicEditor.a(" ", "bluetoothConnectStartConnectionToUuid");
-                    logicEditor.a(" ", "bluetoothConnectStopConnection");
-                    logicEditor.a(" ", "bluetoothConnectSendData");
-                    logicEditor.a(" ", "bluetoothConnectActivateBluetooth");
-                    logicEditor.a(" ", "bluetoothConnectGetPairedDevices");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "bluetoothConnectIsBluetoothEnabled");
+                    logicEditor.a(BlockType.BOOLEAN.getCode(), "bluetoothConnectIsBluetoothActivated");
+                    logicEditor.a(BlockType.STRING.getCode(), "bluetoothConnectGetRandomUuid");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectReadyConnection");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectReadyConnectionToUuid");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectStartConnection");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectStartConnectionToUuid");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectStopConnection");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectSendData");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectActivateBluetooth");
+                    logicEditor.a(BlockType.VOID.getCode(), "bluetoothConnectGetPairedDevices");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_LOCATION_MANAGER)) {
                     logicEditor.a("LocationManager", getTitleBgColor());
-                    logicEditor.a(" ", "locationManagerRequestLocationUpdates");
-                    logicEditor.a(" ", "locationManagerRemoveUpdates");
+                    logicEditor.a(BlockType.VOID.getCode(), "locationManagerRequestLocationUpdates");
+                    logicEditor.a(BlockType.VOID.getCode(), "locationManagerRemoveUpdates");
                 }
                 if (extraBlocks.isComponentUsed(ComponentBean.COMPONENT_TYPE_PROGRESS_DIALOG)
                         || extraBlocks.isCustomVarUsed("ProgressDialog")
                         || eventName.equals("onPreExecute") || eventName.equals("onProgressUpdate")
                         || eventName.equals("onPostExecute")) {
                     logicEditor.a("ProgressDialog", getTitleBgColor());
-                    logicEditor.a(" ", "progressdialogCreate");
-                    logicEditor.a(" ", "progressdialogSetTitle");
-                    logicEditor.a(" ", "progressdialogSetMessage");
-                    logicEditor.a(" ", "progressdialogSetMax");
-                    logicEditor.a(" ", "progressdialogSetProgress");
-                    logicEditor.a(" ", "progressdialogSetCancelable");
-                    logicEditor.a(" ", "progressdialogSetCanceledOutside");
-                    logicEditor.a(" ", "progressdialogSetStyle");
-                    logicEditor.a(" ", "progressdialogShow");
-                    logicEditor.a(" ", "progressdialogDismiss");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogCreate");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetTitle");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetMessage");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetMax");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetProgress");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetCancelable");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetCanceledOutside");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogSetStyle");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogShow");
+                    logicEditor.a(BlockType.VOID.getCode(), "progressdialogDismiss");
                     return;
                 }
                 return;
@@ -1098,20 +1126,21 @@ public class ExtraPaletteBlock {
                 logicEditor.b("Create", "blockAdd");
                 logicEditor.b("Import From Collection", "blockImport");
                 if (ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_SHOW_BUILT_IN_BLOCKS)) {
-                    logicEditor.a(" ", "customToast");
-                    logicEditor.a(" ", "customToastWithIcon");
+                    logicEditor.a(BlockType.VOID.getCode(), "customToast");
+                    logicEditor.a(BlockType.VOID.getCode(), "customToastWithIcon");
                 }
                 moreBlocks();
                 if (ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_SHOW_BUILT_IN_BLOCKS)) {
                     logicEditor.a("Command Blocks", getTitleBgColor());
-                    logicEditor.a("c", "CommandBlockJava");
-                    logicEditor.addDeprecatedBlock("Deprecated: Use XML Command Manager", "c", "CommandBlockXML");
+                    logicEditor.a(BlockType.CLICK.getCode(), "CommandBlockJava");
+                    logicEditor.addDeprecatedBlock("Deprecated: Use XML Command Manager", BlockType.CLICK.getCode(),
+                            "CommandBlockXML");
                     logicEditor.a("Permission Command Blocks", getTitleBgColor());
-                    logicEditor.a(" ", "addPermission");
-                    logicEditor.a(" ", "removePermission");
+                    logicEditor.a(BlockType.VOID.getCode(), "addPermission");
+                    logicEditor.a(BlockType.VOID.getCode(), "removePermission");
                     logicEditor.a("Other Command Blocks", getTitleBgColor());
-                    logicEditor.a(" ", "addCustomVariable");
-                    logicEditor.a(" ", "addInitializer");
+                    logicEditor.a(BlockType.VOID.getCode(), "addCustomVariable");
+                    logicEditor.a(BlockType.VOID.getCode(), "addInitializer");
                     return;
                 }
                 return;
@@ -1161,6 +1190,15 @@ public class ExtraPaletteBlock {
                 }
                 break;
         }
+    }
+
+    private boolean areAnyVariablesUsed() {
+        // Check all primitive types 0-3 and custom types 5-6
+        for (int i = 0; i <= 3; i++) {
+            if (extraBlocks.isVariableUsed(i)) return true;
+        }
+        // Add logic to check custom variables if they are treated as distinct types
+        return extraBlocks.isCustomVarUsed("Custom");
     }
 
     private @ColorInt int getTitleBgColor() {

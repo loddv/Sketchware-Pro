@@ -60,13 +60,10 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
     public static String getLastDirectory(String path) {
         // Get the index of the last occurrence of '/' character
         int lastSlashIndex = path.lastIndexOf('/');
-
         // Get the substring from the start to the lastSlashIndex
         String parentPath = path.substring(0, lastSlashIndex);
-
         // Get the index of the last occurrence of '/' in the parentPath
         lastSlashIndex = parentPath.lastIndexOf('/');
-
         // Extract the last directory name
         return parentPath.substring(lastSlashIndex + 1);
     }
@@ -77,11 +74,10 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ManageFileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         if (getIntent().hasExtra("sc_id")) {
             numProj = getIntent().getStringExtra("sc_id");
         }
-        Helper.fixFileprovider();
+        Helper.fixFileProvider();
         frc = new FileResConfig(numProj);
         fpu = new FilePathUtil();
         setupDialog();
@@ -90,20 +86,25 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
     }
 
     private void checkDir() {
-        if (FileUtil.isExistFile(fpu.getPathResource(numProj))) {
-            temp = fpu.getPathResource(numProj);
+        String resourcePath = fpu.getPathResource(numProj);
+        if (FileUtil.isExistFile(resourcePath)) {
+            temp = resourcePath;
             handleAdapter(temp);
             handleFab();
             return;
         }
-        FileUtil.makeDir(fpu.getPathResource(numProj));
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/anim");
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/drawable");
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/drawable-xhdpi");
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/layout");
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/menu");
-        FileUtil.makeDir(fpu.getPathResource(numProj) + "/values");
-        checkDir();
+        // Define standard Android resource subdirectories
+        String[] subDirs = {"anim", "drawable", "drawable-xhdpi", "layout", "menu", "values"};
+        // Create the base directory
+        FileUtil.makeDir(resourcePath);
+        // Create all subdirectories
+        for (String dir : subDirs) {
+            FileUtil.makeDir(resourcePath + File.separator + dir);
+        }
+        // Now that they are created, initialize the UI
+        temp = resourcePath;
+        handleAdapter(temp);
+        handleFab();
     }
 
     private void handleAdapter(String str) {
@@ -112,7 +113,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         Collections.sort(resourceFile, String.CASE_INSENSITIVE_ORDER);
         adapter = new CustomAdapter(resourceFile);
         binding.filesListRecyclerView.setAdapter(adapter);
-
         binding.noContentLayout.setVisibility(resourceFile.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
@@ -157,7 +157,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 .translationY(isHide ? 300 : 0)
                 .alpha(isHide ? 0 : 1)
                 .setInterpolator(new OvershootInterpolator());
-
         binding.showOptionsButton.animate()
                 .translationY(isHide ? 0 : 300)
                 .alpha(isHide ? 1 : 0)
@@ -189,7 +188,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
     private void createNewDialog(boolean isFolder) {
         DialogCreateNewFileLayoutBinding dialogBinding = DialogCreateNewFileLayoutBinding.inflate(getLayoutInflater());
         var inputText = dialogBinding.inputText;
-
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setView(dialogBinding.getRoot())
                 .setTitle(isFolder ? "Create a new folder" : "Create a new file")
@@ -197,20 +195,18 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("Create", null)
                 .create();
-
         dialogBinding.chipGroupTypes.setVisibility(View.GONE);
         if (!isFolder) {
             dialogBinding.inputText.setText(".xml");
         }
-
         dialog.setOnShowListener(dialogInterface -> {
-            Button positiveButton = ((androidx.appcompat.app.AlertDialog) dialogInterface).getButton(DialogInterface.BUTTON_POSITIVE);
+            Button positiveButton =
+                    ((androidx.appcompat.app.AlertDialog) dialogInterface).getButton(DialogInterface.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(view -> {
                 if (Helper.getText(inputText).isEmpty()) {
                     SketchwareUtil.toastError("Invalid name");
                     return;
                 }
-
                 String name = Helper.getText(inputText);
                 String path;
                 if (isFolder) {
@@ -218,7 +214,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 } else {
                     path = new File(temp + File.separator + name).getAbsolutePath();
                 }
-
                 if (FileUtil.isExistFile(path)) {
                     SketchwareUtil.toastError("File exists already");
                     return;
@@ -232,18 +227,14 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 SketchwareUtil.toast("Created file successfully");
                 dialog.dismiss();
             });
-
             dialog.setView(dialogBinding.getRoot());
             dialog.show();
-
             dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
             inputText.requestFocus();
-
             if (!isFolder) {
                 inputText.setSelection(0);
             }
         });
-
         dialog.show();
     }
 
@@ -252,7 +243,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         options.setSelectionMode(SelectionMode.BOTH);
         options.setMultipleSelection(true);
         options.setTitle("Select resource files");
-
         FilePickerCallback callback = new FilePickerCallback() {
             @Override
             public void onFilesSelected(@NotNull List<? extends File> files) {
@@ -271,22 +261,20 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 handleFab();
             }
         };
-
         dialog = new FilePickerDialogFragment(options, callback);
     }
 
     private void showRenameDialog(String path) {
         DialogInputLayoutBinding dialogBinding = DialogInputLayoutBinding.inflate(getLayoutInflater());
-
         var inputText = dialogBinding.inputText;
-
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle("Rename")
                 .setView(dialogBinding.getRoot())
                 .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("Rename", (dialogInterface, i) -> {
                     if (!Helper.getText(inputText).isEmpty()) {
-                        if (FileUtil.renameFile(path, path.substring(0, path.lastIndexOf("/")) + "/" + Helper.getText(inputText))) {
+                        if (FileUtil.renameFile(path,
+                                path.substring(0, path.lastIndexOf("/")) + "/" + Helper.getText(inputText))) {
                             SketchwareUtil.toast("Renamed successfully");
                         } else {
                             SketchwareUtil.toastError("Renaming failed");
@@ -297,17 +285,13 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                     dialogInterface.dismiss();
                 })
                 .create();
-
-
         try {
             inputText.setText(path.substring(path.lastIndexOf("/") + 1));
         } catch (IndexOutOfBoundsException e) {
             inputText.setText(path);
         }
-
         dialog.setView(dialogBinding.getRoot());
         dialog.show();
-
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         inputText.requestFocus();
     }
@@ -367,7 +351,8 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            ManageJavaItemHsBinding binding = ManageJavaItemHsBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            ManageJavaItemHsBinding binding =
+                    ManageJavaItemHsBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
             return new ViewHolder(binding);
         }
 
@@ -375,10 +360,8 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             String path = data.get(position);
             var binding = holder.binding;
-
             binding.more.setVisibility(FileUtil.isDirectory(path) ? View.GONE : View.VISIBLE);
             binding.title.setText(Uri.parse(path).getLastPathSegment());
-
             if (FileUtil.isDirectory(path)) {
                 binding.icon.setImageResource(R.drawable.ic_mtrl_folder);
             } else {
@@ -394,7 +377,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                     binding.icon.setImageResource(R.drawable.ic_mtrl_file);
                 }
             }
-
             binding.more.setOnClickListener(v -> {
                 PopupMenu popupMenu = new PopupMenu(ManageResourceActivity.this, v);
                 popupMenu.inflate(R.menu.popup_menu_double);
@@ -404,7 +386,8 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                         case "Edit with..." -> {
                             if (frc.listFileResource.get(position).endsWith("xml")) {
                                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                                intent.setDataAndType(Uri.fromFile(new File(frc.listFileResource.get(position))), "text/plain");
+                                intent.setDataAndType(Uri.fromFile(new File(frc.listFileResource.get(position))),
+                                        "text/plain");
                                 startActivity(intent);
                             } else {
                                 SketchwareUtil.toast("Only XML files can be edited");
@@ -421,7 +404,6 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 });
                 popupMenu.show();
             });
-
             binding.getRoot().setOnLongClickListener(v -> {
                 if (FileUtil.isDirectory(frc.listFileResource.get(position))) {
                     PopupMenu popupMenu = new PopupMenu(ManageResourceActivity.this, binding.more);

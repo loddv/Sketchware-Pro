@@ -114,18 +114,19 @@ public class PaletteSelector extends RecyclerView {
         binding.textInputLayoutLibrary.setHint(Helper.getResString(R.string.search_in_palettes_dialog_title));
         if (binding2.searchHeader.getText() != Helper.getResString(R.string.search_in_palettes_dialog_title)) {
             binding.textInputEditText.setText(binding2.searchHeader.getText());
-            binding.textInputEditText.setSelection(binding.textInputEditText.getText().length());
+            binding.textInputEditText.setSelection(Objects.requireNonNull(binding.textInputEditText.getText()).length());
         }
+        binding.title.setText(Helper.getResString(R.string.search_in_palettes_dialog_title));
         binding.buttonRename.setText(Helper.getResString(R.string.search));
         binding.buttonCancel.setText(Helper.getResString(R.string.cancel));
-        binding.description.setText("Type the name of the block you want");
+        binding.description.setText(R.string.type_the_name_of_the_block_you_want);
         // to search for");
         binding.buttonRename.setOnClickListener(v -> {
             String query = Helper.getText(binding.textInputEditText).trim();
             if (canSearch(query)) {
                 startSearch(bottomSheetDialog, query);
                 binding2.searchHeader.setText(query.isEmpty() ?
-                        Helper.getResString(R.string.search_in_palettes_dialog_title) : query);
+                        Helper.getResString(R.string.search_recent_title) : query);
             }
         });
         binding.buttonCancel.setOnClickListener(v -> {

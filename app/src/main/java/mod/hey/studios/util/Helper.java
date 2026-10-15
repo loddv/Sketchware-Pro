@@ -31,10 +31,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import a.a.a.xB;
+import mod.hilal.saif.activities.tools.ConfigActivity;
 import pro.sketchware.lib.base.BaseTextWatcher;
 import pro.sketchware.utility.FileUtil;
 
 public class Helper {
+
     public static final TypeToken<HashMap<String, Object>> TYPE_MAP = new TypeToken<>() {
     };
     public static final TypeToken<ArrayList<HashMap<String, Object>>> TYPE_MAP_LIST = new TypeToken<>() {
@@ -47,7 +50,7 @@ public class Helper {
     private Helper() {
     }
 
-    public static void fixFileprovider() {
+    public static void fixFileProvider() {
         try {
             StrictMode.class.getMethod("disableDeathOnFileUriExposure").invoke(null);
         } catch (Exception e) {
@@ -78,8 +81,18 @@ public class Helper {
     }
 
     public static String getResString(@StringRes int resId) {
-        return getContext().getString(resId);
-        //        return getContext().getResources().getString(resId);
+        // Usando final para garantir imutabilidade no escopo
+        final boolean useTranslations =
+                ConfigActivity.isSettingEnabled(ConfigActivity.SETTING_USE_CUSTOM_TRANSLATE_STRINGS);
+        final Context context = getContext();
+        if (context == null) {
+            return "";
+        }
+        if (useTranslations) {
+            return xB.b().a(context, resId);
+        } else {
+            return context.getString(resId);
+        }
     }
 
     public static String getResString(@StringRes int resId, Object... formatArgs) {
@@ -191,6 +204,7 @@ public class Helper {
     }
 
     public static void addClearErrorOnTextChangeTextWatcher(TextInputLayout target) {
+        assert target.getEditText() != null;
         target.getEditText().addTextChangedListener(new BaseTextWatcher() {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {

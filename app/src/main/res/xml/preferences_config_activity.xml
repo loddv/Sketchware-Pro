@@ -53,6 +53,11 @@
         app:key="use-asd-highlighter"
         app:summary="Enables syntax highlighting while editing blocks' text parameters."
         app:title="Enable block text input highlighting" />
+    <SwitchPreferenceCompat
+        app:iconSpaceReserved="false"
+        app:key="pref_load_custom_strings"
+        app:summary="Load Custom Translate Strings from: localization/strings.xml "
+        app:title="Enable Custom Translate Strings" />" />
 
     <Preference
         app:iconSpaceReserved="false"

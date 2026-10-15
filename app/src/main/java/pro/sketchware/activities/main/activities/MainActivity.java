@@ -168,8 +168,8 @@ public class MainActivity extends BasePermissionAppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
-        enableEdgeToEdgeNoContrast();
         tryLoadingCustomizedAppStrings();
+        enableEdgeToEdgeNoContrast();
         binding = MainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         setSupportActionBar(binding.toolbar);
@@ -230,14 +230,14 @@ public class MainActivity extends BasePermissionAppCompatActivity {
                     public void onCopyPostExecute(@NonNull String path, boolean wasSuccessful, @NonNull String reason) {
                         if (wasSuccessful) {
                             BackupRestoreManager manager = new BackupRestoreManager(MainActivity.this,
-									projectsFragment);
+                                    projectsFragment);
                             if (BackupFactory.zipContainsFile(path, "local_libs")) {
                                 new MaterialAlertDialogBuilder(MainActivity.this)
                                         .setTitle("Warning")
                                         .setMessage(BackupRestoreManager.getRestoreIntegratedLocalLibrariesMessage(false, -1, -1, null))
                                         .setPositiveButton("Copy", (dialog, which) -> manager.doRestore(path, true))
                                         .setNegativeButton("Don't copy", (dialog, which) -> manager.doRestore(path,
-												false))
+                                                false))
                                         .setNeutralButton(R.string.common_word_cancel, null)
                                         .show();
                             } else {
@@ -247,7 +247,7 @@ public class MainActivity extends BasePermissionAppCompatActivity {
                             getIntent().setData(null);
                         } else {
                             SketchwareUtil.toastError("Failed to copy backup file to temporary location: " + reason,
-									Toast.LENGTH_LONG);
+                                    Toast.LENGTH_LONG);
                         }
                     }
                 }).copyFile(data);
@@ -284,7 +284,7 @@ public class MainActivity extends BasePermissionAppCompatActivity {
         if (savedInstanceState != null) {
             projectsFragment = (ProjectsFragment) getSupportFragmentManager().findFragmentByTag(PROJECTS_FRAGMENT_TAG);
             projectsStoreFragment =
-					(ProjectsStoreFragment) getSupportFragmentManager().findFragmentByTag(PROJECTS_STORE_FRAGMENT_TAG);
+                    (ProjectsStoreFragment) getSupportFragmentManager().findFragmentByTag(PROJECTS_STORE_FRAGMENT_TAG);
             currentNavItemId = savedInstanceState.getInt("selected_tab_id");
             Fragment current = getFragmentForNavId(currentNavItemId);
             if (current instanceof ProjectsFragment) {
@@ -416,8 +416,8 @@ public class MainActivity extends BasePermissionAppCompatActivity {
                 dialog.setIcon(R.drawable.ic_expire_48dp);
                 dialog.setTitle("Android 11 storage access");
                 dialog.setMessage("Starting with Android 11, Sketchware Pro needs a new permission to avoid " +
-						"taking ages to build projects. Don't worry, we can't do more to storage than " + "with " +
-						"current granted permissions.");
+                        "taking ages to build projects. Don't worry, we can't do more to storage than " + "with " +
+                        "current granted permissions.");
                 dialog.setPositiveButton(Helper.getResString(R.string.common_word_settings), (v, which) -> {
                     FileUtil.requestAllFilesAccessPermission(this);
                     v.dismiss();
@@ -429,7 +429,7 @@ public class MainActivity extends BasePermissionAppCompatActivity {
                             throw new IOException("Failed to create file " + optOutFile);
                     } catch (IOException e) {
                         Log.e("MainActivity", "Error while trying to create " + "\"Don't show Android 11 hint\" " +
-								"dialog file: " + e.getMessage(), e);
+                                "dialog file: " + e.getMessage(), e);
                     }
                     v.dismiss();
                 });
@@ -446,7 +446,7 @@ public class MainActivity extends BasePermissionAppCompatActivity {
         dialog.setPositiveButton(Helper.getResString(R.string.common_word_ok), (v, which) -> {
             v.dismiss();
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-					Manifest.permission.READ_EXTERNAL_STORAGE}, 9501);
+                    Manifest.permission.READ_EXTERNAL_STORAGE}, 9501);
         });
         dialog.show();
     }
@@ -463,35 +463,40 @@ public class MainActivity extends BasePermissionAppCompatActivity {
     public void s() {
         if (storageAccessDenied == null || !storageAccessDenied.isShown()) {
             storageAccessDenied = Snackbar.make(binding.layoutCoordinator,
-					Helper.getResString(R.string.common_message_permission_denied), Snackbar.LENGTH_INDEFINITE);
+                    Helper.getResString(R.string.common_message_permission_denied), Snackbar.LENGTH_INDEFINITE);
             storageAccessDenied.setAction(Helper.getResString(R.string.common_word_settings), v -> {
                 storageAccessDenied.dismiss();
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-						Manifest.permission.READ_EXTERNAL_STORAGE}, 9501);
+                        Manifest.permission.READ_EXTERNAL_STORAGE}, 9501);
             });
             storageAccessDenied.setActionTextColor(Color.YELLOW);
             storageAccessDenied.show();
         }
     }
 
-    //This is annoying Please remove/togglize it
     private void tryLoadingCustomizedAppStrings() {
-        // Refresh extracted provided strings file if necessary
-        oB oB = new oB();
+        // 1. Atualiza o arquivo de strings fornecidas, se necessário
+        // (Nota: Se oB.a() forem métodos estáticos, remova o 'new oB()')
+        oB fileHelper = new oB();
         try {
             File extractedStringsProvidedXml = new File(wq.m());
-            if (oB.a(getApplicationContext(), "localization/strings.xml") != (extractedStringsProvidedXml.exists() ?
-					extractedStringsProvidedXml.length() : 0)) {
-                oB.a(extractedStringsProvidedXml);
-                oB.a(getApplicationContext(), "localization/strings.xml", wq.m());
+            // Calcula o tamanho atual do arquivo no storage (0 se não existir)
+            long existingFileSize = extractedStringsProvidedXml.exists()
+                    ? extractedStringsProvidedXml.length()
+                    : 0L;
+            // Compara com o tamanho do asset/recurso original
+            long expectedFileSize = fileHelper.a(this, "localization/strings.xml");
+            if (expectedFileSize != existingFileSize) {
+                fileHelper.a(extractedStringsProvidedXml);
+                fileHelper.a(this, "localization/strings.xml", wq.m());
             }
         } catch (Exception e) {
-            String message = "Couldn't extract default strings to storage";
-            SketchwareUtil.toastError(message + ": " + e.getMessage());
-            LogUtil.e("MainActivity", message, e);
+            String errorMessage = "Couldn't extract default strings to storage";
+            SketchwareUtil.toastError(errorMessage + ": " + e.getMessage());
+            LogUtil.e("MainActivity", errorMessage, e);
         }
-        // Actual loading part
-        if (xB.b().b(getApplicationContext())) {
+        // 2. Parte de carregamento real
+        if (xB.b().b(this)) {
             SketchwareUtil.toast(Helper.getResString(R.string.message_strings_xml_loaded));
         }
     }

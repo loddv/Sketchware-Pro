@@ -2309,4 +2309,5 @@ Please try again later"</string>
     <string name="link_sw_assist">https://play.google.com/store/apps/details?id=com.w3wide.swassist</string>
     <string name="title_remove_activity">Remove Activity</string>
     <string name="msg_remove_item">This item will be remove</string>
+    <string name="type_the_name_of_the_block_you_want">Type the name of the block you want</string>
 </resources>

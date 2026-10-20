@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -143,6 +144,8 @@ import pro.sketchware.utility.SvgUtils;
 public class LogicEditorActivity extends BaseAppCompatActivity implements View.OnClickListener, Vs,
         View.OnTouchListener, MoreblockImporterDialog.CallBack {
 
+    private static final ExecutorService BLOCK_COLLECTION_EXECUTOR = Executors.newSingleThreadExecutor();
+    private final AtomicBoolean isLoadingBlockCollections = new AtomicBoolean(false);
     private final Handler handler = new Handler();
     private final int[] v = new int[2];
     private final FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
@@ -2547,14 +2550,29 @@ public class LogicEditorActivity extends BaseAppCompatActivity implements View.O
     }
 
     public void z() {
+        if (editorRightDrawer == null) {
+            return;
+        }
+
+        if (!isLoadingBlockCollections.compareAndSet(false, true)) {
+            return;
+        }
+
         editorRightDrawer.a();
-        Executors.newSingleThreadExecutor().execute(() -> {
-            ArrayList<BlockCollectionBean> collections = Mp.h().f();
+        BLOCK_COLLECTION_EXECUTOR.execute(() -> {
+            final ArrayList<BlockCollectionBean> collections = Mp.h().f();
+
             runOnUiThread(() -> {
-                if (!isFinishing() && !isDestroyed()) {
+                try {
+                    if (editorRightDrawer == null || isFinishing() || isDestroyed()) {
+                        return;
+                    }
+
                     for (BlockCollectionBean next : collections) {
                         editorRightDrawer.a(next.name, next.blocks).setOnTouchListener(this);
                     }
+                } finally {
+                    isLoadingBlockCollections.set(false);
                 }
             });
         });

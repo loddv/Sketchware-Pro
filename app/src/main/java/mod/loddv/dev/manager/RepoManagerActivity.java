@@ -208,8 +208,66 @@ public class RepoManagerActivity extends AppCompatActivity {
         }
         updateIndex();
     }
-
-    private void loadRepositories() {
+    
+    private synchronized void loadRepositories() {
+        try {
+            REPOSITORY_LIST = loadRepositoriesFromFile();
+            initializeRepositories();
+            Log.d(TAG, "Successfully loaded " + REPOSITORY_LIST.size() + " repositories");
+            
+        } catch (IOException e) {
+            Log.e(TAG, "I/O error while loading repositories", e);
+            handleLoadingError();
+        } catch (com.google.gson.JsonSyntaxException e) {
+            Log.e(TAG, "JSON parsing error - repository file may be corrupted", e);
+            handleLoadingError();
+        }
+    }
+    
+    private ArrayList<Repository> loadRepositoriesFromFile() throws IOException {
+        if (!CONFIGURED_REPOSITORIES_FILE.exists()) {
+            return new ArrayList<>();
+        }
+    
+        try (FileReader reader = new FileReader(CONFIGURED_REPOSITORIES_FILE)) {
+            ArrayList<Repository> repositories = gson.fromJson(reader,
+                    new TypeToken<ArrayList<Repository>>() {}.getType());
+            
+            return validateRepositories(repositories);
+        }
+    }
+    
+    private ArrayList<Repository> validateRepositories(ArrayList<Repository> repositories) {
+        if (repositories == null || repositories.isEmpty()) {
+            Log.w(TAG, "No repositories found in file");
+            return new ArrayList<>();
+        }
+    
+        // Remove repositórios inválidos
+        repositories.removeIf(repo -> !isValidRepository(repo));
+        return repositories;
+    }
+    
+    private boolean isValidRepository(Repository repo) {
+        return repo != null && repo.getName() != null && !repo.getName().isEmpty();
+    }
+    
+    private void handleLoadingError() {
+        REPOSITORY_LIST = new ArrayList<>();
+        saveRepositories();
+        refreshUI();
+    }
+    
+    private void initializeRepositories() {
+        for (Repository repo : REPOSITORY_LIST) {
+            repo.setMenuExpanded(View.GONE);
+        }
+    
+        filteredList.clear();
+        filteredList.addAll(REPOSITORY_LIST);
+        updateIndex();
+    }
+    private void LloadRepositories() {
         if (!CONFIGURED_REPOSITORIES_FILE.exists()) {
             REPOSITORY_LIST = new ArrayList<>();
             saveRepositories();

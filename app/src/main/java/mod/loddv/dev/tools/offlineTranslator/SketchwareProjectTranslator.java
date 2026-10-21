@@ -151,7 +151,7 @@ public final class SketchwareProjectTranslator {
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         Transformer transformer = factory.newTransformer();
         transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.INDENT, "no");
         transformer.transform(new DOMSource(document), new StreamResult(destination));
     }
 

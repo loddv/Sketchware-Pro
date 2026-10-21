@@ -24,7 +24,8 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:isScrollContainer="true"
-                android:background="@color/backgroundColor"
+                android:fadingEdge="none"
+                android:nestedScrollingEnabled="true"
                 android:layout_height="?attr/actionBarSize" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>

@@ -1,5 +1,6 @@
 package mod.loddv.dev.manager;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import a.a.a.xB;
 import pro.sketchware.R;
 import pro.sketchware.activities.resourceseditor.components.utils.StringsEditorManager;
 import pro.sketchware.databinding.ActivityManageStringBinding;
@@ -134,9 +136,13 @@ public class ManageStringActivity extends AppCompatActivity {
         executorService.execute(() -> {
             String xmlContent = stringsEditorManager.convertListMapToXmlStrings(dataSnapshot, notesSnapshot);
             FileUtil.writeFile(stringsFile.getAbsolutePath(), xmlContent);
-            if (onComplete != null) {
-                runOnUiThread(onComplete);
-            }
+            Context appContext = getApplicationContext();
+            runOnUiThread(() -> {
+                xB.b().b(appContext);
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            });
         });
     }
 

@@ -77,7 +77,7 @@ public class ManageStringActivity extends AppCompatActivity {
 
     public String getTargetLang() {
         String v = targetLang.getText().toString().trim();
-        return v.isEmpty() ? "en" : v;
+        return v.isEmpty() ? "pt" : v;
     }
 
     public void onSelectionChanged() {
@@ -112,8 +112,8 @@ public class ManageStringActivity extends AppCompatActivity {
         sourceLang.setEms(3);
         sourceLang.setSingleLine();
         targetLang = new EditText(this);
-        targetLang.setHint("en");
-        targetLang.setText("en");
+        targetLang.setHint("pt");
+        targetLang.setText("pt");
         targetLang.setInputType(InputType.TYPE_CLASS_TEXT);
         targetLang.setEms(3);
         targetLang.setSingleLine();
@@ -150,10 +150,18 @@ public class ManageStringActivity extends AppCompatActivity {
         }
         String src = getSourceLang();
         String dst = getTargetLang();
-        SketchwareUtil.toast("Translating " + items.size() + " string(s)...", Toast.LENGTH_SHORT);
+        final int total = items.size();
+        androidx.appcompat.app.AlertDialog progressDialog = new MaterialAlertDialogBuilder(this)
+                .setTitle("Translating")
+                .setMessage("0/" + total)
+                .setCancelable(false)
+                .show();
         executorService.execute(() -> {
             int ok = 0;
+            int current = 0;
             for (HashMap<String, Object> item : items) {
+                final int shown = ++current;
+                runOnUiThread(() -> progressDialog.setMessage(shown + "/" + total));
                 Object text = item.get("text");
                 if (text == null || text.toString().isEmpty()) continue;
                 String result = translateText(text.toString(), src, dst);
@@ -164,6 +172,7 @@ public class ManageStringActivity extends AppCompatActivity {
             }
             final int done = ok;
             runOnUiThread(() -> {
+                progressDialog.dismiss();
                 adapter.notifyDataSetChanged();
                 saveStringsAsync();
                 SketchwareUtil.toast("Translated " + done + "/" + items.size(), Toast.LENGTH_SHORT);

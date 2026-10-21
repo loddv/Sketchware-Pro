@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Bundle;
+import mod.loddv.dev.tools.offlineTranslator.BatchTranslatorManager;
 import android.os.Environment;
 import android.text.InputType;
 import android.view.Gravity;
@@ -157,19 +158,39 @@ public class ManageStringActivity extends AppCompatActivity {
                 .setCancelable(false)
                 .show();
         executorService.execute(() -> {
-            int ok = 0;
-            int current = 0;
+            java.util.List<HashMap<String, Object>> targets = new ArrayList<>();
+            java.util.List<String> texts = new ArrayList<>();
             for (HashMap<String, Object> item : items) {
-                final int shown = ++current;
-                runOnUiThread(() -> progressDialog.setMessage(shown + "/" + total));
                 Object text = item.get("text");
                 if (text == null || text.toString().isEmpty()) continue;
-                String result = translateText(text.toString(), src, dst);
-                if (result != null) {
-                    item.put("text", result);
-                    ok++;
-                }
+                targets.add(item);
+                texts.add(text.toString());
             }
+            final int[] okCount = {0};
+            final int[] current = {0};
+            BatchTranslatorManager batchManager = new BatchTranslatorManager(batch -> {
+                java.util.List<String> out = new ArrayList<>(batch.size());
+                for (String text : batch) {
+                    String result = translateText(text, src, dst);
+                    if (result != null) {
+                        okCount[0]++;
+                        out.add(result);
+                    } else {
+                        out.add(text);
+                    }
+                    final int shown = ++current[0];
+                    runOnUiThread(() -> progressDialog.setMessage(shown + "/" + total));
+                }
+                return out;
+            }, 20);
+            try {
+                java.util.List<String> translated = batchManager.translate(texts);
+                for (int i = 0; i < targets.size(); i++) {
+                    targets.get(i).put("text", translated.get(i));
+                }
+            } catch (Exception ignored) {
+            }
+            int ok = okCount[0];
             final int done = ok;
             runOnUiThread(() -> {
                 progressDialog.dismiss();

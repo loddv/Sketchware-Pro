@@ -1,5 +1,7 @@
 package mod.loddv.dev.manager;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
@@ -12,6 +14,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -225,6 +228,23 @@ public class ManageStringActivity extends AppCompatActivity {
             } else {
                 holder.binding.tvTitle.setVisibility(View.GONE);
             }
+            holder.binding.backgroundCard.setOnLongClickListener(v -> {
+                int adapterPosition = holder.getAbsoluteAdapterPosition();
+                if (adapterPosition == RecyclerView.NO_POSITION) return false;
+                HashMap<String, Object> currentItem = filteredData.get(adapterPosition);
+                PopupMenu popup = new PopupMenu(activity, v);
+                popup.getMenu().add(0, 0, 0, "Copiar key");
+                popup.getMenu().add(0, 1, 1, "Copiar valor");
+                popup.setOnMenuItemClickListener(menuItem -> {
+                    Object value = currentItem.get(menuItem.getItemId() == 0 ? "key" : "text");
+                    ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    clipboard.setPrimaryClip(ClipData.newPlainText("string", value == null ? "" : value.toString()));
+                    SketchwareUtil.toast("Copiado", Toast.LENGTH_SHORT);
+                    return true;
+                });
+                popup.show();
+                return true;
+            });
             holder.binding.backgroundCard.setOnClickListener(v -> {
                 int adapterPosition = holder.getAbsoluteAdapterPosition();
                 if (adapterPosition == RecyclerView.NO_POSITION) return;

@@ -19,9 +19,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
+
         <!-- Pacote oficial do aplicativo Google Gemini -->
         <package android:name="com.google.android.apps.bard" />
     </queries>
+
     <application
         android:name=".SketchApplication"
         android:allowBackup="true"
@@ -334,6 +336,12 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <activity
+            android:name="mod.loddv.dev.manager.ManageStringActivity"
+            android:exported="false"
+            android:label="@string/title_activity_manage_string"
+            android:theme="@style/Theme.SketchwarePro.NoActionBar" />
     </application>
 
 </manifest>

@@ -54,4 +54,6 @@
     <dimen name="recycler_view_item_spacing">6dp</dimen>
 
     <dimen name="dialog_action_size">100dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="text_margin">16dp</dimen>
 </resources>

@@ -98,6 +98,8 @@ public class DesignDrawer extends LinearLayout {
             designActivity.toLogReader();
         } else if (id == R.id.item_collection_manager) {
             designActivity.toCollectionManager();
+        } else if (id == R.id.item_string_manager) {
+            designActivity.toStringManager();
         } else {
             throw new IllegalArgumentException("Invalid item id: " + id);
         }
@@ -119,7 +121,7 @@ public class DesignDrawer extends LinearLayout {
                 .build();
         MaterialShapeDrawable background = new MaterialShapeDrawable(shape);
         background.setFillColor(ColorStateList.valueOf(ThemeUtils.getColor(context,
-				R.attr.colorSurfaceContainerLowest)));
+                R.attr.colorSurfaceContainerLowest)));
         background.initializeElevationOverlay(context);
         setBackground(background);
         setElevation(3f);
@@ -135,51 +137,54 @@ public class DesignDrawer extends LinearLayout {
         UI.addSystemWindowInsetToPadding(this, false, false, true, true);
         addDrawerSubheaderItem(R.string.design_drawer_menu_title, content);
         addDrawerItem(R.id.item_library_manager, R.drawable.ic_mtrl_category,
-				R.string.design_drawer_menu_title_library, R.string.design_drawer_menu_description_library, content);
+                R.string.design_drawer_menu_title_library, R.string.design_drawer_menu_description_library, content);
         addDrawerItem(R.id.item_view_manager, R.drawable.ic_mtrl_devices, R.string.design_drawer_menu_title_view,
-				R.string.design_drawer_menu_description_view, content);
+                R.string.design_drawer_menu_description_view, content);
         addDrawerItem(R.id.item_image_manager, R.drawable.ic_mtrl_image, R.string.design_drawer_menu_title_image,
-				R.string.design_drawer_menu_description_image, content);
+                R.string.design_drawer_menu_description_image, content);
         addDrawerItem(R.id.item_sound_manager, R.drawable.ic_mtrl_music, R.string.design_drawer_menu_title_sound,
-				R.string.design_drawer_menu_description_sound, content);
+                R.string.design_drawer_menu_description_sound, content);
         addDrawerItem(R.id.item_font_manager, R.drawable.ic_mtrl_font, R.string.design_drawer_menu_title_font,
-				R.string.design_drawer_menu_description_font, content);
+                R.string.design_drawer_menu_description_font, content);
         addDrawerItem(R.id.item_java_manager, R.drawable.ic_mtrl_java, R.string.text_title_menu_java,
-				R.string.text_subtitle_menu_java, content);
+                R.string.text_subtitle_menu_java, content);
         addDrawerItem(R.id.item_resource_manager, R.drawable.ic_mtrl_folder, R.string.text_title_menu_resource,
-				R.string.text_subtitle_menu_resource, content);
+                R.string.text_subtitle_menu_resource, content);
         addDrawerItem(R.id.item_resource_editor, R.drawable.ic_mtrl_folder_code,
-				R.string.text_title_menu_resource_editor, R.string.text_subtitle_menu_resource_editor, content);
+                R.string.text_title_menu_resource_editor, R.string.text_subtitle_menu_resource_editor, content);
         addDrawerItem(R.id.item_assets_manager, R.drawable.ic_mtrl_file_present, R.string.text_title_menu_assets,
-				R.string.text_subtitle_menu_assets, content);
+                R.string.text_subtitle_menu_assets, content);
         addDrawerItem(R.id.item_permission_manager, R.drawable.ic_mtrl_shield_check,
-				R.string.text_title_menu_permission, R.string.text_subtitle_menu_permission, content);
+                R.string.text_title_menu_permission, R.string.text_subtitle_menu_permission, content);
         addDrawerItem(R.id.item_appcompat_manager, R.drawable.ic_mtrl_inject, R.string.design_drawer_menu_injection,
-				R.string.design_drawer_menu_injection_subtitle, content);
+                R.string.design_drawer_menu_injection_subtitle, content);
         addDrawerItem(R.id.item_manifest_manager, R.drawable.ic_mtrl_deployed_code,
-				R.string.design_drawer_menu_androidmanifest, R.string.design_drawer_menu_androidmanifest_subtitle,
-				content);
+                R.string.design_drawer_menu_androidmanifest, R.string.design_drawer_menu_androidmanifest_subtitle,
+                content);
         addDrawerItem(R.id.item_used_custom_blocks, R.drawable.ic_mtrl_block,
-				R.string.design_drawer_menu_customblocks, R.string.design_drawer_menu_customblocks_subtitle, content);
+                R.string.design_drawer_menu_customblocks, R.string.design_drawer_menu_customblocks_subtitle, content);
         addDrawerItem(R.id.item_code_shrinking_manager, R.drawable.ic_mtrl_shield_lock,
-				R.string.design_drawer_menu_proguard, R.string.design_drawer_menu_proguard_subtitle, content);
+                R.string.design_drawer_menu_proguard, R.string.design_drawer_menu_proguard_subtitle, content);
         addDrawerItem(R.id.item_stringfog_manager, R.drawable.ic_mtrl_regular_expression,
-				R.string.design_drawer_menu_stringfog, R.string.design_drawer_menu_stringfog_subtitle, content);
+                R.string.design_drawer_menu_stringfog, R.string.design_drawer_menu_stringfog_subtitle, content);
         addDrawerItem(R.id.item_show_src, R.drawable.ic_mtrl_frame_source,
-				R.string.design_drawer_menu_title_source_code, R.string.design_drawer_menu_description_source_code,
-				content);
+                R.string.design_drawer_menu_title_source_code, R.string.design_drawer_menu_description_source_code,
+                content);
         addDrawerItem(R.id.item_xml_command_manager, R.drawable.ic_mtrl_code,
-				R.string.design_drawer_menu_title_xml_command, R.string.design_drawer_menu_description_xml_command,
-				content);
+                R.string.design_drawer_menu_title_xml_command, R.string.design_drawer_menu_description_xml_command,
+                content);
         addDrawerItem(R.id.item_logcat_reader, R.drawable.ic_mtrl_article,
-				R.string.design_drawer_menu_title_logcat_reader, R.string.design_drawer_menu_subtitle_logcat_reader,
-				content);
+                R.string.design_drawer_menu_title_logcat_reader, R.string.design_drawer_menu_subtitle_logcat_reader,
+                content);
         // if you want to show text "Global", uncomment next line
         addDrawerSubheaderItem(R.string.design_drawer_menu_bottom_title, this);
         // addDrawerDivider(this);
         addDrawerItem(R.id.item_collection_manager, R.drawable.ic_mtrl_bookmark,
-				R.string.design_drawer_menu_title_collection, R.string.design_drawer_menu_description_collection,
-				this);
+                R.string.design_drawer_menu_title_collection, R.string.design_drawer_menu_description_collection,
+                this);
+        // adicionar String translation
+        addDrawerItem(R.id.item_string_manager, R.drawable.ic_mtrl_box, R.string.design_drawer_menu_string_manager,
+                R.string.design_drawer_menu_string_subtitle_about, this);
     }
 
     @Override
@@ -203,7 +208,7 @@ public class DesignDrawer extends LinearLayout {
                 break;
             case MeasureSpec.AT_MOST:
                 widthSpec = MeasureSpec.makeMeasureSpec(Math.min(MeasureSpec.getSize(widthSpec), maxWidth),
-						MeasureSpec.EXACTLY);
+                        MeasureSpec.EXACTLY);
                 break;
             case MeasureSpec.UNSPECIFIED:
                 widthSpec = MeasureSpec.makeMeasureSpec(maxWidth, MeasureSpec.EXACTLY);
@@ -215,7 +220,7 @@ public class DesignDrawer extends LinearLayout {
     private void addDrawerItem(int id, int iconResId, int titleResId, int descriptionResId, ViewGroup view) {
         DrawerItem drawerItem = new DrawerItem(getContext());
         drawerItem.setContent(iconResId, Helper.getResString(drawerItem, titleResId), Helper.getResString(drawerItem,
-				descriptionResId));
+                descriptionResId));
         drawerItem.setOnClickListener(id, drawerItemClickListener);
         view.addView(drawerItem);
     }

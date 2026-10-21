@@ -22,6 +22,7 @@
     <item name="item_xml_command_manager" type="id" />
     <item name="item_logcat_reader" type="id" />
     <item name="item_collection_manager" type="id" />
+    <item name="item_string_manager" type="id" />
     <item name="action_install_apk" type="id" />
     <item name="action_uninstall_apk" type="id" />
     <item name="action_start_app" type="id" />

@@ -89,4 +89,13 @@
     </style>
 
     <style name="Platform.Theme.SketchwarePro" parent="Platform.V21.Theme.SketchwarePro" />
+
+    <style name="Theme.SketchwarePro.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Theme.SketchwarePro.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.SketchwarePro.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>

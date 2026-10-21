@@ -129,6 +129,7 @@ import mod.jbk.diagnostic.MissingFileException;
 import mod.jbk.util.LogUtil;
 import mod.khaled.logcat.LogReaderActivity;
 import mod.loddv.dev.designer.GridOptionAdapter;
+import mod.loddv.dev.manager.ManageStringActivity;
 import pro.sketchware.R;
 import pro.sketchware.activities.appcompat.ManageAppCompatActivity;
 import pro.sketchware.activities.editor.command.ManageXMLCommandActivity;
@@ -1406,6 +1407,11 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
         } else {
             optionalLauncher.launch(intent);
         }
+    }
+
+    public void toStringManager() {
+        launchActivity(ManageStringActivity.class,
+                null);
     }
 
     private abstract static class BaseTask {

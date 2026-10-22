@@ -423,9 +423,10 @@ public class ExtraPaletteBlock {
                 variables();
                 return;
             case 1:
-                logicEditor.b("Add list", "listAdd");
-                logicEditor.b("Add custom List", "listAddCustom", clickListener);
-                logicEditor.b("Remove list", "listRemove", clickListener);
+                logicEditor.b(Helper.getResString(R.string.logic_editor_panel_button_add_list), "listAdd");
+                logicEditor.b(Helper.getResString(R.string.add_custom_list), "listAddCustom", clickListener);
+                logicEditor.b(Helper.getResString(R.string.logic_editor_panel_button_remove_list), "listRemove",
+                        clickListener);
                 list();
                 return;
             case 2:

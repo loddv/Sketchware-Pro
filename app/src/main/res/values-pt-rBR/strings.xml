@@ -2319,4 +2319,5 @@ Please try again later"</string>
     <string name="search_for_permissions">Busque por permissões</string>
     <string name="add_custom_variable">Adicionar custom variavel</string>
     <string name="edit_variable">Editar variavel</string>
+    <string name="add_custom_list">Adicionar custom Lista</string>
 </resources>

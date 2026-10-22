@@ -2412,4 +2412,5 @@ Please try again later"</string>
     <string name="search_for_permissions">Search for permissions</string>
     <string name="add_custom_variable">Add custom variable</string>
     <string name="edit_variable">Edit variable</string>
+    <string name="add_custom_list">Add custom List</string>
 </resources>

@@ -65,7 +65,8 @@ public class ArraysEditor extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = ResourcesEditorFragmentBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -75,15 +76,12 @@ public class ArraysEditor extends Fragment {
         this.filePath = filePath;
         boolean isSkippingMode = updateMode == 1;
         boolean isMergeAndReplace = updateMode == 2;
-
         ArrayList<ArrayModel> defaultArrays = arraysEditorManager.parseArraysFile(FileUtil.readFileIfExist(filePath));
-
         if (isSkippingMode) {
             HashSet<String> existingArrayNames = new HashSet<>();
             for (ArrayModel existingArray : arraysList) {
                 existingArrayNames.add(existingArray.getArrayName());
             }
-
             for (ArrayModel array : defaultArrays) {
                 if (!existingArrayNames.contains(array.getArrayName())) {
                     arraysList.add(array);
@@ -95,14 +93,12 @@ public class ArraysEditor extends Fragment {
                 for (ArrayModel array : defaultArrays) {
                     newArrayNames.add(array.getArrayName());
                 }
-
                 arraysList.removeIf(existingArray -> newArrayNames.contains(existingArray.getArrayName()));
             } else {
                 arraysList.clear();
             }
             arraysList.addAll(defaultArrays);
         }
-
         activity.runOnUiThread(() -> {
             notesMap = new HashMap<>(arraysEditorManager.notesMap);
             adapter = new ArraysAdapter(arraysList, this, notesMap);
@@ -118,8 +114,10 @@ public class ArraysEditor extends Fragment {
     private void updateNoContentLayout() {
         if (arraysList.isEmpty()) {
             binding.noContentLayout.setVisibility(View.VISIBLE);
-            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title), "Arrays"));
-            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body), "arrays"));
+            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title)
+                    , "Arrays"));
+            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body),
+                    "arrays"));
         } else {
             binding.noContentLayout.setVisibility(View.GONE);
         }
@@ -129,7 +127,6 @@ public class ArraysEditor extends Fragment {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         ArraysEditorAddBinding binding = ArraysEditorAddBinding.inflate(getLayoutInflater());
         dialog.setTitle("Create new array");
-
         binding.arrayType.setOnClickListener(view -> {
             String[] arrayTypes = {"STRING", "INTEGER", "OBJECT"};
             new MaterialAlertDialogBuilder(requireContext())
@@ -140,24 +137,19 @@ public class ArraysEditor extends Fragment {
                     })
                     .show();
         });
-
-        dialog.setPositiveButton("Create", (d, which) -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_create), (d, which) -> {
             String arrayName = Objects.requireNonNull(binding.arrayName.getText()).toString();
             String arrayTypeString = Objects.requireNonNull(binding.arrayType.getText()).toString();
             String header = Objects.requireNonNull(binding.arrayHeaderInput.getText()).toString();
-
             if (arrayName.isEmpty()) {
                 SketchwareUtil.toastError("Array name Input is Empty");
                 return;
             }
-
             if (arrayTypeString.isEmpty()) {
                 SketchwareUtil.toastError("Array type not selected");
                 return;
             }
-
             ARRAYS_TYPES arrayType = ARRAYS_TYPES.valueOf(arrayTypeString.toUpperCase());
-
             ArrayModel array = new ArrayModel(arrayName, arrayType);
             arraysList.add(array);
             int notifyPosition = arraysList.size() - 1;
@@ -168,7 +160,6 @@ public class ArraysEditor extends Fragment {
             updateNoContentLayout();
             hasUnsavedChanges = true;
         });
-
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();
@@ -178,7 +169,6 @@ public class ArraysEditor extends Fragment {
         ArrayModel array = arraysList.get(position);
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         ArraysEditorAddBinding binding = ArraysEditorAddBinding.inflate(getLayoutInflater());
-
         binding.arrayName.setText(array.getArrayName());
         binding.arrayType.setText(array.getArrayType().name());
         if (notesMap.containsKey(position)) {
@@ -194,18 +184,15 @@ public class ArraysEditor extends Fragment {
                     })
                     .show();
         });
-
         dialog.setTitle("Edit array");
         dialog.setPositiveButton("Edit", (d, which) -> {
             String arrayName = Objects.requireNonNull(binding.arrayName.getText()).toString();
             String arrayType = Objects.requireNonNull(binding.arrayType.getText()).toString();
             String header = Objects.requireNonNull(binding.arrayHeaderInput.getText()).toString();
-
             if (arrayName.isEmpty()) {
                 SketchwareUtil.toastError("Array name Input is Empty");
                 return;
             }
-
             array.setArrayName(arrayName);
             array.setArrayType(ARRAYS_TYPES.valueOf(arrayType.toUpperCase()));
             if (header.isEmpty()) {
@@ -216,19 +203,20 @@ public class ArraysEditor extends Fragment {
             adapter.notifyItemChanged(position);
             hasUnsavedChanges = true;
         });
-        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete), (d, which) -> new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Warning")
-                .setMessage("Are you sure you want to delete " + array.getArrayName() + "?")
-                .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
-                    arraysList.remove(position);
-                    notesMap.remove(position);
-                    adapter.notifyItemRemoved(position);
-                    d.dismiss();
-                    updateNoContentLayout();
-                    hasUnsavedChanges = true;
-                })
-                .setNegativeButton("Cancel", null)
-                .show());
+        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete),
+                (d, which) -> new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Warning")
+                        .setMessage("Are you sure you want to delete " + array.getArrayName() + "?")
+                        .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
+                            arraysList.remove(position);
+                            notesMap.remove(position);
+                            adapter.notifyItemRemoved(position);
+                            d.dismiss();
+                            updateNoContentLayout();
+                            hasUnsavedChanges = true;
+                        })
+                        .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
+                        .show());
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();
@@ -240,9 +228,7 @@ public class ArraysEditor extends Fragment {
         var binding = PropertyPopupParentAttrBinding.inflate(getLayoutInflater());
         dialog.setContentView(binding.getRoot());
         dialog.show();
-
         binding.title.setText(array.getArrayName() + " attributes");
-
         attributesAdapter = new PropertyInputItem.AttributesAdapter();
         attributesAdapter.setOnItemClickListener(
                 new PropertyInputItem.AttributesAdapter.ItemClickListener() {
@@ -262,7 +248,7 @@ public class ArraysEditor extends Fragment {
                                     attributesAdapter.submitList(new ArrayList<>(attributes.keySet()));
                                     hasUnsavedChanges = true;
                                 })
-                                .setNegativeButton("Cancel", null)
+                                .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
                                 .create()
                                 .show();
                     }
@@ -276,23 +262,19 @@ public class ArraysEditor extends Fragment {
         attributesAdapter.setAttributes(attributes);
         List<String> keys = new ArrayList<>(attributes.keySet());
         attributesAdapter.submitList(keys);
-
         binding.add.setOnClickListener(
                 v -> showAttributeDialog(array, ""));
     }
 
     private void showAttributeDialog(ArrayModel array, String attr) {
         boolean isEditing = !attr.isEmpty();
-
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         ArraysEditorAddAttrBinding binding = ArraysEditorAddAttrBinding.inflate(getLayoutInflater());
-
         if (array.getArrayType() == ARRAYS_TYPES.INTEGER) {
             binding.itemValue.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
         } else {
             binding.itemValue.setInputType(InputType.TYPE_CLASS_TEXT);
         }
-
         if (isEditing) {
             binding.itemName.setText(attr);
             binding.itemValue.setText(array.getAttribute(attr));
@@ -300,26 +282,20 @@ public class ArraysEditor extends Fragment {
             binding.itemName.setText("item" + (array.getAttributes().keySet().size() + 1));
             binding.itemValue.requestFocus();
         }
-
         dialog.setTitle(isEditing ? "Edit item" : "Create new item");
-
         dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (d, which) -> {
             String attribute = Objects.requireNonNull(binding.itemName.getText()).toString();
             String value = Objects.requireNonNull(binding.itemValue.getText()).toString();
-
             if (attribute.isEmpty() || value.isEmpty()) {
                 SketchwareUtil.toastError("Please fill in all fields");
                 return;
             }
-
             if (!attribute.equals(attr)) array.getAttributes().remove(attr);
-
             array.addAttribute(attribute, value);
             attributesAdapter.submitList(new ArrayList<>(array.getAttributes().keySet()));
             attributesAdapter.notifyDataSetChanged();
             hasUnsavedChanges = true;
         });
-
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();

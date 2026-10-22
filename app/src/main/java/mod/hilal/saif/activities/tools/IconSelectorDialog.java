@@ -18,6 +18,7 @@ import java.util.List;
 
 import mod.hey.studios.util.Helper;
 import mod.jbk.util.OldResourceIdMapper;
+import pro.sketchware.R;
 import pro.sketchware.databinding.DialogIconSelectorBinding;
 import pro.sketchware.databinding.ItemIconSelectorBinding;
 
@@ -30,7 +31,6 @@ public class IconSelectorDialog {
     public IconSelectorDialog(Activity activity, TextView toSetText) {
         this.activity = activity;
         this.toSetText = toSetText;
-
         data = new ArrayList<>(OldResourceIdMapper.HIGHEST_ID - OldResourceIdMapper.LOWEST_ID);
         for (int i = OldResourceIdMapper.LOWEST_ID; i < OldResourceIdMapper.HIGHEST_ID; i++) {
             data.add(i);
@@ -39,23 +39,21 @@ public class IconSelectorDialog {
 
     public void show() {
         DialogIconSelectorBinding dialogBinding = DialogIconSelectorBinding.inflate(LayoutInflater.from(activity));
-
         GridView gridView = dialogBinding.gridView;
         gridView.setAdapter(new IconListAdapter(data));
         gridView.setOnItemClickListener((parent, view, position, id) -> {
             toSetText.setText(String.valueOf(data.get(position)));
             builder.dismiss();
         });
-
         String iconIdInput = Helper.getText(toSetText);
         if (!iconIdInput.isEmpty() && OldResourceIdMapper.isValidIconId(iconIdInput)) {
             gridView.smoothScrollToPosition(data.indexOf(Integer.parseInt(iconIdInput)));
         }
-
         builder = new MaterialAlertDialogBuilder(activity)
                 .setTitle("Select an icon")
                 .setView(dialogBinding.getRoot())
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialog, which) -> dialog.dismiss())
                 .create();
         builder.show();
     }
@@ -77,7 +75,6 @@ public class IconSelectorDialog {
             } else {
                 itemBinding = (ItemIconSelectorBinding) convertView.getTag();
             }
-
             int oldResourceId = getItem(position);
             try {
                 itemBinding.iconImage.setImageResource(
@@ -87,7 +84,6 @@ public class IconSelectorDialog {
                 iconsList.remove(position);
                 notifyDataSetChanged();
             }
-
             return convertView;
         }
 

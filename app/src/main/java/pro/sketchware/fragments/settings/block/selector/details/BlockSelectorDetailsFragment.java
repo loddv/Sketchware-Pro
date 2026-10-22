@@ -23,6 +23,7 @@ import java.util.List;
 
 import a.a.a.qA;
 import mod.hey.studios.util.Helper;
+import pro.sketchware.R;
 import pro.sketchware.databinding.DialogAddCustomActivityBinding;
 import pro.sketchware.databinding.DialogSelectorActionsBinding;
 import pro.sketchware.databinding.FragmentBlockSelectorManagerBinding;
@@ -49,7 +50,6 @@ public class BlockSelectorDetailsFragment extends qA {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Bundle args = getArguments();
         index = args.getInt("index");
         selectors = args.getParcelableArrayList("selectors");
@@ -57,7 +57,8 @@ public class BlockSelectorDetailsFragment extends qA {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = FragmentBlockSelectorManagerBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -66,52 +67,46 @@ public class BlockSelectorDetailsFragment extends qA {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         configureToolbar(binding.toolbar);
-
         adapter = new BlockSelectorDetailsAdapter(
                 (selector, indexA) -> showActionsDialog(indexA)
         );
-
         adapter.submitList(selectors.get(index).getData());
         binding.list.setAdapter(adapter);
-
         binding.createNew.setOnClickListener(v -> showCreateEditDialog(false, 0));
-
         {
             View view1 = binding.appBarLayout;
             int left = view1.getPaddingLeft();
             int top = view1.getPaddingTop();
             int right = view1.getPaddingRight();
             int bottom = view1.getPaddingBottom();
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 v.setPadding(left + insets.left, top + insets.top, right + insets.right, bottom + insets.bottom);
                 return i;
             });
         }
-
         {
             View view1 = binding.content;
             int left = view1.getPaddingLeft();
             int top = view1.getPaddingTop();
             int right = view1.getPaddingRight();
             int bottom = view1.getPaddingBottom();
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 v.setPadding(left + insets.left, top, right + insets.right, bottom + insets.bottom);
                 return i;
             });
         }
-
         {
             View view1 = binding.createNew;
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view1.getLayoutParams();
             int end = lp.getMarginEnd();
             int bottom = lp.bottomMargin;
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 lp.setMarginEnd(end + insets.right);
                 lp.bottomMargin = bottom + insets.bottom;
                 v.setLayoutParams(lp);
@@ -121,15 +116,15 @@ public class BlockSelectorDetailsFragment extends qA {
     }
 
     private void showCreateEditDialog(boolean isEdit, int indexA) {
-        DialogAddCustomActivityBinding dialogBinding = DialogAddCustomActivityBinding.inflate(LayoutInflater.from(requireContext()));
+        DialogAddCustomActivityBinding dialogBinding =
+                DialogAddCustomActivityBinding.inflate(LayoutInflater.from(requireContext()));
         dialogBinding.activityNameInputLayout.setHint("Name");
         if (isEdit) {
             dialogBinding.activityNameInput.setText(selectors.get(index).getData().get(indexA));
         }
-
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         dialog.setTitle("New Selector Item");
-        dialog.setPositiveButton("Create", (v, which) -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_create), (v, which) -> {
             String newItem = Helper.getText(dialogBinding.activityNameInput);
             if (newItem != null && !newItem.isEmpty()) {
                 if (!isEdit) {
@@ -142,25 +137,22 @@ public class BlockSelectorDetailsFragment extends qA {
             }
             v.dismiss();
         });
-        dialog.setNegativeButton("Cancel", null);
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.setView(dialogBinding.getRoot());
         dialog.show();
     }
 
     private void showActionsDialog(int indexA) {
-        DialogSelectorActionsBinding dialogBinding = DialogSelectorActionsBinding.inflate(LayoutInflater.from(requireContext()));
-
+        DialogSelectorActionsBinding dialogBinding =
+                DialogSelectorActionsBinding.inflate(LayoutInflater.from(requireContext()));
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireActivity()).create();
         dialog.setTitle("Actions");
         dialog.setView(dialogBinding.getRoot());
-
         dialogBinding.edit.setOnClickListener(v -> {
             dialog.dismiss();
             showCreateEditDialog(true, indexA);
         });
-
         dialogBinding.export.setVisibility(View.GONE);
-
         dialogBinding.delete.setOnClickListener(v -> {
             dialog.dismiss();
             showConfirmationDialog(
@@ -174,17 +166,16 @@ public class BlockSelectorDetailsFragment extends qA {
                     DialogInterface::dismiss
             );
         });
-
         dialog.show();
     }
 
-    private void showConfirmationDialog(String message, OnDialogClickListener onConfirm, OnDialogClickListener onCancel) {
+    private void showConfirmationDialog(String message, OnDialogClickListener onConfirm,
+                                        OnDialogClickListener onCancel) {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         dialog.setTitle("Attention");
         dialog.setMessage(message);
         dialog.setPositiveButton("Yes", (v, which) -> onConfirm.onClick(v));
-        dialog.setNegativeButton("Cancel", (v, which) -> onCancel.onClick(v));
-
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v, which) -> onCancel.onClick(v));
         dialog.show();
     }
 

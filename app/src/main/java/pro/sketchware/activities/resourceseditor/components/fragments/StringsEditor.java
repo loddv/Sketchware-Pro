@@ -54,7 +54,8 @@ public class StringsEditor extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = ResourcesEditorFragmentBinding.inflate(inflater, container, false);
         stringsEditorManager.sc_id = activity.sc_id;
         return binding.getRoot();
@@ -63,11 +64,9 @@ public class StringsEditor extends Fragment {
     public void updateStringsList(String filePath, int updateMode, boolean hasUnsavedChangesStatus) {
         this.filePath = filePath;
         hasUnsavedChanges = hasUnsavedChangesStatus;
-
         boolean isSkippingMode = updateMode == 1;
         boolean isMergeAndReplace = updateMode == 2;
         stringsEditorManager.isDefaultVariant = activity.variant.isEmpty();
-
         ArrayList<HashMap<String, Object>> defaultStrings = new ArrayList<>();
         if ((activity.variant.isEmpty() || hasUnsavedChanges) && !FileUtil.isExistFile(filePath)) {
             String generatedContent = activity.yq.getXMLString();
@@ -76,13 +75,11 @@ public class StringsEditor extends Fragment {
             stringsEditorManager.convertXmlStringsToListMap(FileUtil.readFileIfExist(filePath), defaultStrings);
         }
         notesMap = new HashMap<>(stringsEditorManager.notesMap);
-
         if (isSkippingMode) {
             HashSet<String> existingKeys = new HashSet<>();
             for (HashMap<String, Object> existingMap : listmap) {
                 existingKeys.add((String) existingMap.get("key"));
             }
-
             for (HashMap<String, Object> stringMap : defaultStrings) {
                 String key = (String) stringMap.get("key");
                 if (existingKeys.add(key)) {
@@ -95,14 +92,12 @@ public class StringsEditor extends Fragment {
                 for (HashMap<String, Object> stringMap : defaultStrings) {
                     newKeys.add((String) stringMap.get("key"));
                 }
-
                 listmap.removeIf(existingMap -> newKeys.contains((String) existingMap.get("key")));
             } else {
                 listmap.clear();
             }
             listmap.addAll(defaultStrings);
         }
-
         activity.runOnUiThread(() -> {
             adapter = new StringsAdapter(activity, listmap, notesMap);
             binding.recyclerView.setAdapter(adapter);
@@ -117,8 +112,10 @@ public class StringsEditor extends Fragment {
     public void updateNoContentLayout() {
         if (listmap.isEmpty()) {
             binding.noContentLayout.setVisibility(View.VISIBLE);
-            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title), "Strings"));
-            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body), "string"));
+            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title)
+                    , "Strings"));
+            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body),
+                    "string"));
         } else {
             binding.noContentLayout.setVisibility(View.GONE);
         }
@@ -143,15 +140,13 @@ public class StringsEditor extends Fragment {
                 binding.importantNote.setVisibility(s.toString().equals("app_name") ? View.VISIBLE : View.GONE);
             }
         });
-        dialog.setPositiveButton("Create", (d, which) -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_create), (d, which) -> {
             String key = Objects.requireNonNull(binding.stringKeyInput.getText()).toString();
             String value = Objects.requireNonNull(binding.stringValueInput.getText()).toString();
-
             if (key.isEmpty() || value.isEmpty()) {
                 SketchwareUtil.toastError("Please fill in all fields");
                 return;
             }
-
             if (stringsEditorManager.isXmlStringsExist(listmap, key)) {
                 SketchwareUtil.toastError("\"" + key + "\" is already exist");
                 return;

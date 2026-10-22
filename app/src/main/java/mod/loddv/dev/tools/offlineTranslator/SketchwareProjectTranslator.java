@@ -30,13 +30,13 @@ public final class SketchwareProjectTranslator {
     private static final Pattern ANDROID_LOCALE_QUALIFIER =
             Pattern.compile("[a-z]{2,3}(-r[A-Z]{2})?");
 
-    private final BatchTranslatorManager batchTranslatorManager;
+    private final AidlBatchTranslator batchTranslator;
 
-    public SketchwareProjectTranslator(BatchTranslatorManager batchTranslatorManager) {
-        if (batchTranslatorManager == null) {
-            throw new NullPointerException("batchTranslatorManager");
+    public SketchwareProjectTranslator(AidlBatchTranslator batchTranslator) {
+        if (batchTranslator == null) {
+            throw new NullPointerException("batchTranslator");
         }
-        this.batchTranslatorManager = batchTranslatorManager;
+        this.batchTranslator = batchTranslator;
     }
 
     /**
@@ -71,7 +71,12 @@ public final class SketchwareProjectTranslator {
                 sourceTexts.add(stringElement.getTextContent());
             }
 
-            List<String> translations = batchTranslatorManager.translate(sourceTexts);
+            List<String> translations;
+            try {
+                translations = batchTranslator.translate(sourceTexts);
+            } catch (Exception e) {
+                throw new IOException("Failed to translate project strings", e);
+            }
             for (int i = 0; i < translatableStrings.size(); i++) {
                 translatableStrings.get(i).setTextContent(translations.get(i));
             }

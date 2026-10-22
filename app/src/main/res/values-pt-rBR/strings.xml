@@ -985,7 +985,7 @@ Please click on Settings to allow permission for Storage. Without this permissio
     <string name="common_word_project_information">Project Information</string>
     <string name="common_word_project_information_app_name">App Name</string>
     <string name="common_word_project_information_package">Package</string>
-    <string name="common_word_project_information_project">Project</string>
+    <string name="common_word_project_information_project">Projeto</string>
     <string name="common_word_project_information_version_code">Version code</string>
     <string name="common_word_project_information_version_name">Version name</string>
     <string name="common_word_public">public</string>
@@ -1525,7 +1525,7 @@ But, components should be added manually for working correctly."</string>
     <string name="main_drawer_title_subscribe">Subscribe</string>
     <string name="main_drawer_title_system_settings">System Settings</string>
     <string name="main_tab_title_competitions">Competitions</string>
-    <string name="main_tab_title_myproject">My Projects</string>
+    <string name="main_tab_title_myproject">Meus Projetos</string>
     <string name="main_tab_title_projects_store">Projects store</string>
     <string name="main_tab_title_tutorials">Tutorials</string>
     <string name="manage_export_url_actionbar_title">Manage Exported URLs</string>
@@ -1566,11 +1566,11 @@ But, components should be added manually for working correctly."</string>
     <string name="myprojects_export_src_chooser_title_email">Choose email</string>
     <string name="myprojects_export_src_title_email_body">attached file : %s</string>
     <string name="myprojects_export_src_title_email_subject">%s , Source Code for Android Studio</string>
-    <string name="myprojects_list_menu_title_create_a_new_project">New Project</string>
+    <string name="myprojects_list_menu_title_create_a_new_project">Novo Projeto</string>
     <string name="myprojects_list_menu_title_delete">Delete</string>
     <string name="myprojects_list_menu_title_settings">Setting</string>
     <string name="myprojects_list_menu_title_sign_export">Sign/Export</string>
-    <string name="myprojects_settings_actionbar_title_new_projet">New Project</string>
+    <string name="myprojects_settings_actionbar_title_new_projet">Novo Projeto</string>
     <string name="myprojects_settings_actionbar_title_project_settings">Project Settings</string>
     <string name="myprojects_settings_button_create_app">Create App</string>
     <string name="myprojects_settings_button_save">Save</string>
@@ -1591,10 +1591,10 @@ But, components should be added manually for working correctly."</string>
     <string name="myprojects_settings_version_control_title_code">Code</string>
     <string name="myprojects_settings_version_control_title_name">Name</string>
 
-    <string name="theme_section_title">Theme Presets </string>
+    <string name="theme_section_title">Temas Predefinidos </string>
     <string name="theme_section_description">Choose from predefined themes or generate a random one</string>
-    <string name="theme_generate_random">Generate Random</string>
-    <string name="theme_random_generated">Random theme generated</string>
+    <string name="theme_generate_random">Gerar Aleatoriamente</string>
+    <string name="theme_random_generated">Tema aleatorio gerado</string>
 
     <string name="myprojects_sign_apk_dialog_complete_create_certificate">A new certificate has been created</string>
     <string name="myprojects_sign_apk_error_failed_create_new_certificate">Failed to create a new certificate</string>
@@ -2014,7 +2014,7 @@ Please try again later"</string>
     <string name="shared_project_all_actionbar_title_editor_choice_project">"Editors' Choice Projects"</string>
     <string name="shared_project_all_actionbar_title_my_liked_project">My Liked Projects</string>
     <string name="shared_project_all_actionbar_title_my_shared_project">My Shared Projects</string>
-    <string name="shared_project_all_actionbar_title_new_project">New Projects</string>
+    <string name="shared_project_all_actionbar_title_new_project">Novo Projetos</string>
     <string name="shared_project_all_actionbar_title_popular_project">Popular Projects</string>
     <string name="shared_project_all_actionbar_title_who_liked_project">"%s's Shared Projects"</string>
     <string name="shared_project_confirm_delete_project">"Are you sure you want to deletar this project? You can't undo this action"</string>
@@ -2178,7 +2178,7 @@ Please try again later"</string>
     <string name="design_drawer_menu_customblocks_subtitle">See used custom blocks</string>
     <string name="design_drawer_menu_title_logcat_reader">Logcat Reader Manager</string>
     <string name="design_drawer_menu_subtitle_logcat_reader">Read logs from enabled projects</string>
-    <string name="myprojects_list_menu_title_restore_projects">Restaurar Projects</string>
+    <string name="myprojects_list_menu_title_restore_projects">Restaurar Projetos</string>
     <string name="sort_projects">Sort projects</string>
     <string name="code_shrinker_use_r8">Use R8</string>
     <string name="code_shrinker_obfuscate_def">Activating R8/ProGuard will minimize and obfuscate your project by renaming existing classes and methods on compilation time.</string>
@@ -2237,77 +2237,86 @@ Please try again later"</string>
     <string name="link_about_team">https://sketchware-pro.github.io/Sketchware-Pro/about.json</string>
     <string name="link_github_commits_url"><![CDATA[https://api.github.com/repos/Sketchware-Pro/Sketchware-Pro/commits?per_page=%s&page=%s]]></string>
     <string name="github_api_error_message">Something went wrong. Please wait and try again.</string>
-    <string name="github_api_date_unavailable">Date unavailable</string>
+    <string name="github_api_date_unavailable">Data indisponível</string>
     <string name="link_github_url">https://github.com/Sketchware-Pro/Sketchware-Pro</string>
-    <string name="change_launcher_activity_dialog_title">Launcher Activity</string>
+    <string name="change_launcher_activity_dialog_title">Atividade de Inicialização</string>
     <string name="common_word_add_activtiy">Adicionar Activity</string>
-    <string name="delete_custom_activity_dialog_message">All features related to %1$s will be removed. Are you sure?</string>
-    <string name="delete_custom_activity_dialog_title">Delete Activity</string>
-    <string name="delete_project_dialog_title">Delete project</string>
-    <string name="delete_project_dialog_message">Are you sure you want to deletar this project named %1$s?</string>
-    <string name="src_code_editor_unsaved_changes_dialog_warning_message">You have unsaved changes. Are you sure you want to exit?</string>
-    <string name="change_firebase_config_title">Change Firebase Config</string>
-    <string name="review_firebase_config_title">Review</string>
-    <string name="edit_view_properties_title">Editar Properties</string>
-    <string name="search_in_palettes_dialog_title">Buscar palettes</string>
+    <string name="delete_custom_activity_dialog_message">Todos os recursos relacionados a %1$s serão removidos. Tem certeza?</string>
+    <string name="delete_custom_activity_dialog_title">Excluir Activity</string>
+    <string name="delete_project_dialog_title">Excluir projeto</string>
+    <string name="delete_project_dialog_message">Tem certeza de que deseja excluir este projeto chamado %1$s?</string>
+    <string name="src_code_editor_unsaved_changes_dialog_warning_message">Você tem alterações não salvas. Tem certeza de que deseja sair?</string>
+    <string name="change_firebase_config_title">Alterar Configuração do Firebase</string>
+    <string name="review_firebase_config_title">Revisar</string>
+    <string name="edit_view_properties_title">Editar Propriedades</string>
+    <string name="search_in_palettes_dialog_title">Buscar paletas</string>
     <string name="search">Buscar</string>
     <string name="cancel">Cancelar</string>
     <string name="restore">Restaurar</string>
-    <string name="searching">Searching…</string>
-    <string name="restoring">Restoring…</string>
-    <string name="search_error_message">Nothing found,\ntry again with something else</string>
+    <string name="searching">Pesquisando…</string>
+    <string name="restoring">Restaurando…</string>
+    <string name="search_error_message">Nada encontrado,\ntente novamente com outra coisa</string>
     <string name="search_header">"  Buscar…"</string>
     <string name="strings_xml">strings.xml</string>
     <string name="xml_strings">XML Strings</string>
 
-    <string name="create_new_widget">Create a widget</string>
-    <string name="import_widgets">Import Widgets</string>
-    <string name="export_widgets">Export Widgets</string>
-    <string name="widget_editor">Widget editor</string>
-    <string name="var_is_required">%s is required</string>
-    <string name="widget_type_title">Widget type</string>
-    <string name="new_class">Or create a new category</string>
-    <string name="add_to">Adicionar to category</string>
-    <string name="title_activity_icon_creator">IconCreatorActivity</string>
+    <string name="create_new_widget">Criar um widget</string>
+    <string name="import_widgets">Importar Widgets</string>
+    <string name="export_widgets">Exportar Widgets</string>
+    <string name="widget_editor">Editor de widgets</string>
+    <string name="var_is_required">%s é obrigatório</string>
+    <string name="widget_type_title">Tipo de widget</string>
+    <string name="new_class">Ou criar uma nova categoria</string>
+    <string name="add_to">Adicionar à categoria</string>
+    <string name="title_activity_icon_creator">Criador de Ícones</string>
 
-    <string name="used_custom_blocks">Used Custom Blocks</string>
-    <string name="property_enter_value">Enter %s valor</string>
+    <string name="used_custom_blocks">Blocos personalizados usados</string>
+    <string name="property_enter_value">Insira o valor de %s</string>
 
-    <string name="code_viewer">Code Viewer</string>
-    <string name="block_name">Block Name</string>
+    <string name="code_viewer">Visualizador de Código</string>
+    <string name="block_name">Nome do Bloco</string>
 
-    <string name="resources_manager_xml_load_failed_message">data loading failed in \"%s\" \nPlease open the code editor to fix the issue manually</string>
-    <string name="resources_manager_xml_load_failed_title">Data Loading Failed</string>
-    <string name="resources_manager_xml_important_note_title">Important Note :</string>
-    <string name="resources_manager_xml_important_note_message_strings">Changing the `app_name` valor will directly affect this project\'s application name</string>
-    <string name="resources_manager_xml_important_note_message_colors">Changing primary colors will affect the app\'s visual theme, including buttons and highlights</string>
-    <string name="resources_editor_unsaved_changes_message">You have unsaved changes in \"%s\"\nDo you want to save your changes before quitting?</string>
-    <string name="resources_editor_unsaved_changes_message_variant_change">You have unsaved changes in \"%s\"\nDo you want to save your changes before changing the variant?</string>
-    <string name="save_to_collection">Save to collection</string>
-    <string name="unknown_attr">Unknown Attribute</string>
-    <string name="attr_already_exist">This attribute already exists</string>
-    <string name="title_activity_gradle_settings">GradleSettingsActivity</string>
+    <string name="resources_manager_xml_load_failed_message">falha ao carregar dados em \"%s\" \nAbra o editor de código para corrigir o problema manualmente</string>
+    <string name="resources_manager_xml_load_failed_title">Falha ao Carregar Dados</string>
+    <string name="resources_manager_xml_important_note_title">Nota Importante:</string>
+    <string name="resources_manager_xml_important_note_message_strings">Alterar o valor de `app_name` afetará diretamente o nome do aplicativo deste projeto</string>
+    <string name="resources_manager_xml_important_note_message_colors">Alterar as cores primárias afetará o tema visual do aplicativo, incluindo botões e destaques</string>
+    <string name="resources_editor_unsaved_changes_message">Você tem alterações não salvas em \"%s\"\nDeseja salvar suas alterações antes de sair?</string>
+    <string name="resources_editor_unsaved_changes_message_variant_change">Você tem alterações não salvas em \"%s\"\nDeseja salvar suas alterações antes de alterar a variante?</string>
+    <string name="save_to_collection">Salvar na coleção</string>
+    <string name="unknown_attr">Atributo desconhecido</string>
+    <string name="attr_already_exist">Este atributo já existe</string>
+    <string name="title_activity_gradle_settings">Configurações do Gradle</string>
 
     <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
+    <string name="messages_header">Mensagens</string>
+    <string name="sync_header">Sincronização</string>
 
     <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
+    <string name="signature_title">Sua assinatura</string>
+    <string name="reply_title">Ação de resposta padrão</string>
 
     <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    <string name="sync_title">Sincronizar e-mail periodicamente</string>
+    <string name="attachment_title">Baixar anexos recebidos</string>
+    <string name="attachment_summary_on">Baixar automaticamente anexos para e-mails recebidos
     </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
-    <string name="title_activity_library_dependecy_view">library_dependecy_view</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="attachment_summary_off">Baixar anexos apenas quando solicitado manualmente</string>
+    <string name="title_activity_library_dependecy_view">Visualização de Dependências</string>
+    <string name="title_home">Início</string>
+    <string name="title_dashboard">Painel</string>
+    <string name="title_notifications">Notificações</string>
     <string name="link_sw_assist">https://play.google.com/store/apps/details?id=com.w3wide.swassist</string>
-    <string name="type_the_name_of_the_block_you_want">Digite o nome do block que deseja</string>
-    <string name="design_drawer_menu_string_manager">String Manager</string>
-    <string name="design_drawer_menu_string_subtitle_about">My strings translation</string>
+    <string name="type_the_name_of_the_block_you_want">Digite o nome do bloco que deseja</string>
+    <string name="design_drawer_menu_string_manager">Gerenciador de Strings</string>
+    <string name="design_drawer_menu_string_subtitle_about">Tradução das strings</string>
+    <string name="translating">Traduzindo</string>
+    <string name="translation_progress">%1$d/%2$d</string>
+    <string name="get_your_projects_in_a_couple_of_clicks">Obtenha seus projetos com apenas alguns cliques</string>
+    <string name="store">Loja</string>
+    <string name="search_for_projects">Busque por projetos…</string>
+    <string name="search_for_libraries">Busque por bibliotecas</string>
+    <string name="search_for_permissions">Busque por permissões</string>
+    <string name="add_custom_variable">Adicionar custom variavel</string>
+    <string name="edit_variable">Editar variavel</string>
 </resources>

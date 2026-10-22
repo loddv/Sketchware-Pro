@@ -93,7 +93,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
                 android:layout_weight="1"
-                tools:text="Cancel" />
+                tools:text="@string/common_word_cancel" />
 
             <Button
                 android:id="@+id/btn_delete"

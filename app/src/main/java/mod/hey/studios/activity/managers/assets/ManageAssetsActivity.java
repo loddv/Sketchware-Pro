@@ -116,8 +116,9 @@ public class ManageAssetsActivity extends BaseAppCompatActivity {
                 .setView(dialogBinding.getRoot())
                 .setTitle("Create new")
                 .setMessage("If you're creating a file, make sure to add an extension.")
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
-                .setPositiveButton("Create", null)
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton(Helper.getResString(R.string.common_word_create), null)
                 .create();
         dialog.setOnShowListener(dialogInterface -> {
             Button positiveButton = ((AlertDialog) dialogInterface).getButton(DialogInterface.BUTTON_POSITIVE);
@@ -176,7 +177,8 @@ public class ManageAssetsActivity extends BaseAppCompatActivity {
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle("Rename " + assetsAdapter.getFileName(position))
                 .setView(dialogBinding.getRoot())
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("Rename", (dialogInterface, i) -> {
                     if (!Helper.getText(inputText).isEmpty()) {
                         FileUtil.renameFile(assetsAdapter.getItem(position), new File(current_path,

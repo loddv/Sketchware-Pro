@@ -25,6 +25,7 @@ import a.a.a.kq;
 import mod.agus.jcoderz.beans.ViewBeans;
 import mod.hey.studios.editor.view.IdGenerator;
 import mod.hey.studios.moreblock.ReturnMoreblockManager;
+import mod.hey.studios.util.Helper;
 import mod.hilal.saif.activities.tools.ConfigActivity;
 import mod.hilal.saif.blocks.BlocksHandler;
 import mod.pranav.viewbinding.ViewBindingBuilder;
@@ -411,12 +412,13 @@ public class ExtraPaletteBlock {
                 }
                 return;
             case 0:
-                logicEditor.b("Add variable", "variableAdd");
-                logicEditor.b("Add custom variable", "variableAddNew", clickListener);
+                logicEditor.b(Helper.getResString(R.string.logic_editor_panel_button_add_variable), "variableAdd");
+                logicEditor.b(Helper.getResString(R.string.add_custom_variable), "variableAddNew", clickListener);
                 // Check if any variables (boolean=0, number=1, string=2, map=3, custom=5/6) exist and are used
                 if (areAnyVariablesUsed()) {
-                    logicEditor.b("Remove variable", "variableRemove", clickListener);
-                    logicEditor.b("Edit variable", "variableEdit", clickListener);
+                    logicEditor.b(Helper.getResString(R.string.logic_editor_panel_button_remove_variable),
+                            "variableRemove", clickListener);
+                    logicEditor.b(Helper.getResString(R.string.edit_variable), "variableEdit", clickListener);
                 }
                 variables();
                 return;

@@ -21,6 +21,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
 
 import a.a.a.GB;
+import mod.hey.studios.util.Helper;
 import pro.sketchware.R;
 import pro.sketchware.utility.SketchwareUtil;
 
@@ -29,31 +30,28 @@ public class CollectErrorActivity extends BaseAppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Intent intent = getIntent();
         if (intent != null) {
             String error = intent.getStringExtra("error");
-
             var dialog = new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.common_error_an_error_occurred)
                     .setMessage("An error occurred while running Sketchware Pro. " +
                             "Do you want to report this error log so that we can fix it? " +
                             "No personal information will be included.")
                     .setPositiveButton("Copy", null)
-                    .setNegativeButton("Cancel", (dialogInterface, which) -> finish())
-                    .setNeutralButton("Show error", null) // null to set proper onClick listeners later without dismissing the AlertDialog
+                    .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                            (dialogInterface, which) -> finish())
+                    .setNeutralButton("Show error", null) // null to set proper onClick listeners later without
+                    // dismissing the AlertDialog
                     .setCancelable(false)
                     .show();
-
             TextView messageView = dialog.findViewById(android.R.id.message);
-
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
                 messageView.setTextIsSelectable(true);
                 messageView.setText(error);
             });
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
                 PackageInfo info;
-
                 try {
                     info = getPackageManager().getPackageInfo(getPackageName(), 0);
                 } catch (PackageManager.NameNotFoundException e) {
@@ -61,9 +59,7 @@ public class CollectErrorActivity extends BaseAppCompatActivity {
                     messageView.setText("Somehow couldn't get package info. Stack trace:\n" + Log.getStackTraceString(e));
                     return;
                 }
-
                 long fileSizeInBytes = new File(info.applicationInfo.sourceDir).length();
-
                 String deviceInfo = "Sketchware Pro " + info.versionName + " (" + info.versionCode + ")\n"
                         + "base.apk size: " + Formatter.formatFileSize(this, fileSizeInBytes) + " (" + fileSizeInBytes + " B)\n"
                         + "Locale: " + GB.g(getApplicationContext()) + "\n"
@@ -71,7 +67,6 @@ public class CollectErrorActivity extends BaseAppCompatActivity {
                         + "Brand: " + Build.BRAND + "\n"
                         + "Manufacturer: " + Build.MANUFACTURER + "\n"
                         + "Model: " + Build.MODEL;
-
                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("error", deviceInfo + "\n\n```\n" + error + "\n```");
                 clipboard.setPrimaryClip(clip);

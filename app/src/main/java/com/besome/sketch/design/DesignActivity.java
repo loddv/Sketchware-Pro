@@ -1628,7 +1628,7 @@ public class DesignActivity extends BaseAppCompatActivity implements View.OnClic
                         dialog.setMessage("A directory important for building is missing. " +
                                 "Sketchware Pro can try creating " + e.getMissingFile().getAbsolutePath() +
                                 " if you'd like to.");
-                        dialog.setNeutralButton("Create",
+                        dialog.setNeutralButton(Helper.getResString(R.string.common_word_create),
                                 (v, which) -> {
                                     v.dismiss();
                                     if (!e.getMissingFile().mkdirs()) {

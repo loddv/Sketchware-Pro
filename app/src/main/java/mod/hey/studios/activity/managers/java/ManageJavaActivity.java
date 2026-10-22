@@ -174,8 +174,9 @@ public class ManageJavaActivity extends BaseAppCompatActivity {
                 .setView(dialogBinding.getRoot())
                 .setTitle("Create new")
                 .setMessage("File extension will be added automatically based on the file type you select")
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
-                .setPositiveButton("Create", null)
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton(Helper.getResString(R.string.common_word_create), null)
                 .create();
         dialog.setOnShowListener(dialogInterface -> {
             dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
@@ -259,28 +260,28 @@ public class ManageJavaActivity extends BaseAppCompatActivity {
         var inputText = dialogBinding.inputText;
         var renameOccurrencesCheckBox = dialogBinding.renameOccurrencesCheckBox;
         var dialog =
-                new MaterialAlertDialogBuilder(this).setTitle("Rename " + filesAdapter.getFileName(position)).setView(dialogBinding.getRoot()).setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss()).setPositiveButton("Rename", (dialogInterface, i) -> {
-            if (!Helper.getText(inputText).isEmpty()) {
-                if (!filesAdapter.isFolder(position)) {
-                    if (frc.getJavaManifestList().contains(filesAdapter.getFullName(position))) {
-                        frc.getJavaManifestList().remove(filesAdapter.getFullName(position));
-                        FileUtil.writeFile(fpu.getManifestJava(sc_id), new Gson().toJson(frc.listJavaManifest));
-                        SketchwareUtil.toast("NOTE: Removed Activity from manifest");
+                new MaterialAlertDialogBuilder(this).setTitle("Rename " + filesAdapter.getFileName(position)).setView(dialogBinding.getRoot()).setNegativeButton(Helper.getResString(R.string.common_word_cancel), (dialogInterface, i) -> dialogInterface.dismiss()).setPositiveButton("Rename", (dialogInterface, i) -> {
+                    if (!Helper.getText(inputText).isEmpty()) {
+                        if (!filesAdapter.isFolder(position)) {
+                            if (frc.getJavaManifestList().contains(filesAdapter.getFullName(position))) {
+                                frc.getJavaManifestList().remove(filesAdapter.getFullName(position));
+                                FileUtil.writeFile(fpu.getManifestJava(sc_id), new Gson().toJson(frc.listJavaManifest));
+                                SketchwareUtil.toast("NOTE: Removed Activity from manifest");
+                            }
+                            if (renameOccurrencesCheckBox.isChecked()) {
+                                String fileContent = FileUtil.readFile(filesAdapter.getItem(position));
+                                FileUtil.writeFile(filesAdapter.getItem(position),
+                                        fileContent.replaceAll(filesAdapter.getFileNameWoExt(position),
+                                                FileUtil.getFileNameNoExtension(Helper.getText(inputText))));
+                            }
+                        }
+                        FileUtil.renameFile(filesAdapter.getItem(position),
+                                new File(current_path, Helper.getText(inputText)).getAbsolutePath());
+                        refresh();
+                        SketchwareUtil.toast("Renamed successfully");
                     }
-                    if (renameOccurrencesCheckBox.isChecked()) {
-                        String fileContent = FileUtil.readFile(filesAdapter.getItem(position));
-                        FileUtil.writeFile(filesAdapter.getItem(position),
-                                fileContent.replaceAll(filesAdapter.getFileNameWoExt(position),
-                                        FileUtil.getFileNameNoExtension(Helper.getText(inputText))));
-                    }
-                }
-                FileUtil.renameFile(filesAdapter.getItem(position),
-                        new File(current_path, Helper.getText(inputText)).getAbsolutePath());
-                refresh();
-                SketchwareUtil.toast("Renamed successfully");
-            }
-            dialogInterface.dismiss();
-        }).create();
+                    dialogInterface.dismiss();
+                }).create();
         inputText.setText(filesAdapter.getFileName(position));
         boolean isFolder = filesAdapter.isFolder(position);
         inputText.setText(filesAdapter.getFileName(position));

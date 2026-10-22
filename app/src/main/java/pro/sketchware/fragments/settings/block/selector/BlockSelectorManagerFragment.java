@@ -56,57 +56,51 @@ public class BlockSelectorManagerFragment extends qA {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         configureToolbar(binding.toolbar);
-
-        adapter = new BlockSelectorAdapter((selector, index) -> openFragment(BlockSelectorDetailsFragment.newInstance(index, selectors)), (selector, index) -> showActionsDialog(index));
-
+        adapter =
+                new BlockSelectorAdapter((selector, index) -> openFragment(BlockSelectorDetailsFragment.newInstance(index, selectors)), (selector, index) -> showActionsDialog(index));
         if (FileUtil.isExistFile(BlockSelectorConsts.BLOCK_SELECTORS_FILE.getAbsolutePath())) {
             selectors = parseJson(FileUtil.readFile(BlockSelectorConsts.BLOCK_SELECTORS_FILE.getAbsolutePath()));
         } else {
             selectors.add(new Selector("Select typeview:", "typeview", getTypeViewList()));
             saveAllSelectors();
         }
-
         binding.list.setAdapter(adapter);
         adapter.submitList(selectors);
-
         binding.createNew.setOnClickListener(v -> showCreateEditDialog(0, false));
-
         {
             View view1 = binding.appBarLayout;
             int left = view1.getPaddingLeft();
             int top = view1.getPaddingTop();
             int right = view1.getPaddingRight();
             int bottom = view1.getPaddingBottom();
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 v.setPadding(left + insets.left, top + insets.top, right + insets.right, bottom + insets.bottom);
                 return i;
             });
         }
-
         {
             View view1 = binding.content;
             int left = view1.getPaddingLeft();
             int top = view1.getPaddingTop();
             int right = view1.getPaddingRight();
             int bottom = view1.getPaddingBottom();
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 v.setPadding(left + insets.left, top, right + insets.right, bottom + insets.bottom);
                 return i;
             });
         }
-
         {
             View view1 = binding.createNew;
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view1.getLayoutParams();
             int end = lp.getMarginEnd();
             int bottom = lp.bottomMargin;
-
             ViewCompat.setOnApplyWindowInsetsListener(view1, (v, i) -> {
-                Insets insets = i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets insets =
+                        i.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
                 lp.setMarginEnd(end + insets.right);
                 lp.bottomMargin = bottom + insets.bottom;
                 v.setLayoutParams(lp);
@@ -122,15 +116,14 @@ public class BlockSelectorManagerFragment extends qA {
     }
 
     private void showCreateEditDialog(int index, boolean isEdit) {
-        DialogBlockConfigurationBinding dialogBinding = DialogBlockConfigurationBinding.inflate(LayoutInflater.from(requireContext()));
+        DialogBlockConfigurationBinding dialogBinding =
+                DialogBlockConfigurationBinding.inflate(LayoutInflater.from(requireContext()));
         dialogBinding.tilPalettesPath.setHint("Selector name");
         dialogBinding.tilBlocksPath.setHint("Selector title (ex: Select View:)");
-
         if (isEdit) {
             dialogBinding.palettesPath.setText(selectors.get(index).getName());
             dialogBinding.blocksPath.setText(selectors.get(index).getTitle());
         }
-
         addBasicTextChangedListener(dialogBinding.palettesPath, str -> {
             if (itemAlreadyExists(str)) {
                 dialogBinding.tilPalettesPath.setError("An item with this name already exists");
@@ -138,19 +131,18 @@ public class BlockSelectorManagerFragment extends qA {
                 dialogBinding.tilPalettesPath.setError(null);
             }
         });
-
         if ("typeview".equals(Objects.requireNonNull(dialogBinding.palettesPath.getText()).toString())) {
             dialogBinding.palettesPath.setEnabled(false);
-            dialogBinding.tilPalettesPath.setOnClickListener(v -> SketchwareUtil.toast("You cannot change the name of this selector"));
+            dialogBinding.tilPalettesPath.setOnClickListener(v -> SketchwareUtil.toast("You cannot change the name of" +
+                    " this selector"));
         }
-
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         dialog.setTitle(!isEdit ? "New selector" : "Edit selector");
         dialog.setView(dialogBinding.getRoot());
-        dialog.setPositiveButton(!isEdit ? "Create" : "Save", (v, which) -> {
+        dialog.setPositiveButton(!isEdit ? Helper.getResString(R.string.common_word_create) :
+                Helper.getResString(R.string.common_word_save), (v, which) -> {
             String selectorName = Helper.getText(dialogBinding.palettesPath);
             String selectorTitle = Objects.requireNonNull(dialogBinding.blocksPath.getText()).toString();
-
             if (selectorName.isEmpty()) {
                 SketchwareUtil.toast("Please type the selector's name");
                 return;
@@ -172,16 +164,16 @@ public class BlockSelectorManagerFragment extends qA {
             adapter.notifyDataSetChanged();
             v.dismiss();
         });
-        dialog.setNegativeButton("Cancel", (v, which) -> v.dismiss());
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v, which) -> v.dismiss());
         dialog.show();
     }
 
     private void showActionsDialog(int index) {
-        DialogSelectorActionsBinding dialogBinding = DialogSelectorActionsBinding.inflate(LayoutInflater.from(requireContext()));
+        DialogSelectorActionsBinding dialogBinding =
+                DialogSelectorActionsBinding.inflate(LayoutInflater.from(requireContext()));
         AlertDialog dialog = new MaterialAlertDialogBuilder(requireActivity()).create();
         dialog.setTitle("Actions");
         dialog.setView(dialogBinding.getRoot());
-
         dialogBinding.edit.setOnClickListener(v -> {
             dialog.dismiss();
             showCreateEditDialog(index, true);
@@ -210,7 +202,7 @@ public class BlockSelectorManagerFragment extends qA {
         dialog.setTitle("Attention");
         dialog.setMessage(message);
         dialog.setPositiveButton("Yes", (v, which) -> onConfirm.onConfirm(v));
-        dialog.setNegativeButton("Cancel", (v, which) -> onCancel.onCancel(v));
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), (v, which) -> onCancel.onCancel(v));
         dialog.setCancelable(false);
         dialog.show();
     }
@@ -223,7 +215,8 @@ public class BlockSelectorManagerFragment extends qA {
                 showImportSelectorDialog();
                 return true;
             } else if (item.getItemId() == R.id.export_all_block_selector_menus) {
-                saveAllSelectors(BlockSelectorConsts.EXPORT_FILE.getAbsolutePath(), "Exported in " + BlockSelectorConsts.EXPORT_FILE.getAbsolutePath());
+                saveAllSelectors(BlockSelectorConsts.EXPORT_FILE.getAbsolutePath(),
+                        "Exported in " + BlockSelectorConsts.EXPORT_FILE.getAbsolutePath());
                 return true;
             }
             return false;
@@ -234,7 +227,6 @@ public class BlockSelectorManagerFragment extends qA {
         FilePickerOptions options = new FilePickerOptions();
         options.setTitle("Select .json selector file");
         options.setExtensions(new String[]{"json"});
-
         FilePickerCallback callback = new FilePickerCallback() {
             @Override
             public void onFileSelected(@NonNull File file) {
@@ -242,9 +234,7 @@ public class BlockSelectorManagerFragment extends qA {
             }
 
         };
-
         FilePickerDialogFragment pickerDialog = new FilePickerDialogFragment(options, callback);
-
         pickerDialog.show(getChildFragmentManager(), "file_picker_dialog");
     }
 
@@ -330,7 +320,9 @@ public class BlockSelectorManagerFragment extends qA {
     }
 
     private List<String> getTypeViewList() {
-        return List.of("View", "ViewGroup", "LinearLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView", "TextView", "EditText", "Button", "RadioButton", "CheckBox", "Switch", "ImageView", "SeekBar", "ListView", "Spinner", "WebView", "MapView", "ProgressBar");
+        return List.of("View", "ViewGroup", "LinearLayout", "RelativeLayout", "ScrollView", "HorizontalScrollView",
+                "TextView", "EditText", "Button", "RadioButton", "CheckBox", "Switch", "ImageView", "SeekBar",
+                "ListView", "Spinner", "WebView", "MapView", "ProgressBar");
     }
 
     interface ConfirmListener {

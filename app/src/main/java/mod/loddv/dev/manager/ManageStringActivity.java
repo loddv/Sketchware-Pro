@@ -1,54 +1,53 @@
 package mod.loddv.dev.manager;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Bundle;
-import mod.loddv.dev.tools.offlineTranslator.BatchTranslatorManager;
 import android.os.Environment;
-import android.text.InputType;
 import android.view.Gravity;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import androidx.appcompat.widget.Toolbar.LayoutParams;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
-import org.json.JSONArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar.LayoutParams;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
+
+import org.json.JSONArray;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import a.a.a.xB;
+import mod.hey.studios.util.Helper;
+import mod.loddv.dev.tools.offlineTranslator.AidlBatchTranslator;
+import mod.loddv.dev.tools.offlineTranslator.TranslationManager;
+import mod.loddv.dev.tools.offlineTranslator.TranslatorUtils;
 import pro.sketchware.R;
 import pro.sketchware.activities.resourceseditor.components.utils.StringsEditorManager;
 import pro.sketchware.databinding.ActivityManageStringBinding;
@@ -66,6 +65,7 @@ public class ManageStringActivity extends AppCompatActivity {
     private ManageStringAdapter adapter;
     private File stringsFile;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private TranslationManager translationManager;
     private LinearLayout translateBar;
     private TextView selectionCount;
     private EditText sourceLang;
@@ -99,6 +99,70 @@ public class ManageStringActivity extends AppCompatActivity {
         }
     }
 
+    private void showLanguagePickerDialog(boolean isSource) {
+        java.util.List<String> codes = new ArrayList<>();
+        if (isSource) {
+            codes.add("auto");
+        }
+        boolean fromService = false;
+        if (translationManager != null && translationManager.isAidlConnected()) {
+            try {
+                String rawLangs = translationManager.getAvailableLanguages();
+                if (rawLangs != null && !rawLangs.trim().isEmpty()) {
+                    rawLangs = rawLangs.trim();
+                    if (rawLangs.startsWith("[")) {
+                        JSONArray array = new JSONArray(rawLangs);
+                        for (int i = 0; i < array.length(); i++) {
+                            String code = array.getString(i).trim();
+                            if (!codes.contains(code)) codes.add(code);
+                        }
+                    } else {
+                        String[] parts = rawLangs.split(",");
+                        for (String part : parts) {
+                            String code = part.trim();
+                            if (!code.isEmpty() && !codes.contains(code)) codes.add(code);
+                        }
+                    }
+                    fromService = true;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        if (!fromService) {
+            String[] defaultCodes = {"en", "pt", "es", "fr", "de", "it", "ru", "zh", "ja", "ar"};
+            for (String code : defaultCodes) {
+                if (!codes.contains(code)) codes.add(code);
+            }
+        }
+        CharSequence[] displayNames = new CharSequence[codes.size()];
+        for (int i = 0; i < codes.size(); i++) {
+            String code = codes.get(i);
+            if ("auto".equalsIgnoreCase(code)) {
+                displayNames[i] = "Auto Detect (auto)";
+            } else {
+                java.util.Locale locale = java.util.Locale.forLanguageTag(code);
+                String name = locale.getDisplayLanguage(java.util.Locale.getDefault());
+                if (!name.isEmpty() && !name.equalsIgnoreCase(code)) {
+                    displayNames[i] = name.substring(0, 1).toUpperCase() + name.substring(1) + " (" + code + ")";
+                } else {
+                    displayNames[i] = code;
+                }
+            }
+        }
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(isSource ? "Source Language" : "Target Language")
+                .setItems(displayNames, (dialog, which) -> {
+                    String selectedCode = codes.get(which);
+                    if (isSource) {
+                        sourceLang.setText(selectedCode);
+                    } else {
+                        targetLang.setText(selectedCode);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     private void buildTranslateBar(Toolbar toolbar) {
         translateBar = new LinearLayout(this);
         translateBar.setOrientation(LinearLayout.HORIZONTAL);
@@ -109,23 +173,27 @@ public class ManageStringActivity extends AppCompatActivity {
         sourceLang = new EditText(this);
         sourceLang.setHint("auto");
         sourceLang.setText("auto");
-        sourceLang.setInputType(InputType.TYPE_CLASS_TEXT);
+        sourceLang.setFocusable(false);
+        sourceLang.setClickable(true);
         sourceLang.setEms(3);
         sourceLang.setSingleLine();
+        sourceLang.setOnClickListener(v -> showLanguagePickerDialog(true));
         targetLang = new EditText(this);
         targetLang.setHint("pt");
         targetLang.setText("pt");
-        targetLang.setInputType(InputType.TYPE_CLASS_TEXT);
+        targetLang.setFocusable(false);
+        targetLang.setClickable(true);
         targetLang.setEms(3);
         targetLang.setSingleLine();
+        targetLang.setOnClickListener(v -> showLanguagePickerDialog(false));
         TextView arrow = new TextView(this);
-        arrow.setText("→");
+        arrow.setText(" → ");
         Button start = new Button(this);
         start.setText("Translate");
         start.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(this, v);
-            popup.getMenu().add(0, 0, 0, "Selecionados");
-            popup.getMenu().add(0, 1, 1, "Todos");
+            popup.getMenu().add(0, 0, 0, Helper.getResString(R.string.common_word_select));
+            popup.getMenu().add(0, 1, 1, Helper.getResString(R.string.common_word_all));
             popup.setOnMenuItemClickListener(mi -> {
                 translateItems(mi.getItemId() == 1 ? new ArrayList<>(adapter.getOriginalData())
                         : adapter.getSelectedItems());
@@ -149,12 +217,33 @@ public class ManageStringActivity extends AppCompatActivity {
             SketchwareUtil.toast("No strings to translate", Toast.LENGTH_SHORT);
             return;
         }
+        if (translationManager == null || !translationManager.isAidlConnected()) {
+            if (!TranslatorUtils.isOfflineTranslatorInstalled(this)) {
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Offline Translator not installed")
+                        .setMessage("Install Offline Translator from F-Droid to use offline translation.")
+                        .setPositiveButton("Go to F-Droid",
+                                (d, w) -> TranslatorUtils.openOfflineTranslatorInFdroid(this))
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            } else {
+                SketchwareUtil.toast("Offline Translator service is connecting...", Toast.LENGTH_SHORT);
+            }
+            return;
+        }
         String src = getSourceLang();
         String dst = getTargetLang();
         final int total = items.size();
-        androidx.appcompat.app.AlertDialog progressDialog = new MaterialAlertDialogBuilder(this)
-                .setTitle("Translating")
-                .setMessage("0/" + total)
+        LinearProgressIndicator progressBar = new LinearProgressIndicator(this);
+        progressBar.setIndeterminate(true);
+        int paddingPx = (int) (16 * getResources().getDisplayMetrics().density);
+        FrameLayout container = new FrameLayout(this);
+        container.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
+        container.addView(progressBar);
+        AlertDialog progressDialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(Helper.getResString(R.string.translating))
+                .setMessage(Helper.getResString(R.string.translation_progress, 0, total))
+                .setView(container)
                 .setCancelable(false)
                 .show();
         executorService.execute(() -> {
@@ -167,28 +256,21 @@ public class ManageStringActivity extends AppCompatActivity {
                 texts.add(text.toString());
             }
             final int[] okCount = {0};
-            final int[] current = {0};
-            BatchTranslatorManager batchManager = new BatchTranslatorManager(batch -> {
-                java.util.List<String> out = new ArrayList<>(batch.size());
-                for (String text : batch) {
-                    String result = translateText(text, src, dst);
-                    if (result != null) {
-                        okCount[0]++;
-                        out.add(result);
-                    } else {
-                        out.add(text);
-                    }
-                    final int shown = ++current[0];
-                    runOnUiThread(() -> progressDialog.setMessage(shown + "/" + total));
-                }
-                return out;
-            }, 20);
+            java.util.List<String> translated = null;
             try {
-                java.util.List<String> translated = batchManager.translate(texts);
-                for (int i = 0; i < targets.size(); i++) {
-                    targets.get(i).put("text", translated.get(i));
+                AidlBatchTranslator aidlBatch = new AidlBatchTranslator(translationManager.getAidlClient(), src, dst);
+                translated = aidlBatch.translate(texts);
+            } catch (Exception e) {
+                translated = null;
+            }
+            if (translated != null) {
+                for (int i = 0; i < translated.size(); i++) {
+                    String res = translated.get(i);
+                    if (res != null) {
+                        okCount[0]++;
+                        targets.get(i).put("text", res);
+                    }
                 }
-            } catch (Exception ignored) {
             }
             int ok = okCount[0];
             final int done = ok;
@@ -202,51 +284,39 @@ public class ManageStringActivity extends AppCompatActivity {
     }
 
     public void translateSingle(HashMap<String, Object> item, String text, java.util.function.Consumer<String> cb) {
+        if (translationManager == null || !translationManager.isAidlConnected()) {
+            if (!TranslatorUtils.isOfflineTranslatorInstalled(this)) {
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Offline Translator not installed")
+                        .setMessage("Install Offline Translator from F-Droid to use offline translation.")
+                        .setPositiveButton("Go to F-Droid",
+                                (d, w) -> TranslatorUtils.openOfflineTranslatorInFdroid(this))
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+            } else {
+                SketchwareUtil.toast("Offline Translator service is connecting...", Toast.LENGTH_SHORT);
+            }
+            return;
+        }
         String src = getSourceLang();
         String dst = getTargetLang();
-        executorService.execute(() -> {
-            String r = translateText(text, src, dst);
-            runOnUiThread(() -> {
-                if (r == null) {
-                    SketchwareUtil.toast("Translation failed", Toast.LENGTH_SHORT);
-                } else {
-                    cb.accept(r);
-                }
-            });
-        });
-    }
+        translationManager.translate(text, src, dst, new TranslationManager.TranslationCallback() {
+            @Override
+            public void onSuccess(String translation) {
+                runOnUiThread(() -> cb.accept(translation));
+            }
 
-    private static String translateText(String text, String src, String dst) {
-        HttpURLConnection conn = null;
-        try {
-            String url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl="
-                    + URLEncoder.encode(src, "UTF-8") + "&tl=" + URLEncoder.encode(dst, "UTF-8")
-                    + "&dt=t&q=" + URLEncoder.encode(text, "UTF-8");
-            conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(15000);
-            if (conn.getResponseCode() != 200) return null;
-            StringBuilder sb = new StringBuilder();
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
-                String line;
-                while ((line = r.readLine()) != null) sb.append(line);
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> SketchwareUtil.toast("Translation failed: " + error, Toast.LENGTH_SHORT));
             }
-            JSONArray parts = new JSONArray(sb.toString()).getJSONArray(0);
-            StringBuilder out = new StringBuilder();
-            for (int i = 0; i < parts.length(); i++) {
-                out.append(parts.getJSONArray(i).getString(0));
-            }
-            return out.toString();
-        } catch (Exception e) {
-            return null;
-        } finally {
-            if (conn != null) conn.disconnect();
-        }
+        });
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        translationManager = new TranslationManager(this);
         binding = ActivityManageStringBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         Toolbar toolbar = binding.toolbar;
@@ -355,6 +425,9 @@ public class ManageStringActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (translationManager != null) {
+            translationManager.disconnect();
+        }
         executorService.shutdown();
     }
 

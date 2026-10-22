@@ -59,7 +59,8 @@ public class ThemesEditor extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = ResourcesEditorFragmentBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -69,15 +70,12 @@ public class ThemesEditor extends Fragment {
         this.filePath = filePath;
         boolean isSkippingMode = updateMode == 1;
         boolean isMergeAndReplace = updateMode == 2;
-
         ArrayList<StyleModel> defaultStyles = themesEditorManager.parseStylesFile(FileUtil.readFileIfExist(filePath));
-
         if (isSkippingMode) {
             HashSet<String> existingThemeNames = new HashSet<>();
             for (StyleModel existingStyle : themesList) {
                 existingThemeNames.add(existingStyle.getStyleName());
             }
-
             for (StyleModel style : defaultStyles) {
                 if (!existingThemeNames.contains(style.getStyleName())) {
                     themesList.add(style);
@@ -89,14 +87,12 @@ public class ThemesEditor extends Fragment {
                 for (StyleModel theme : defaultStyles) {
                     newThemeNames.add(theme.getStyleName());
                 }
-
                 themesList.removeIf(existingStyle -> newThemeNames.contains(existingStyle.getStyleName()));
             } else {
                 themesList.clear();
             }
             themesList.addAll(defaultStyles);
         }
-
         activity.runOnUiThread(() -> {
             notesMap = new HashMap<>(themesEditorManager.notesMap);
             adapter = new StylesAdapter(themesList, this, notesMap);
@@ -112,8 +108,10 @@ public class ThemesEditor extends Fragment {
     private void updateNoContentLayout() {
         if (themesList.isEmpty()) {
             binding.noContentLayout.setVisibility(View.VISIBLE);
-            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title), "Themes"));
-            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body), "themes"));
+            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title)
+                    , "Themes"));
+            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body),
+                    "themes"));
         } else {
             binding.noContentLayout.setVisibility(View.GONE);
         }
@@ -123,16 +121,14 @@ public class ThemesEditor extends Fragment {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
         dialog.setTitle("Create new theme");
-        dialog.setPositiveButton("Create", (d, which) -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_create), (d, which) -> {
             String themeName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
-
             if (themeName.isEmpty()) {
                 SketchwareUtil.toastError("Theme name Input is Empty");
                 return;
             }
-
             StyleModel theme = new StyleModel(themeName, parent);
             themesList.add(theme);
             int notifyPosition = themesList.size() - 1;
@@ -152,24 +148,20 @@ public class ThemesEditor extends Fragment {
         StyleModel theme = themesList.get(position);
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
-
         binding.styleName.setText(theme.getStyleName());
         binding.styleParent.setText(theme.getParent());
         if (notesMap.containsKey(position)) {
             binding.styleHeaderInput.setText(notesMap.get(position));
         }
-
         dialog.setTitle("Edit theme");
         dialog.setPositiveButton("Edit", (d, which) -> {
             String themeName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
-
             if (themeName.isEmpty()) {
                 SketchwareUtil.toastError("Theme name Input is Empty");
                 return;
             }
-
             theme.setStyleName(themeName);
             theme.setParent(parent);
             if (header.isEmpty()) {
@@ -177,23 +169,23 @@ public class ThemesEditor extends Fragment {
             } else {
                 notesMap.put(position, header);
             }
-
             adapter.notifyItemChanged(position);
             hasUnsavedChanges = true;
         });
-        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete), (d, which) -> new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Warning")
-                .setMessage("Are you sure you want to delete " + theme.getStyleName() + "?")
-                .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
-                    themesList.remove(position);
-                    notesMap.remove(position);
-                    adapter.notifyItemRemoved(position);
-                    d.dismiss();
-                    updateNoContentLayout();
-                    hasUnsavedChanges = true;
-                })
-                .setNegativeButton("Cancel", null)
-                .show());
+        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete),
+                (d, which) -> new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Warning")
+                        .setMessage("Are you sure you want to delete " + theme.getStyleName() + "?")
+                        .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
+                            themesList.remove(position);
+                            notesMap.remove(position);
+                            adapter.notifyItemRemoved(position);
+                            d.dismiss();
+                            updateNoContentLayout();
+                            hasUnsavedChanges = true;
+                        })
+                        .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
+                        .show());
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();
@@ -205,9 +197,7 @@ public class ThemesEditor extends Fragment {
         var binding = PropertyPopupParentAttrBinding.inflate(getLayoutInflater());
         dialog.setContentView(binding.getRoot());
         dialog.show();
-
         binding.title.setText(theme.getStyleName() + " attributes");
-
         attributesAdapter = new PropertyInputItem.AttributesAdapter();
         attributesAdapter.setOnItemClickListener(
                 new PropertyInputItem.AttributesAdapter.ItemClickListener() {
@@ -227,7 +217,7 @@ public class ThemesEditor extends Fragment {
                                     attributesAdapter.submitList(new ArrayList<>(attributes.keySet()));
                                     hasUnsavedChanges = true;
                                 })
-                                .setNegativeButton("Cancel", null)
+                                .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
                                 .create()
                                 .show();
                     }
@@ -241,41 +231,32 @@ public class ThemesEditor extends Fragment {
         attributesAdapter.setAttributes(attributes);
         List<String> keys = new ArrayList<>(attributes.keySet());
         attributesAdapter.submitList(keys);
-
         binding.add.setOnClickListener(
                 v -> showAttributeDialog(theme, ""));
     }
 
     private void showAttributeDialog(StyleModel theme, String attr) {
         boolean isEditing = !attr.isEmpty();
-
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(activity);
         StyleEditorAddAttrBinding binding = StyleEditorAddAttrBinding.inflate(getLayoutInflater());
-
         if (isEditing) {
             binding.attrName.setText(attr);
             binding.attrValue.setText(theme.getAttribute(attr));
         }
-
         dialog.setTitle(isEditing ? "Edit attribute " : "Create new attribute");
-
         dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (d, which) -> {
             String attribute = Objects.requireNonNull(binding.attrName.getText()).toString();
             String value = Objects.requireNonNull(binding.attrValue.getText()).toString();
-
             if (attribute.isEmpty() || value.isEmpty()) {
                 SketchwareUtil.toastError("Please fill in all fields");
                 return;
             }
-
             if (!attribute.equals(attr)) theme.getAttributes().remove(attr);
-
             theme.addAttribute(attribute, value);
             attributesAdapter.submitList(new ArrayList<>(theme.getAttributes().keySet()));
             attributesAdapter.notifyDataSetChanged();
             hasUnsavedChanges = true;
         });
-
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();

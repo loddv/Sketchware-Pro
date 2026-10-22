@@ -192,8 +192,9 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
                 .setView(dialogBinding.getRoot())
                 .setTitle(isFolder ? "Create a new folder" : "Create a new file")
                 .setMessage("Enter a name for the new " + (isFolder ? "folder" : "file"))
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
-                .setPositiveButton("Create", null)
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton(Helper.getResString(R.string.common_word_create), null)
                 .create();
         dialogBinding.chipGroupTypes.setVisibility(View.GONE);
         if (!isFolder) {
@@ -270,7 +271,8 @@ public class ManageResourceActivity extends BaseAppCompatActivity {
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle("Rename")
                 .setView(dialogBinding.getRoot())
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("Rename", (dialogInterface, i) -> {
                     if (!Helper.getText(inputText).isEmpty()) {
                         if (FileUtil.renameFile(path,

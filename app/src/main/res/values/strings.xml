@@ -2403,4 +2403,13 @@ Please try again later"</string>
         "when a user tries to pick up one of cards.\n\n"
     </string>
     <string name="action_settings">Settings</string>
+    <string name="translating">Translating</string>
+    <string name="translation_progress">%1$d/%2$d</string>
+    <string name="get_your_projects_in_a_couple_of_clicks">Get your projects in a couple of clicks</string>
+    <string name="store">Store</string>
+    <string name="search_for_projects">Search for projects...</string>
+    <string name="search_for_libraries">Search for libraries</string>
+    <string name="search_for_permissions">Search for permissions</string>
+    <string name="add_custom_variable">Add custom variable</string>
+    <string name="edit_variable">Edit variable</string>
 </resources>

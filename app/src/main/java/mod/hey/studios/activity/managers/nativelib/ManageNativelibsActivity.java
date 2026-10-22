@@ -59,17 +59,13 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         super.onCreate(savedInstanceState);
         binding = ManageFileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         if (getIntent().hasExtra("sc_id")) numProj = getIntent().getStringExtra("sc_id");
-
         frc = new FileResConfig(numProj);
         fpu = new FilePathUtil();
-
         setupDialog();
         checkDir();
         setupUI();
     }
-
 
     private void checkDir() {
         if (FileUtil.isExistFile(fpu.getPathNativelibs(numProj))) {
@@ -83,7 +79,6 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         FileUtil.makeDir(fpu.getPathNativelibs(numProj) + "/armeabi-v7a");
         FileUtil.makeDir(fpu.getPathNativelibs(numProj) + "/arm64-v8a");
         FileUtil.makeDir(fpu.getPathNativelibs(numProj) + "/x86");
-
         checkDir();
     }
 
@@ -92,7 +87,6 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         Helper.sortPaths(nativelibsFile);
         CustomAdapter adapter = new CustomAdapter(nativelibsFile);
         binding.filesListRecyclerView.setAdapter(adapter);
-
         binding.noContentLayout.setVisibility(nativelibsFile.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
@@ -111,7 +105,6 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
     private void setupUI() {
         binding.topAppBar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
         binding.topAppBar.setTitle("Native Library Manager");
-
         binding.showOptionsButton.setOnClickListener(view -> hideShowOptionsButton(false));
         binding.closeButton.setOnClickListener(view -> hideShowOptionsButton(true));
         binding.createNewButton.setOnClickListener(v -> {
@@ -125,9 +118,9 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
                 filePicker.show(getSupportFragmentManager(), "filePicker");
             }
         });
-
         ViewCompat.setOnApplyWindowInsetsListener(binding.createNewButton,
-                new AddMarginOnApplyWindowInsetsListener(WindowInsetsCompat.Type.navigationBars(), WindowInsetsCompat.CONSUMED));
+                new AddMarginOnApplyWindowInsetsListener(WindowInsetsCompat.Type.navigationBars(),
+                        WindowInsetsCompat.CONSUMED));
     }
 
     private void hideShowOptionsButton(boolean isHide) {
@@ -135,7 +128,6 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
                 .translationY(isHide ? 300 : 0)
                 .alpha(isHide ? 0 : 1)
                 .setInterpolator(new OvershootInterpolator());
-
         binding.showOptionsButton.animate()
                 .translationY(isHide ? 0 : 300)
                 .alpha(isHide ? 1 : 0)
@@ -164,18 +156,16 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         DialogCreateNewFileLayoutBinding dialogBinding = DialogCreateNewFileLayoutBinding.inflate(getLayoutInflater());
         var inputText = dialogBinding.inputText;
         var textInputLayout = dialogBinding.textInputLayout;
-
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setView(dialogBinding.getRoot())
                 .setTitle("Create a new folder")
                 .setMessage("Enter the name of the new folder")
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
-                .setPositiveButton("Create", null)
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
+                .setPositiveButton(Helper.getResString(R.string.common_word_create), null)
                 .create();
-
         dialogBinding.chipGroupTypes.setVisibility(View.GONE);
         textInputLayout.setHint("Folder name");
-
         inputText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -188,46 +178,35 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
 
             @Override
             public void afterTextChanged(Editable editable) {
-
             }
         });
-
         dialog.setOnShowListener(dialogInterface -> {
             Button positiveButton = ((AlertDialog) dialogInterface).getButton(DialogInterface.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(view -> {
                 String name = Helper.getText(inputText);
-
                 if (name.isEmpty()) {
                     textInputLayout.setError("Invalid folder name");
                     return;
                 }
                 textInputLayout.setError(null);
-
                 String path = fpu.getPathNativelibs(numProj) + "/" + name;
-
                 if (FileUtil.isExistFile(path)) {
                     textInputLayout.setError("Folder already exists");
                     return;
                 }
                 textInputLayout.setError(null);
-
                 FileUtil.makeDir(path);
                 handleAdapter(nativeLibrariesPath);
                 SketchwareUtil.toast("Created folder successfully");
-
                 dialog.dismiss();
             });
-
             dialog.setView(dialogBinding.getRoot());
             dialog.show();
-
             dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
             inputText.requestFocus();
         });
-
         dialog.show();
     }
-
 
     private void setupDialog() {
         FilePickerOptions options = new FilePickerOptions();
@@ -239,32 +218,32 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
             public void onFilesSelected(@NotNull List<? extends File> files) {
                 for (File file : files) {
                     try {
-                        FileUtil.copyDirectory(file, new File(nativeLibrariesPath + File.separator + Uri.fromFile(file).getLastPathSegment()));
+                        FileUtil.copyDirectory(file,
+                                new File(nativeLibrariesPath + File.separator + Uri.fromFile(file).getLastPathSegment()));
                     } catch (IOException e) {
                         SketchwareUtil.toastError("Couldn't import library! [" + e.getMessage() + "]");
                     }
                 }
-
                 handleAdapter(nativeLibrariesPath);
                 handleFab();
             }
         };
-
         filePicker = new FilePickerDialogFragment(options, callback);
     }
 
     private void showRenameDialog(String path) {
         DialogInputLayoutBinding dialogBinding = DialogInputLayoutBinding.inflate(getLayoutInflater());
         var inputText = dialogBinding.inputText;
-
         var dialog = new MaterialAlertDialogBuilder(this)
                 .setTitle("Rename")
                 .setView(dialogBinding.getRoot())
-                .setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss())
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                        (dialogInterface, i) -> dialogInterface.dismiss())
                 .setPositiveButton("Rename", (dialogInterface, i) -> {
                     String newName = Helper.getText(inputText);
                     if (!newName.isEmpty()) {
-                        if (FileUtil.renameFile(path, path.substring(0, path.lastIndexOf(File.separator)) + File.separator + newName)) {
+                        if (FileUtil.renameFile(path,
+                                path.substring(0, path.lastIndexOf(File.separator)) + File.separator + newName)) {
                             SketchwareUtil.toast("Renamed successfully");
                         } else {
                             SketchwareUtil.toastError("Renaming failed");
@@ -277,15 +256,12 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
                     dialogInterface.dismiss();
                 })
                 .create();
-
         try {
             inputText.setText(path.substring(path.lastIndexOf("/") + 1));
         } catch (Exception ignored) {
         }
-
         dialog.setView(dialogBinding.getRoot());
         dialog.show();
-
         dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         inputText.requestFocus();
     }
@@ -300,7 +276,8 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            ManageJavaItemHsBinding binding = ManageJavaItemHsBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
+            ManageJavaItemHsBinding binding =
+                    ManageJavaItemHsBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
             return new ViewHolder(binding);
         }
 
@@ -308,24 +285,20 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             String path = data.get(position);
             var binding = holder.binding;
-
             if (FileUtil.isDirectory(path)) {
                 binding.more.setVisibility(View.GONE);
             } else {
                 binding.more.setVisibility(View.VISIBLE);
             }
-
             binding.title.setText(Uri.parse(path).getLastPathSegment());
-            binding.icon.setImageResource(FileUtil.isDirectory(path) ? R.drawable.ic_mtrl_folder : R.drawable.ic_mtrl_file);
-
+            binding.icon.setImageResource(FileUtil.isDirectory(path) ? R.drawable.ic_mtrl_folder :
+                    R.drawable.ic_mtrl_file);
             binding.more.setOnClickListener(v -> {
                 PopupMenu menu = new PopupMenu(ManageNativelibsActivity.this, v);
                 menu.inflate(R.menu.popup_menu_double);
-
                 menu.getMenu().getItem(0).setVisible(false);
                 menu.getMenu().getItem(1).setVisible(false);
                 menu.getMenu().getItem(2).setVisible(false);
-
                 menu.setOnMenuItemClickListener(item -> {
                     String title = item.getTitle().toString();
                     switch (title) {
@@ -338,12 +311,10 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
                             return false;
                         }
                     }
-
                     return true;
                 });
                 menu.show();
             });
-
             binding.getRoot().setOnLongClickListener(view -> {
                 if (FileUtil.isDirectory(frc.listFileNativeLibs.get(position))) {
                     PopupMenu menu = new PopupMenu(ManageNativelibsActivity.this, view);
@@ -352,14 +323,12 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
                         FileUtil.deleteFile(frc.listFileNativeLibs.get(position));
                         handleAdapter(nativeLibrariesPath);
                         SketchwareUtil.toast("Deleted");
-
                         return true;
                     });
                     menu.show();
                 }
                 return true;
             });
-
             binding.getRoot().setOnClickListener(v -> {
                 if (FileUtil.isDirectory(frc.listFileNativeLibs.get(position))) {
                     nativeLibrariesPath = frc.listFileNativeLibs.get(position);

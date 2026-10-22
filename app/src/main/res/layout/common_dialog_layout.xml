@@ -110,7 +110,7 @@
                             android:paddingHorizontal="18dp"
                             android:paddingVertical="12dp"
                             android:textColor="?colorPrimary"
-                            tools:text="Cancel" />
+                            tools:text="@string/common_word_cancel" />
 
                         <TextView
                             android:id="@+id/common_dialog_ok_button"

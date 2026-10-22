@@ -59,7 +59,8 @@ public class StylesEditor extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         binding = ResourcesEditorFragmentBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -69,22 +70,18 @@ public class StylesEditor extends Fragment {
         this.filePath = filePath;
         boolean isSkippingMode = updateMode == 1;
         boolean isMergeAndReplace = updateMode == 2;
-
         ArrayList<StyleModel> defaultStyles;
-
         if ((activity.variant.isEmpty() || hasUnsavedChanges) && !FileUtil.isExistFile(filePath)) {
             String generatedContent = activity.yq.getXMLStyle();
             defaultStyles = stylesEditorManager.parseStylesFile(generatedContent);
         } else {
             defaultStyles = stylesEditorManager.parseStylesFile(FileUtil.readFileIfExist(filePath));
         }
-
         if (isSkippingMode) {
             HashSet<String> existingStyleNames = new HashSet<>();
             for (StyleModel existingStyle : stylesList) {
                 existingStyleNames.add(existingStyle.getStyleName());
             }
-
             for (StyleModel style : defaultStyles) {
                 if (!existingStyleNames.contains(style.getStyleName())) {
                     stylesList.add(style);
@@ -96,14 +93,12 @@ public class StylesEditor extends Fragment {
                 for (StyleModel style : defaultStyles) {
                     newStyleNames.add(style.getStyleName());
                 }
-
                 stylesList.removeIf(existingStyle -> newStyleNames.contains(existingStyle.getStyleName()));
             } else {
                 stylesList.clear();
             }
             stylesList.addAll(defaultStyles);
         }
-
         activity.runOnUiThread(() -> {
             notesMap = new HashMap<>(stylesEditorManager.notesMap);
             adapter = new StylesAdapter(stylesList, this, notesMap);
@@ -119,8 +114,10 @@ public class StylesEditor extends Fragment {
     private void updateNoContentLayout() {
         if (stylesList.isEmpty()) {
             binding.noContentLayout.setVisibility(View.VISIBLE);
-            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title), "Styles"));
-            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body), "styles"));
+            binding.noContentTitle.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_title)
+                    , "Styles"));
+            binding.noContentBody.setText(String.format(Helper.getResString(R.string.resource_manager_no_list_body),
+                    "styles"));
         } else {
             binding.noContentLayout.setVisibility(View.GONE);
         }
@@ -130,21 +127,18 @@ public class StylesEditor extends Fragment {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
         dialog.setTitle("Create new style");
-        dialog.setPositiveButton("Create", (d, which) -> {
+        dialog.setPositiveButton(Helper.getResString(R.string.common_word_create), (d, which) -> {
             String styleName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
-
             if (styleName.isEmpty()) {
                 SketchwareUtil.toastError("Style name Input is Empty");
                 return;
             }
-
             if (stylesEditorManager.isStyleExist(stylesList, styleName)) {
                 SketchwareUtil.toastError("\"" + styleName + "\" is already exist");
                 return;
             }
-
             StyleModel style = new StyleModel(styleName, parent);
             stylesList.add(style);
             int notifyPosition = stylesList.size() - 1;
@@ -164,24 +158,20 @@ public class StylesEditor extends Fragment {
         StyleModel style = stylesList.get(position);
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddBinding binding = StyleEditorAddBinding.inflate(getLayoutInflater());
-
         binding.styleName.setText(style.getStyleName());
         binding.styleParent.setText(style.getParent());
         if (notesMap.containsKey(position)) {
             binding.styleHeaderInput.setText(notesMap.get(position));
         }
-
         dialog.setTitle("Edit style");
         dialog.setPositiveButton("Edit", (d, which) -> {
             String styleName = Objects.requireNonNull(binding.styleName.getText()).toString();
             String parent = Objects.requireNonNull(binding.styleParent.getText()).toString();
             String header = Objects.requireNonNull(binding.styleHeaderInput.getText()).toString();
-
             if (styleName.isEmpty()) {
                 SketchwareUtil.toastError("Style name Input is Empty");
                 return;
             }
-
             style.setStyleName(styleName);
             style.setParent(parent);
             if (header.isEmpty()) {
@@ -192,20 +182,21 @@ public class StylesEditor extends Fragment {
             hasUnsavedChanges = true;
             adapter.notifyItemChanged(position);
         });
-        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete), (d, which) -> new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Warning")
-                .setMessage("Are you sure you want to delete " + style.getStyleName() + "?")
-                .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
-                    stylesList.remove(position);
-                    notesMap.remove(position);
-                    adapter.notifyItemRemoved(position);
-                    d.dismiss();
-                    updateNoContentLayout();
-                    hasUnsavedChanges = true;
-                })
-                .setNegativeButton("Cancel", null)
-                .create()
-                .show());
+        dialog.setNeutralButton(Helper.getResString(R.string.common_word_delete),
+                (d, which) -> new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Warning")
+                        .setMessage("Are you sure you want to delete " + style.getStyleName() + "?")
+                        .setPositiveButton(R.string.common_word_yes, (d2, w) -> {
+                            stylesList.remove(position);
+                            notesMap.remove(position);
+                            adapter.notifyItemRemoved(position);
+                            d.dismiss();
+                            updateNoContentLayout();
+                            hasUnsavedChanges = true;
+                        })
+                        .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
+                        .create()
+                        .show());
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();
@@ -217,9 +208,7 @@ public class StylesEditor extends Fragment {
         var binding = PropertyPopupParentAttrBinding.inflate(getLayoutInflater());
         dialog.setContentView(binding.getRoot());
         dialog.show();
-
         binding.title.setText(style.getStyleName() + " attributes");
-
         attributesAdapter = new PropertyInputItem.AttributesAdapter();
         attributesAdapter.setOnItemClickListener(
                 new PropertyInputItem.AttributesAdapter.ItemClickListener() {
@@ -239,7 +228,7 @@ public class StylesEditor extends Fragment {
                                     attributesAdapter.submitList(new ArrayList<>(attributes.keySet()));
                                     hasUnsavedChanges = true;
                                 })
-                                .setNegativeButton("Cancel", null)
+                                .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
                                 .create()
                                 .show();
                     }
@@ -253,41 +242,32 @@ public class StylesEditor extends Fragment {
         attributesAdapter.setAttributes(attributes);
         List<String> keys = new ArrayList<>(attributes.keySet());
         attributesAdapter.submitList(keys);
-
         binding.add.setOnClickListener(
                 v -> showAttributeDialog(style, ""));
     }
 
     private void showAttributeDialog(StyleModel style, String attr) {
         boolean isEditing = !attr.isEmpty();
-
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         StyleEditorAddAttrBinding binding = StyleEditorAddAttrBinding.inflate(getLayoutInflater());
-
         if (isEditing) {
             binding.attrName.setText(attr);
             binding.attrValue.setText(style.getAttribute(attr));
         }
-
         dialog.setTitle(isEditing ? "Edit attribute" : "Create new attribute");
-
         dialog.setPositiveButton(Helper.getResString(R.string.common_word_save), (d, which) -> {
             String attribute = Objects.requireNonNull(binding.attrName.getText()).toString();
             String value = Objects.requireNonNull(binding.attrValue.getText()).toString();
-
             if (attribute.isEmpty() || value.isEmpty()) {
                 SketchwareUtil.toastError("Please fill in all fields");
                 return;
             }
-
             if (!attribute.equals(attr)) style.getAttributes().remove(attr);
-
             style.addAttribute(attribute, value);
             attributesAdapter.submitList(new ArrayList<>(style.getAttributes().keySet()));
             attributesAdapter.notifyDataSetChanged();
             hasUnsavedChanges = true;
         });
-
         dialog.setNegativeButton(getString(R.string.cancel), null);
         dialog.setView(binding.getRoot());
         dialog.show();

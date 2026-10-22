@@ -1,25 +1,8 @@
 # Offline project translation helpers
 
-These Java helpers batch text through a caller-provided offline translation engine and
+These Java helpers translate text using an offline translation engine and
 write translated Sketchware project string resources. They are in the
-`mod.loddv.dev.tools.offlineTranslator` package and do not depend on a particular
-translation library.
-
-## Batch translation
-
-Implement `BatchTranslatorManager.OfflineTranslator` using an offline engine whose
-model is already available on the device. The adapter receives one immutable list
-per batch and must return exactly one non-null translation for every input, in the
-same order.
-
-```java
-BatchTranslatorManager batches = new BatchTranslatorManager(offlineEngine, 32);
-List<String> translations = batches.translate(sourceTexts);
-```
-
-The manager divides larger input lists into batches of the configured maximum size,
-then combines the results in their original order. It returns an empty list for
-empty input and reports an error if the engine returns a mismatched batch.
+`mod.loddv.dev.tools.offlineTranslator` package.
 
 ## Translating a Sketchware project
 
@@ -28,8 +11,8 @@ The project helper reads
 `<project>/files/resource/values-<locale>/strings.xml`. For example:
 
 ```java
-SketchwareProjectTranslator projectTranslator =
-        new SketchwareProjectTranslator(batches);
+AidlBatchTranslator batchTranslator = new AidlBatchTranslator(offlineTranslatorClient, "en", "pt");
+SketchwareProjectTranslator projectTranslator = new SketchwareProjectTranslator(batchTranslator);
 File translatedStrings = projectTranslator.translateStrings(projectDirectory, "pt-rBR");
 ```
 

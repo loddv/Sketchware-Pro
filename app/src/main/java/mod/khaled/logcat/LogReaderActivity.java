@@ -57,16 +57,13 @@ public class LogReaderActivity extends BaseAppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         enableEdgeToEdgeNoContrast();
         super.onCreate(savedInstanceState);
-
         binding = ActivityLogcatreaderBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         initialize();
     }
 
     private void initialize() {
         binding.logsRecyclerView.setAdapter(new Adapter(new ArrayList<>()));
-
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction("pro.sketchware.ACTION_NEW_DEBUG_LOG");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -74,7 +71,6 @@ public class LogReaderActivity extends BaseAppCompatActivity {
         } else {
             registerReceiver(logger, intentFilter);
         }
-
         binding.topAppBar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
         binding.topAppBar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -94,7 +90,6 @@ public class LogReaderActivity extends BaseAppCompatActivity {
             }
             return true;
         });
-
         binding.searchInput.addTextChangedListener(new BaseTextWatcher() {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -123,9 +118,7 @@ public class LogReaderActivity extends BaseAppCompatActivity {
     void showFilterDialog() {
         var dialogBinding = EasyDeleteEdittextBinding.inflate(getLayoutInflater());
         View view = dialogBinding.getRoot();
-
         dialogBinding.imgDelete.setVisibility(View.GONE);
-
         var builder = new MaterialAlertDialogBuilder(this)
                 .setTitle("Filter by package name")
                 .setMessage("For multiple package names, separate them with a comma (,).")
@@ -141,9 +134,8 @@ public class LogReaderActivity extends BaseAppCompatActivity {
                     pkgFilterList.clear();
                     dialogBinding.easyEdInput.setText("");
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(Helper.getResString(R.string.common_word_cancel), null)
                 .create();
-
         builder.show();
     }
 
@@ -159,13 +151,13 @@ public class LogReaderActivity extends BaseAppCompatActivity {
         }
         try {
             String fileName = Calendar.getInstance(Locale.ENGLISH).getTimeInMillis() + ".txt";
-            String filePath = Environment.getExternalStorageDirectory() + "/.sketchware/logcat/" + packageName + "/" + fileName;
+            String filePath =
+                    Environment.getExternalStorageDirectory() + "/.sketchware/logcat/" + packageName + "/" + fileName;
             String stars = "*".repeat(95);
             String blank = " ".repeat(87);
             createNewFileIfNotPresent(filePath);
             StringBuilder contentBuilder = new StringBuilder();
             String formattedDate = new SimpleDateFormat("yyyy/MM/dd 'at' HH:mm:ss", Locale.ENGLISH).format(new Date());
-
             contentBuilder.append(stars).append("\n");
             contentBuilder.append(stars).append("\n");
             contentBuilder.append("**").append(blank).append("**");
@@ -173,13 +165,11 @@ public class LogReaderActivity extends BaseAppCompatActivity {
             contentBuilder.append("**").append(blank).append("**\n");
             contentBuilder.append(stars).append("\n");
             contentBuilder.append(stars).append("\n");
-
             for (HashMap<String, Object> log : logs) {
                 String date = safeGet(log, "date");
                 String type = safeGet(log, "type");
                 String tag = safeGet(log, "header");
                 String body = safeGet(log, "body");
-
                 if (!type.isEmpty()) {
                     contentBuilder.append("\n\n|-- Log Type: ").append(type).append("\n");
                     contentBuilder.append("    |-- Date: ").append(date).append("\n");
@@ -220,7 +210,6 @@ public class LogReaderActivity extends BaseAppCompatActivity {
                 }
                 map.put("logRaw", intent.getStringExtra("log"));
                 if (intent.getStringExtra("log") == null) return;
-
                 Matcher matcher = logPattern.matcher(intent.getStringExtra("log"));
                 if (matcher.matches()) {
                     //group 1 = pid, time stuff & idk
@@ -233,7 +222,6 @@ public class LogReaderActivity extends BaseAppCompatActivity {
                     map.put("body", matcher.group(4));
                     map.put("culturedLog", "true");
                 }
-
                 mainList.add(map);
                 if (pkgFilterList.isEmpty()) {
                     if (!Helper.getText(binding.searchInput).isEmpty()) {
@@ -266,12 +254,10 @@ public class LogReaderActivity extends BaseAppCompatActivity {
         public void updateList(HashMap<String, Object> _map) {
             data.add(_map);
             binding.logsRecyclerView.getAdapter().notifyItemInserted(data.size() + 1);
-
             if (autoScroll) {
                 binding.logsRecyclerView.getLayoutManager().scrollToPosition(data.size() - 1);
                 binding.appBarLayout.setExpanded(false);
             }
-
             binding.noContentLayout.setVisibility(data.isEmpty() ? View.VISIBLE : View.GONE);
         }
 
@@ -285,7 +271,8 @@ public class LogReaderActivity extends BaseAppCompatActivity {
         @NonNull
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             var listBinding = ViewLogcatItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-            var layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            var layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             listBinding.getRoot().setLayoutParams(layoutParams);
             return new ViewHolder(listBinding);
         }
@@ -293,7 +280,6 @@ public class LogReaderActivity extends BaseAppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             var binding = holder.listBinding;
-
             if (data.get(position).containsKey("pkgName")) {
                 binding.pkgName.setText(data.get(position).get("pkgName").toString());
                 binding.pkgName.setVisibility(View.VISIBLE);
@@ -319,9 +305,10 @@ public class LogReaderActivity extends BaseAppCompatActivity {
                 binding.log.setText(data.get(position).get("body").toString());
                 try {
                     if (data.get(position).get("date").toString().equals(data.get(position + 1).get("date").toString())) {
-//                        binding.divider.setVisibility(View.GONE);
+                        //                        binding.divider.setVisibility(View.GONE);
                         try {
-                            if (data.get(position).get("pkgName").toString().equals(data.get(position + 1).get("pkgName").toString())) {
+                            if (data.get(position).get("pkgName").toString().equals(data.get(position + 1).get(
+                                    "pkgName").toString())) {
                                 binding.pkgName.setVisibility(View.GONE);
                             } else {
                                 binding.pkgName.setVisibility(View.VISIBLE);
@@ -330,7 +317,8 @@ public class LogReaderActivity extends BaseAppCompatActivity {
                             binding.pkgName.setVisibility(View.VISIBLE);
                         }
                         try {
-                            if (data.get(position).get("header").toString().equals(data.get(position + 1).get("header").toString())) {
+                            if (data.get(position).get("header").toString().equals(data.get(position + 1).get("header"
+                            ).toString())) {
                                 binding.dateHeader.setVisibility(View.GONE);
                             } else {
                                 binding.dateHeader.setVisibility(View.VISIBLE);

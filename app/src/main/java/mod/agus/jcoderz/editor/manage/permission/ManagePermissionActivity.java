@@ -43,7 +43,6 @@ public class ManagePermissionActivity extends BaseAppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ManagePermissionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
         initViews();
         if (getIntent().hasExtra("sc_id")) {
             numProj = getIntent().getStringExtra("sc_id");
@@ -118,7 +117,8 @@ public class ManagePermissionActivity extends BaseAppCompatActivity {
                             frc = new FileResConfig(numProj);
                             setItems();
                         })
-                        .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                        .setNegativeButton(Helper.getResString(R.string.common_word_cancel),
+                                (dialog, which) -> dialog.dismiss())
                         .show();
             }
             return true;
@@ -133,10 +133,8 @@ public class ManagePermissionActivity extends BaseAppCompatActivity {
     private void initRecyclerView() {
         var recyclerView = binding.recyclerView;
         var scrollToTopButton = binding.scrollToTopButton;
-
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -165,17 +163,17 @@ public class ManagePermissionActivity extends BaseAppCompatActivity {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            var listBinding = ViewItemPermissionBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-            var layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            var listBinding = ViewItemPermissionBinding.inflate(LayoutInflater.from(parent.getContext()), parent,
+                    false);
+            var layoutParams = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             listBinding.getRoot().setLayoutParams(layoutParams);
             return new ViewHolder(listBinding);
         }
 
-
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
             var binding = holder.listBinding;
-
             String permission = namePerm.get(position);
             binding.checkboxContent.setText(permission);
             binding.checkboxContent.setOnCheckedChangeListener(null); // Important to avoid infinite loops

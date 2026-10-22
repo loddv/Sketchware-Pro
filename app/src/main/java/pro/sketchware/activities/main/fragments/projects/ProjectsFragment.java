@@ -44,6 +44,7 @@ import a.a.a.lC;
 import dev.chrisbanes.insetter.Insetter;
 import mod.hey.studios.project.ProjectTracker;
 import mod.hey.studios.project.backup.BackupRestoreManager;
+import mod.hey.studios.util.Helper;
 import pro.sketchware.R;
 import pro.sketchware.activities.main.activities.MainActivity;
 import pro.sketchware.databinding.MyprojectsBinding;
@@ -55,20 +56,21 @@ public class ProjectsFragment extends DA {
     private final List<HashMap<String, Object>> projectsList = new ArrayList<>();
     private MyprojectsBinding binding;
     private ProjectsAdapter projectsAdapter;
-    public final ActivityResultLauncher<Intent> openProjectSettings = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-        if (result.getResultCode() == Activity.RESULT_OK) {
-            Intent data = result.getData();
-            if (data != null) {
-                String sc_id = data.getStringExtra("sc_id");
-                if (data.getBooleanExtra("is_new", false)) {
-                    toDesignActivity(sc_id);
-                    addProject(sc_id);
-                } else {
-                    updateProject(sc_id);
+    public final ActivityResultLauncher<Intent> openProjectSettings =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    Intent data = result.getData();
+                    if (data != null) {
+                        String sc_id = data.getStringExtra("sc_id");
+                        if (data.getBooleanExtra("is_new", false)) {
+                            toDesignActivity(sc_id);
+                            addProject(sc_id);
+                        } else {
+                            updateProject(sc_id);
+                        }
+                    }
                 }
-            }
-        }
-    });
+            });
     private DB preference;
     private SearchView projectsSearchView;
     private MenuProvider menuProvider;
@@ -140,34 +142,28 @@ public class ProjectsFragment extends DA {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         preference = new DB(requireContext(), "project");
-
         ExtendedFloatingActionButton fab = requireActivity().findViewById(R.id.create_new_project);
         fab.setOnClickListener((v) -> toProjectSettingsActivity());
         Insetter.builder().margin(WindowInsetsCompat.Type.navigationBars()).applyToView(fab);
-
         binding.swipeRefresh.setOnRefreshListener(this::refreshProjectsList);
-
         projectsAdapter = new ProjectsAdapter(this, projectsList);
         binding.myprojects.setAdapter(projectsAdapter);
         binding.myprojects.setHasFixedSize(true);
-
         binding.myprojects.post(this::refreshProjectsList); // wait for RecyclerView to be ready
         UI.addSystemWindowInsetToPadding(binding.specialActionContainer, true, false, true, false);
         UI.addSystemWindowInsetToPadding(binding.loadingContainer, true, false, true, true);
         UI.addSystemWindowInsetToPadding(binding.titleContainer, true, false, true, false);
         UI.addSystemWindowInsetToPadding(binding.myprojects, true, false, true, true);
-
-        binding.nestedScroll.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+        binding.nestedScroll.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener) (v, scrollX, scrollY
+                , oldScrollX, oldScrollY) -> {
             if (scrollY > oldScrollY) {
                 fab.shrink();
             } else if (scrollY < oldScrollY) {
                 fab.extend();
             }
         });
-
         binding.iconSort.setOnClickListener(v -> showProjectSortingDialog());
         binding.specialAction.getRoot().setOnClickListener(v -> restoreProject());
-
         menuProvider = new MenuProvider() {
             @Override
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater menuInflater) {
@@ -194,7 +190,6 @@ public class ProjectsFragment extends DA {
                 return false;
             }
         };
-
         requireActivity().addMenuProvider(menuProvider);
     }
 
@@ -212,20 +207,17 @@ public class ProjectsFragment extends DA {
     public void refreshProjectsList() {
         // Check if the fragment is still attached to the activity
         if (!isAdded()) return;
-
         // Don't load project list without having permissions
         if (!c()) {
             if (binding.swipeRefresh.isRefreshing()) binding.swipeRefresh.setRefreshing(false);
             ((MainActivity) requireActivity()).s(); // ask for permissions
             return;
         }
-
         executorService.execute(() -> {
             List<HashMap<String, Object>> loadedProjects = lC.a();
             loadedProjects.sort(new ProjectComparator(preference.d("sortBy")));
-
-            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new ProjectDiffCallback(projectsList, loadedProjects));
-
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new ProjectDiffCallback(projectsList,
+                    loadedProjects));
             requireActivity().runOnUiThread(() -> {
                 if (binding.swipeRefresh.isRefreshing()) binding.swipeRefresh.setRefreshing(false);
                 if (binding.loadingContainer.getVisibility() == View.VISIBLE) {
@@ -258,7 +250,8 @@ public class ProjectsFragment extends DA {
         executorService.execute(() -> {
             HashMap<String, Object> updatedProject = lC.b(sc_id);
             if (updatedProject != null) {
-                int index = IntStream.range(0, projectsList.size()).filter(i -> projectsList.get(i).get("sc_id").equals(sc_id)).findFirst().orElse(-1);
+                int index =
+                        IntStream.range(0, projectsList.size()).filter(i -> projectsList.get(i).get("sc_id").equals(sc_id)).findFirst().orElse(-1);
                 if (index != -1) {
                     projectsList.set(index, updatedProject);
                     requireActivity().runOnUiThread(() -> projectsAdapter.notifyDataSetChanged());
@@ -270,13 +263,12 @@ public class ProjectsFragment extends DA {
     private void showProjectSortingDialog() {
         MaterialAlertDialogBuilder dialog = new MaterialAlertDialogBuilder(requireActivity());
         dialog.setTitle("Sort options");
-
-        SortProjectDialogBinding dialogBinding = SortProjectDialogBinding.inflate(LayoutInflater.from(requireActivity()));
+        SortProjectDialogBinding dialogBinding =
+                SortProjectDialogBinding.inflate(LayoutInflater.from(requireActivity()));
         RadioButton sortByName = dialogBinding.sortByName;
         RadioButton sortByID = dialogBinding.sortByID;
         RadioButton sortOrderAsc = dialogBinding.sortOrderAsc;
         RadioButton sortOrderDesc = dialogBinding.sortOrderDesc;
-
         int storedValue = preference.a("sortBy", ProjectComparator.DEFAULT);
         if ((storedValue & ProjectComparator.SORT_BY_NAME) == ProjectComparator.SORT_BY_NAME) {
             sortByName.setChecked(true);
@@ -288,7 +280,6 @@ public class ProjectsFragment extends DA {
         } else if ((storedValue & ProjectComparator.SORT_ORDER_DESCENDING) == ProjectComparator.SORT_ORDER_DESCENDING) {
             sortOrderDesc.setChecked(true);
         }
-
         dialog.setView(dialogBinding.getRoot());
         dialog.setPositiveButton("Save", (v, which) -> {
             int sortValue = 0;
@@ -308,7 +299,7 @@ public class ProjectsFragment extends DA {
             v.dismiss();
             refreshProjectsList();
         });
-        dialog.setNegativeButton("Cancel", null);
+        dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);
         dialog.show();
     }
 

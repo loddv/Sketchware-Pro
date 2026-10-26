@@ -619,8 +619,9 @@ public class ManageStringActivity extends AppCompatActivity {
                 shown.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener(nv -> {
                     if (activity instanceof ManageStringActivity) {
                         ((ManageStringActivity) activity).translateSingle(currentItem,
-                                String.valueOf(dialogBinding.stringValueInput.getText()),
-                                r -> dialogBinding.stringValueInput.setText(r));
+                        String.valueOf(dialogBinding.stringValueInput.getText()).trim(),
+                        r -> dialogBinding.stringValueInput.setText(r)
+                    );
                     }
                 });
             });

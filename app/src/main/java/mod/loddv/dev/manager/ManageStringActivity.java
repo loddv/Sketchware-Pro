@@ -355,7 +355,21 @@ public class ManageStringActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_manage_string, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
+        MenuItem scopeItem = menu.findItem(R.id.action_search_scope);
         if (searchItem != null) {
+            searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                @Override
+                public boolean onMenuItemActionExpand(MenuItem item) {
+                    if (scopeItem != null) scopeItem.setVisible(true);
+                    return true;
+                }
+
+                @Override
+                public boolean onMenuItemActionCollapse(MenuItem item) {
+                    if (scopeItem != null) scopeItem.setVisible(false);
+                    return true;
+                }
+            });
             SearchView searchView = (SearchView) searchItem.getActionView();
             if (searchView != null) {
                 searchView.setQueryHint("Search strings...");
@@ -375,6 +389,21 @@ public class ManageStringActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        int scope = -1;
+        if (id == R.id.search_scope_all) scope = 0;
+        else if (id == R.id.search_scope_keys) scope = 1;
+        else if (id == R.id.search_scope_values) scope = 2;
+        if (scope >= 0) {
+            item.setChecked(true);
+            adapter.setSearchScope(scope);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void loadStringsAsync() {
@@ -495,7 +524,16 @@ public class ManageStringActivity extends AppCompatActivity {
             return originalData;
         }
 
+        private int searchScope = 0;
+        private String lastQuery = "";
+
+        public void setSearchScope(int scope) {
+            searchScope = scope;
+            filter(lastQuery);
+        }
+
         public void filter(String query) {
+            lastQuery = query;
             if (query == null || query.isEmpty()) {
                 filteredData = originalData;
             } else {
@@ -504,8 +542,9 @@ public class ManageStringActivity extends AppCompatActivity {
                 for (HashMap<String, Object> item : originalData) {
                     String key = (String) item.get("key");
                     String text = (String) item.get("text");
-                    if ((key != null && key.toLowerCase().contains(lowerQuery)) ||
-                            (text != null && text.toLowerCase().contains(lowerQuery))) {
+                    boolean matchKey = searchScope != 2 && key != null && key.toLowerCase().contains(lowerQuery);
+                    boolean matchText = searchScope != 1 && text != null && text.toLowerCase().contains(lowerQuery);
+                    if (matchKey || matchText) {
                         filtered.add(item);
                     }
                 }

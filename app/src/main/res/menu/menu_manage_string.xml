@@ -9,4 +9,27 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="always|collapseActionView"
         tools:ignore="AlwaysShowAction" />
+    <item
+        android:id="@+id/action_search_scope"
+        android:icon="@drawable/ic_mtrl_filter"
+        android:title="Search in"
+        android:visible="false"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction">
+        <menu>
+            <group
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/search_scope_all"
+                    android:checked="true"
+                    android:title="All" />
+                <item
+                    android:id="@+id/search_scope_keys"
+                    android:title="Keys" />
+                <item
+                    android:id="@+id/search_scope_values"
+                    android:title="Values" />
+            </group>
+        </menu>
+    </item>
 </menu>

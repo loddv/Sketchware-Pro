@@ -16,6 +16,25 @@ To build the app, you must use Gradle. It's highly recommended to use Android St
 
 ### Source Code Map
 
+The main contributor-maintained code is under `app/src/main/java/mod` and
+`app/src/main/java/dev/aldi/sayuti`. The developer map in
+[`README_DEVS.MD`](README_DEVS.MD) describes these packages in more detail.
+
+| Package | Role |
+| ------- | ---- |
+| `mod/agus/jcoderz` | DEX/dx tooling and Sketchware editor widgets |
+| `mod/hey/studios` | Project, editor, compiler, build, and custom-block features |
+| `mod/hilal/saif` | Activities, blocks, components, events, and library features |
+| `mod/pranav` | Build/compiler tools, dependency resolution, export, and view binding |
+| `mod/jbk` | Utility classes |
+| `mod/tyron` | Backup support |
+| `dev/aldi/sayuti` | Additional blocks, editor injections, local-library management, and widgets |
+
+The `mod` directory also contains smaller contributor packages such as `alucard`,
+`bobur`, `khaled`, `loddv`, and `remaker`.
+
+#### Key classes
+
 | Class           | Role                                        |
 | --------------- | ------------------------------------------- |
 | `a.a.a.ProjectBuilder`      | Helper for compiling an entire project       |
@@ -28,7 +47,7 @@ To build the app, you must use Gradle. It's highly recommended to use Android St
 | `a.a.a.yq`      | Organizes Sketchware projects' file paths    |
 
 > [!TIP]
-> You can also check the `mod` package, which contains the majority of contributors' changes.
+> Browse `app/src/main/java/mod` and `app/src/main/java/dev/aldi/sayuti` for contributor changes.
 
 ## Contributing
 

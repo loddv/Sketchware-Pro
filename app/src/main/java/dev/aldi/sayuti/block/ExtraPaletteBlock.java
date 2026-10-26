@@ -1196,12 +1196,14 @@ public class ExtraPaletteBlock {
     }
 
     private boolean areAnyVariablesUsed() {
-        // Check all primitive types 0-3 and custom types 5-6
+        // Primitive types: 0=boolean, 1=number, 2=string, 3=map
         for (int i = 0; i <= 3; i++) {
             if (extraBlocks.isVariableUsed(i)) return true;
         }
-        // Add logic to check custom variables if they are treated as distinct types
-        return extraBlocks.isCustomVarUsed("Custom");
+        // Custom variables: 5 (legacy "Type name") and 6 (new format)
+        var projectDataManager = jC.a(sc_id);
+        return !projectDataManager.e(javaName, 5).isEmpty()
+                || !projectDataManager.e(javaName, 6).isEmpty();
     }
 
     private @ColorInt int getTitleBgColor() {

@@ -58,6 +58,29 @@ import pro.sketchware.utility.SketchwareUtil;
 
 public class LogicClickListener implements View.OnClickListener {
 
+    private static String buildCustomVariableDeclaration(
+            String modifierInput,
+            String typeInput,
+            String nameInput,
+            String initializerInput
+    ) {
+        String modifier = modifierInput == null ? "" : modifierInput.trim().replaceAll("\\s+", " ");
+        String type = typeInput == null ? "" : typeInput.trim().replaceAll("\\s+", " ");
+        String name = nameInput == null ? "" : nameInput.trim().replaceAll("\\s+", " ");
+        String initializer = initializerInput == null ? "" : initializerInput.trim();
+
+        List<String> parts = new ArrayList<>();
+        parts.add(modifier.isEmpty() ? "private" : modifier);
+        parts.add(type);
+        parts.add(name);
+
+        String declaration = String.join(" ", parts).replaceAll("\\s+", " ").trim();
+        if (!initializer.isEmpty()) {
+            declaration += " = " + initializer;
+        }
+        return declaration + ";";
+    }
+
     private final eC projectDataManager;
     private final LogicEditorActivity logicEditor;
     private final ProjectFileBean projectFile;
@@ -424,12 +447,13 @@ public class LogicClickListener implements View.OnClickListener {
                 binding.nameLayout.setError(null);
                 binding.nameLayout.setErrorEnabled(false);
             }
-            String variable = !variableModifier.isEmpty() ? variableModifier + " " : "";
-            variable += variableType + " " + variableName;
-            if (!variableInitializer.isEmpty()) {
-                variable += " = " + variableInitializer;
-            }
-            logicEditor.b(6, variable.trim());
+            String variable = buildCustomVariableDeclaration(
+                    variableModifier,
+                    variableType,
+                    variableName,
+                    variableInitializer
+            );
+            logicEditor.b(6, variable);
             v.dismiss();
         });
         dialog.setNegativeButton(Helper.getResString(R.string.common_word_cancel), null);

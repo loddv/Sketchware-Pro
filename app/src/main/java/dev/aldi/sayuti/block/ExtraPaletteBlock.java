@@ -165,6 +165,8 @@ public class ExtraPaletteBlock {
     }
 
     private void variables() {
+        boolean customVariableHeaderShown = false;
+
         ArrayList<String> booleanVariables = jC.a(sc_id).e(javaName, 0);
         for (int i = 0; i < booleanVariables.size(); i++) {
             if (i == 0) logicEditor.a("Boolean", getTitleBgColor());
@@ -187,7 +189,10 @@ public class ExtraPaletteBlock {
         }
         ArrayList<String> customVariables = jC.a(sc_id).e(javaName, 5);
         for (int i = 0; i < customVariables.size(); i++) {
-            if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
+            if (i == 0 && !customVariableHeaderShown) {
+                logicEditor.a("Custom Variable", getTitleBgColor());
+                customVariableHeaderShown = true;
+            }
             String[] split = customVariables.get(i).split(BlockType.VOID.getCode());
             if (split.length > 1) {
                 logicEditor.a(split[1], BlockType.VIEW.getCode(), split[0], "getVar").setTag(customVariables.get(i));
@@ -197,7 +202,10 @@ public class ExtraPaletteBlock {
         }
         ArrayList<String> customVariables2 = jC.a(sc_id).e(javaName, 6);
         for (int i = 0; i < customVariables2.size(); i++) {
-            if (i == 0) logicEditor.a("Custom Variable", getTitleBgColor());
+            if (i == 0 && !customVariableHeaderShown) {
+                logicEditor.a("Custom Variable", getTitleBgColor());
+                customVariableHeaderShown = true;
+            }
             String variable = customVariables2.get(i);
             String variableType = CustomVariableUtil.getVariableType(variable);
             String variableName = CustomVariableUtil.getVariableName(variable);

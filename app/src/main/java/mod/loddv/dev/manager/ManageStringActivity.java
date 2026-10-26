@@ -212,23 +212,35 @@ public class ManageStringActivity extends AppCompatActivity {
                 Gravity.END));
     }
 
+    private void showNotInstalledDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Offline Translator not installed")
+                .setMessage("Install Offline Translator from F-Droid to use offline translation.")
+                .setPositiveButton("Go to F-Droid",
+                        (d, w) -> TranslatorUtils.openOfflineTranslatorInFdroid(this))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    /** Blocking; call off the UI thread. Returns null on success, otherwise an error message. */
+    private String ensureAidlConnected() {
+        if (translationManager == null || translationManager.getAidlClient() == null) {
+            return "Offline Translator service unavailable";
+        }
+        if (translationManager.isAidlConnected()) return null;
+        if (translationManager.getAidlClient().connectAndWait(3000)) return null;
+        return TranslatorUtils.isOfflineTranslatorInstalled(this)
+                ? "Could not connect to Offline Translator service (timeout)"
+                : "NOT_INSTALLED";
+    }
+
+    private boolean isActive() {
+        return !isFinishing() && !isDestroyed();
+    }
+
     public void translateItems(java.util.List<HashMap<String, Object>> items) {
         if (items.isEmpty()) {
             SketchwareUtil.toast("No strings to translate", Toast.LENGTH_SHORT);
-            return;
-        }
-        if (translationManager == null || !translationManager.isAidlConnected()) {
-            if (!TranslatorUtils.isOfflineTranslatorInstalled(this)) {
-                new MaterialAlertDialogBuilder(this)
-                        .setTitle("Offline Translator not installed")
-                        .setMessage("Install Offline Translator from F-Droid to use offline translation.")
-                        .setPositiveButton("Go to F-Droid",
-                                (d, w) -> TranslatorUtils.openOfflineTranslatorInFdroid(this))
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show();
-            } else {
-                SketchwareUtil.toast("Offline Translator service is connecting...", Toast.LENGTH_SHORT);
-            }
             return;
         }
         String src = getSourceLang();
@@ -247,6 +259,16 @@ public class ManageStringActivity extends AppCompatActivity {
                 .setCancelable(false)
                 .show();
         executorService.execute(() -> {
+            String connError = ensureAidlConnected();
+            if (connError != null) {
+                runOnUiThread(() -> {
+                    if (!isActive()) return;
+                    progressDialog.dismiss();
+                    if ("NOT_INSTALLED".equals(connError)) showNotInstalledDialog();
+                    else SketchwareUtil.toast(connError, Toast.LENGTH_SHORT);
+                });
+                return;
+            }
             java.util.List<HashMap<String, Object>> targets = new ArrayList<>();
             java.util.List<String> texts = new ArrayList<>();
             for (HashMap<String, Object> item : items) {
@@ -255,61 +277,77 @@ public class ManageStringActivity extends AppCompatActivity {
                 targets.add(item);
                 texts.add(text.toString());
             }
-            final int[] okCount = {0};
-            java.util.List<String> translated = null;
+            int changed = 0;
+            int unchanged = 0;
+            String error = null;
             try {
                 AidlBatchTranslator aidlBatch = new AidlBatchTranslator(translationManager.getAidlClient(), src, dst);
-                translated = aidlBatch.translate(texts);
-            } catch (Exception e) {
-                translated = null;
-            }
-            if (translated != null) {
+                java.util.List<String> translated = aidlBatch.translate(texts);
                 for (int i = 0; i < translated.size(); i++) {
                     String res = translated.get(i);
-                    if (res != null) {
-                        okCount[0]++;
+                    if (res != null && !res.equals(texts.get(i))) {
+                        changed++;
                         targets.get(i).put("text", res);
+                    } else {
+                        unchanged++;
                     }
                 }
+            } catch (Exception e) {
+                error = e.getMessage();
             }
-            int ok = okCount[0];
-            final int done = ok;
+            final int done = changed;
+            final int same = unchanged;
+            final String err = error;
             runOnUiThread(() -> {
+                if (!isActive()) return;
                 progressDialog.dismiss();
                 adapter.notifyDataSetChanged();
                 saveStringsAsync();
-                SketchwareUtil.toast("Translated " + done + "/" + items.size(), Toast.LENGTH_SHORT);
+                String msg = "Translated " + done + "/" + total;
+                if (same > 0) msg += " (" + same + " unchanged" + ("auto".equals(src) ? ", try choosing the source language" : "") + ")";
+                if (err != null) msg += ". Error: " + err;
+                SketchwareUtil.toast(msg, Toast.LENGTH_LONG);
             });
         });
     }
 
-    public void translateSingle(HashMap<String, Object> item, String text, java.util.function.Consumer<String> cb) {
-        if (translationManager == null || !translationManager.isAidlConnected()) {
-            if (!TranslatorUtils.isOfflineTranslatorInstalled(this)) {
-                new MaterialAlertDialogBuilder(this)
-                        .setTitle("Offline Translator not installed")
-                        .setMessage("Install Offline Translator from F-Droid to use offline translation.")
-                        .setPositiveButton("Go to F-Droid",
-                                (d, w) -> TranslatorUtils.openOfflineTranslatorInFdroid(this))
-                        .setNegativeButton(android.R.string.cancel, null)
-                        .show();
-            } else {
-                SketchwareUtil.toast("Offline Translator service is connecting...", Toast.LENGTH_SHORT);
-            }
+    public void translateSingle(HashMap<String, Object> item, String text, java.util.function.Consumer<String> cb,
+                                Runnable onFinish) {
+        if (text == null || text.isEmpty()) {
+            if (onFinish != null) onFinish.run();
             return;
         }
         String src = getSourceLang();
         String dst = getTargetLang();
-        translationManager.translate(text, src, dst, new TranslationManager.TranslationCallback() {
-            @Override
-            public void onSuccess(String translation) {
-                runOnUiThread(() -> cb.accept(translation));
+        SketchwareUtil.toast("Translating...", Toast.LENGTH_SHORT);
+        executorService.execute(() -> {
+            String connError = ensureAidlConnected();
+            String result = null;
+            String error = connError;
+            if (connError == null) {
+                try {
+                    result = translationManager.getAidlClient().translateSync(text, src, dst, 15000);
+                } catch (Exception e) {
+                    error = e.getMessage() != null ? e.getMessage() : "Translation failed";
+                }
             }
-
-            @Override
-            public void onError(String error) {
-                runOnUiThread(() -> SketchwareUtil.toast("Translation failed: " + error, Toast.LENGTH_SHORT));
-            }
+            final String res = result;
+            final String err = error;
+            runOnUiThread(() -> {
+                if (onFinish != null) onFinish.run();
+                if (!isActive()) return;
+                if ("NOT_INSTALLED".equals(err)) {
+                    showNotInstalledDialog();
+                } else if (err != null) {
+                    SketchwareUtil.toast("Translation failed: " + err, Toast.LENGTH_LONG);
+                } else if (res == null || res.equals(text)) {
+                    SketchwareUtil.toast("Text unchanged" + ("auto".equals(src)
+                            ? " - language detection may have failed; choose the source language explicitly"
+                            : " - check source/target languages"), Toast.LENGTH_LONG);
+                } else {
+                    cb.accept(res);
+                }
+            });
         });
     }
 
@@ -520,6 +558,13 @@ public class ManageStringActivity extends AppCompatActivity {
             }
         }
 
+        private int originalIndexOf(HashMap<String, Object> item) {
+            for (int i = 0; i < originalData.size(); i++) {
+                if (originalData.get(i) == item) return i;
+            }
+            return -1;
+        }
+
         public ArrayList<HashMap<String, Object>> getOriginalData() {
             return originalData;
         }
@@ -568,8 +613,9 @@ public class ManageStringActivity extends AppCompatActivity {
             String text = (String) item.get("text");
             holder.binding.title.setText(key);
             holder.binding.sub.setText(text);
-            if (notesMap.containsKey(position)) {
-                holder.binding.tvTitle.setText(notesMap.get(position));
+            int noteIndex = originalIndexOf(item);
+            if (notesMap.containsKey(noteIndex)) {
+                holder.binding.tvTitle.setText(notesMap.get(noteIndex));
                 holder.binding.tvTitle.setVisibility(View.VISIBLE);
             } else {
                 holder.binding.tvTitle.setVisibility(View.GONE);
@@ -596,7 +642,7 @@ public class ManageStringActivity extends AppCompatActivity {
                 dialogBinding.stringKeyInput.setText((String) currentItem.get("key"));
                 dialogBinding.stringKeyInput.setEnabled(false); // Key cannot be edited, only value (translation)
                 dialogBinding.stringValueInput.setText((String) currentItem.get("text"));
-                dialogBinding.stringHeaderInput.setText(notesMap.getOrDefault(adapterPosition, ""));
+                dialogBinding.stringHeaderInput.setText(notesMap.getOrDefault(originalIndexOf(currentItem), ""));
                 dialogBinding.stringHeaderInput.setVisibility(View.GONE);
                 dialog.setTitle("Translate string value");
                 dialog.setPositiveButton("Save", (d, which) -> {
@@ -618,10 +664,13 @@ public class ManageStringActivity extends AppCompatActivity {
                 androidx.appcompat.app.AlertDialog shown = dialog.show();
                 shown.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener(nv -> {
                     if (activity instanceof ManageStringActivity) {
+                        nv.setEnabled(false);
                         ((ManageStringActivity) activity).translateSingle(currentItem,
-                        String.valueOf(dialogBinding.stringValueInput.getText()).trim(),
-                        r -> dialogBinding.stringValueInput.setText(r)
-                    );
+                                String.valueOf(dialogBinding.stringValueInput.getText()).trim(),
+                                r -> {
+                                    if (shown.isShowing()) dialogBinding.stringValueInput.setText(r);
+                                },
+                                () -> nv.setEnabled(true));
                     }
                 });
             });

@@ -34,6 +34,7 @@ import com.google.android.material.progressindicator.LinearProgressIndicator;
 import org.json.JSONArray;
 
 import java.io.File;
+import mod.loddv.dev.tools.extrator.StringExportUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,6 +75,11 @@ public class ManageStringActivity extends AppCompatActivity {
     public String getSourceLang() {
         String v = sourceLang.getText().toString().trim();
         return v.isEmpty() ? "auto" : v;
+    }
+
+    public String getEffectiveSourceLang() {
+        String src = getSourceLang();
+        return "auto".equals(src) ? "en" : src; // Or handle auto-detection appropriately
     }
 
     public String getTargetLang() {
@@ -222,7 +228,9 @@ public class ManageStringActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** Blocking; call off the UI thread. Returns null on success, otherwise an error message. */
+    /**
+     * Blocking; call off the UI thread. Returns null on success, otherwise an error message.
+     */
     private String ensureAidlConnected() {
         if (translationManager == null || translationManager.getAidlClient() == null) {
             return "Offline Translator service unavailable";
@@ -304,7 +312,9 @@ public class ManageStringActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
                 saveStringsAsync();
                 String msg = "Translated " + done + "/" + total;
-                if (same > 0) msg += " (" + same + " unchanged" + ("auto".equals(src) ? ", try choosing the source language" : "") + ")";
+                if (same > 0)
+                    msg += " (" + same + " unchanged" + ("auto".equals(src) ? ", try choosing the source language" :
+                            "") + ")";
                 if (err != null) msg += ". Error: " + err;
                 SketchwareUtil.toast(msg, Toast.LENGTH_LONG);
             });
@@ -317,7 +327,8 @@ public class ManageStringActivity extends AppCompatActivity {
             if (onFinish != null) onFinish.run();
             return;
         }
-        String src = getSourceLang();
+        // Use getEffectiveSourceLang() if text is too short, otherwise use getSourceLang()
+        String src = (text.length() < 25) ? getEffectiveSourceLang() : getSourceLang();
         String dst = getTargetLang();
         SketchwareUtil.toast("Translating...", Toast.LENGTH_SHORT);
         executorService.execute(() -> {
@@ -326,7 +337,7 @@ public class ManageStringActivity extends AppCompatActivity {
             String error = connError;
             if (connError == null) {
                 try {
-                    result = translationManager.getAidlClient().translateSync(text, src, dst, 15000);
+                    result = translationManager.getAidlClient().translateSync(text, src, dst, 10000);
                 } catch (Exception e) {
                     error = e.getMessage() != null ? e.getMessage() : "Translation failed";
                 }
@@ -373,7 +384,7 @@ public class ManageStringActivity extends AppCompatActivity {
         }
         stringsFile = new File(localizationDir, "strings.xml");
         if (!stringsFile.exists()) {
-            FileUtil.writeFile(stringsFile.getAbsolutePath(), "<resources>\n</resources>");
+            StringExportUtil.exportDefaultStrings(this, stringsFile);
         }
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -388,6 +399,7 @@ public class ManageStringActivity extends AppCompatActivity {
         fab.setOnClickListener(v -> saveStringsAsync(() -> SketchwareUtil.toast("Strings saved successfully",
                 Toast.LENGTH_SHORT)));
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

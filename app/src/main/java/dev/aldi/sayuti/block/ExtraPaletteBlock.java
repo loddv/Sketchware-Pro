@@ -166,7 +166,6 @@ public class ExtraPaletteBlock {
 
     private void variables() {
         boolean customVariableHeaderShown = false;
-
         ArrayList<String> booleanVariables = jC.a(sc_id).e(javaName, 0);
         for (int i = 0; i < booleanVariables.size(); i++) {
             if (i == 0) logicEditor.a("Boolean", getTitleBgColor());
@@ -189,7 +188,7 @@ public class ExtraPaletteBlock {
         }
         ArrayList<String> customVariables = jC.a(sc_id).e(javaName, 5);
         for (int i = 0; i < customVariables.size(); i++) {
-            if (i == 0 && !customVariableHeaderShown) {
+            if (i == 0) {
                 logicEditor.a("Custom Variable", getTitleBgColor());
                 customVariableHeaderShown = true;
             }

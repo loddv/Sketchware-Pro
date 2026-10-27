@@ -96,15 +96,15 @@ public class ManageNativelibsActivity extends BaseAppCompatActivity implements V
 
     private void handleFab() {
         if (isInMainDirectory()) {
-            binding.showOptionsButton.setText("New folder");
+            binding.showOptionsButton.setText(Helper.getResString(R.string.new_folder));
         } else {
-            binding.showOptionsButton.setText("Import library");
+            binding.showOptionsButton.setText(Helper.getResString(R.string.import_library));
         }
     }
 
     private void setupUI() {
         binding.topAppBar.setNavigationOnClickListener(Helper.getBackPressedClickListener(this));
-        binding.topAppBar.setTitle("Native Library Manager");
+        binding.topAppBar.setTitle(Helper.getResString(R.string.native_library_manager));
         binding.showOptionsButton.setOnClickListener(view -> hideShowOptionsButton(false));
         binding.closeButton.setOnClickListener(view -> hideShowOptionsButton(true));
         binding.createNewButton.setOnClickListener(v -> {

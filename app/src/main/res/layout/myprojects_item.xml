@@ -38,6 +38,7 @@
                 android:layout_centerHorizontal="true"
                 android:layout_marginEnd="14dp"
                 android:layout_marginBottom="4dp"
+                android:textStyle="bold"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="#fff"
                 tools:text="605" />

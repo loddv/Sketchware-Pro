@@ -40,14 +40,17 @@ import a.a.a.jC;
 import a.a.a.mB;
 import a.a.a.wq;
 import a.a.a.xw;
+import mod.hey.studios.util.Helper;
 import pro.sketchware.R;
 
-public class ManageViewActivity extends BaseAppCompatActivity implements OnClickListener, ViewPager.OnPageChangeListener {
+public class ManageViewActivity extends BaseAppCompatActivity implements OnClickListener,
+        ViewPager.OnPageChangeListener {
     private static final int TAB_COUNT = 2;
     private static final int REQUEST_CODE_ADD_ACTIVITY = 264;
     private static final int REQUEST_CODE_ADD_CUSTOM_VIEW = 266;
     private final int[] x = new int[19];
-    // signature mustn't be changed: used in La/a/a/Bw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V, La/a/a/tw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V
+    // signature mustn't be changed: used in La/a/a/Bw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V,
+    // La/a/a/tw;->a(Landroidx/recyclerview/widget/RecyclerView;II)V
     public FloatingActionButton s;
     private MaterialCardView actionButtonsContainer;
     private boolean selecting = false;
@@ -68,28 +71,23 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         String var9 = var4.toString();
         ArrayList<ViewBean> var12 = jC.a(sc_id).d(var2);
         var2 = var9;
-
         while (true) {
             boolean var7 = false;
             Iterator<ViewBean> var10 = var12.iterator();
-
             boolean var13;
             while (true) {
                 var13 = var7;
                 if (!var10.hasNext()) {
                     break;
                 }
-
                 if (var2.equals(var10.next().id)) {
                     var13 = true;
                     break;
                 }
             }
-
             if (!var13) {
                 return var2;
             }
-
             StringBuilder var8 = new StringBuilder();
             var8.append(var3);
             int[] var11 = x;
@@ -120,11 +118,11 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         }
     }
 
-    // signature mustn't be changed: used in La/a/a/Dw;->onLongClick(Landroid/view/View;)Z, La/a/a/vw;->onLongClick(Landroid/view/View;)Z
+    // signature mustn't be changed: used in La/a/a/Dw;->onLongClick(Landroid/view/View;)Z, La/a/a/vw;->onLongClick
+    // (Landroid/view/View;)Z
     public void a(boolean var1) {
         selecting = var1;
         invalidateOptionsMenu();
-
         if (selecting) {
             actionButtonsContainer.setVisibility(View.VISIBLE);
             actionButtonsContainer.post(() -> {
@@ -135,7 +133,6 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
             actionButtonsContainer.setVisibility(View.GONE);
             s.animate().translationY(0.0F).setDuration(200L).start();
         }
-
         activitiesFragment.a(selecting);
         customViewsFragment.a(selecting);
     }
@@ -162,15 +159,12 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         projectLayoutFiles.add("debug");
         ArrayList<ProjectFileBean> activitiesFiles = activitiesFragment.c();
         ArrayList<ProjectFileBean> customViewsFiles = customViewsFragment.c();
-
         for (ProjectFileBean projectFileBean : activitiesFiles) {
             projectLayoutFiles.add(projectFileBean.fileName);
         }
-
         for (ProjectFileBean projectFileBean : customViewsFiles) {
             projectLayoutFiles.add(projectFileBean.fileName);
         }
-
         return projectLayoutFiles;
     }
 
@@ -193,11 +187,9 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
                 if (projectFileBean.hasActivityOption(ProjectFileBean.OPTION_ACTIVITY_DRAWER)) {
                     b(projectFileBean.getDrawerName());
                 }
-
                 if (projectFileBean.hasActivityOption(ProjectFileBean.OPTION_ACTIVITY_DRAWER) || projectFileBean.hasActivityOption(ProjectFileBean.OPTION_ACTIVITY_FAB)) {
                     jC.c(sc_id).c().useYn = "Y";
                 }
-
                 if (data.hasExtra("preset_views")) {
                     a(projectFileBean, data.getParcelableArrayListExtra("preset_views"));
                 }
@@ -214,11 +206,11 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
 
     @Override
     public void onBackPressed() {
+        super.onBackPressed();
         if (selecting) {
             a(false);
         } else {
             k();
-
             try {
                 new Handler().postDelayed(() -> new a(this).execute(), 500L);
             } catch (Exception e) {
@@ -243,19 +235,21 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
                     a(false);
                     activitiesFragment.g();
                     customViewsFragment.g();
-                    bB.a(getApplicationContext(), getString(R.string.common_message_complete_delete), bB.TOAST_WARNING).show();
+                    bB.a(getApplicationContext(),
+                            Helper.getResString(R.string.common_message_complete_delete),
+                            bB.TOAST_WARNING).show();
                     s.show();
                 }
             } else if (viewId == R.id.fab) {
                 a(false);
-
                 boolean isActivitiesTab = viewPager.getCurrentItem() == 0;
                 Intent intent = new Intent(this, isActivitiesTab ? AddViewActivity.class : AddCustomViewActivity.class);
                 intent.putStringArrayListExtra("screen_names", l());
                 if (isActivitiesTab) {
                     intent.putExtra("request_code", REQUEST_CODE_ADD_ACTIVITY);
                 }
-                startActivityForResult(intent, isActivitiesTab ? REQUEST_CODE_ADD_ACTIVITY : REQUEST_CODE_ADD_CUSTOM_VIEW);
+                startActivityForResult(intent, isActivitiesTab ? REQUEST_CODE_ADD_ACTIVITY :
+                        REQUEST_CODE_ADD_CUSTOM_VIEW);
             }
         }
     }
@@ -266,19 +260,17 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         if (!super.isStoragePermissionGranted()) {
             finish();
         }
-
         setContentView(R.layout.manage_view);
+        setTitle(Helper.getResString(R.string.design_actionbar_title_manager_view));
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         topAppBar.setNavigationOnClickListener(v -> onBackPressed());
-
         actionButtonsContainer = findViewById(R.id.layout_btn_group);
         Button delete = findViewById(R.id.btn_delete);
         Button cancel = findViewById(R.id.btn_cancel);
-        delete.setText(R.string.common_word_delete);
-        cancel.setText(R.string.common_word_cancel);
+        delete.setText(Helper.getResString(R.string.common_word_delete));
+        cancel.setText(Helper.getResString(R.string.common_word_cancel));
         delete.setOnClickListener(this);
         cancel.setOnClickListener(this);
-
         if (savedInstanceState == null) {
             sc_id = getIntent().getStringExtra("sc_id");
             isAppCompatEnabled = getIntent().getStringExtra("compatUseYn");
@@ -286,7 +278,6 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
             sc_id = savedInstanceState.getString("sc_id");
             isAppCompatEnabled = savedInstanceState.getString("compatUseYn");
         }
-
         TabLayout tabLayout = findViewById(R.id.tab_layout);
         viewPager = findViewById(R.id.view_pager);
         viewPager.setAdapter(new ManageViewActivity.b(getSupportFragmentManager()));
@@ -353,11 +344,11 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
         public void b() throws By {
             var activity = this.activity.get();
             try {
-                publishProgress(activity.getString(R.string.common_message_progress));
+                publishProgress(Helper.getResString(R.string.common_message_progress));
                 activity.m();
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new By(activity.getString(R.string.common_error_unknown));
+                throw new By(Helper.getResString(R.string.common_error_unknown));
             }
         }
 
@@ -368,7 +359,8 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
 
         public b(FragmentManager fragmentManager) {
             super(fragmentManager);
-            f = new String[]{getString(R.string.common_word_view), getString(R.string.common_word_custom_view)};
+            f = new String[]{Helper.getResString(R.string.common_word_view),
+                    Helper.getResString(R.string.common_word_custom_view)};
         }
 
         @Override
@@ -390,7 +382,6 @@ public class ManageViewActivity extends BaseAppCompatActivity implements OnClick
             } else {
                 activitiesFragment = (Fw) var3;
             }
-
             return var3;
         }
 

@@ -1064,7 +1064,7 @@ ex)\"*/*\", \"image/*\", \"audio/*\", \"text/*\""</string>
     <string name="design_actionbar_title_manager_font">Font Manager</string>
     <string name="design_actionbar_title_manager_image">Image Manager</string>
     <string name="design_actionbar_title_manager_sound">Sound Manager</string>
-    <string name="design_actionbar_title_manager_view">View Manager</string>
+    <string name="design_actionbar_title_manager_view">Visualização</string>
     <string name="design_actionbar_title_manager_resources">Resources Editor</string>
     <string name="resource_manager_no_list_title">No %s here</string>
     <string name="resource_manager_no_list_body">You don\'t have any %s here yet, try creating one.</string>
@@ -2320,4 +2320,12 @@ Please try again later"</string>
     <string name="add_custom_variable">Adicionar custom variavel</string>
     <string name="edit_variable">Editar variavel</string>
     <string name="add_custom_list">Adicionar custom Lista</string>
+    <string name="select_moreblock_type">Select Moreblock type</string>
+    <string name="variable_name">Variable name</string>
+    <string name="label_text">Label text</string>
+    <string name="parameter">Parameter</string>
+    <string name="typecode_for_custom_moreblock_type_s">use (moreblockName[type|typeName] or\nmoreblockName[type|typeName|typeCode]) for custom moreblock type(S)</string>
+    <string name="native_library_manager">Native Library Manager</string>
+    <string name="new_folder">New folder</string>
+    <string name="import_library">Import library</string>
 </resources>

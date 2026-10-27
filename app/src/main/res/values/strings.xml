@@ -2413,4 +2413,12 @@ Please try again later"</string>
     <string name="add_custom_variable">Add custom variable</string>
     <string name="edit_variable">Edit variable</string>
     <string name="add_custom_list">Add custom List</string>
+    <string name="select_moreblock_type">Select Moreblock type</string>
+    <string name="variable_name">Variable name</string>
+    <string name="label_text">Label text</string>
+    <string name="parameter">Parameter</string>
+    <string name="typecode_for_custom_moreblock_type_s">use (moreblockName[type|typeName] or\nmoreblockName[type|typeName|typeCode]) for custom moreblock type(S)</string>
+    <string name="native_library_manager">Native Library Manager</string>
+    <string name="new_folder">New folder</string>
+    <string name="import_library">Import library</string>
 </resources>

@@ -234,6 +234,80 @@
                         android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="14sp" />
 
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardBackgroundColor="?attr/colorSurface"
+                        app:strokeColor="?attr/colorOutline">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/theme_preview_toolbar"
+                                android:layout_width="match_parent"
+                                android:layout_height="40dp"
+                                android:gravity="center_vertical"
+                                android:paddingHorizontal="12dp"
+                                android:text="@string/theme_section_title"
+                                android:textColor="@android:color/white"
+                                android:textStyle="bold"
+                                tools:background="#3700B3" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:padding="12dp">
+
+                                <TextView
+                                    android:id="@+id/theme_preview_heading"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/theme_section_title"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold"
+                                    tools:textColor="#6200EE" />
+
+                                <TextView
+                                    android:id="@+id/theme_preview_body"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="@string/theme_section_description"
+                                    android:textSize="12sp"
+                                    tools:textColor="#BDBDBD" />
+
+                                <TextView
+                                    android:id="@+id/theme_preview_highlight"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:padding="8dp"
+                                    android:text="@string/theme_section_title"
+                                    android:textSize="12sp"
+                                    tools:background="#E8EAF6"
+                                    tools:textColor="#BDBDBD" />
+
+                                <TextView
+                                    android:id="@+id/theme_preview_action"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="end"
+                                    android:layout_marginTop="8dp"
+                                    android:paddingHorizontal="12dp"
+                                    android:paddingVertical="8dp"
+                                    android:text="@string/common_word_ok"
+                                    android:textColor="@android:color/white"
+                                    android:textStyle="bold"
+                                    tools:background="#03DAC5" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/layout_theme_presets"
                         android:layout_width="match_parent"

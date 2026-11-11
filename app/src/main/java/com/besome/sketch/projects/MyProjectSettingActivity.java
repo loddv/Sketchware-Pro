@@ -390,6 +390,12 @@ public class MyProjectSettingActivity extends BaseAppCompatActivity implements V
 		for (int i = 0; i < projectThemeColors.length; i++) {
 			((ThemeColorView) binding.layoutThemeColors.getChildAt(i)).color.setBackgroundColor(projectThemeColors[i]);
 		}
+		binding.themePreviewToolbar.setBackgroundColor(projectThemeColors[2]);
+		binding.themePreviewHeading.setTextColor(projectThemeColors[1]);
+		binding.themePreviewBody.setTextColor(projectThemeColors[4]);
+		binding.themePreviewHighlight.setBackgroundColor(projectThemeColors[3]);
+		binding.themePreviewHighlight.setTextColor(projectThemeColors[4]);
+		binding.themePreviewAction.setBackgroundColor(projectThemeColors[0]);
 	}
 
 	private void parseVersion(String toParse) {

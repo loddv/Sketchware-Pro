@@ -16,6 +16,8 @@ To build the app, you must use Gradle. It's highly recommended to use Android St
 
 ### Source Code Map
 
+For the architecture and development workflow of this branch, see the [Developer Manual](docs/DEVELOPMENT.md).
+
 | Class           | Role                                        |
 | --------------- | ------------------------------------------- |
 | `a.a.a.ProjectBuilder`      | Helper for compiling an entire project       |
